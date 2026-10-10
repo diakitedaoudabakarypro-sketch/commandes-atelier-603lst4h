@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V4 · 2026-10-10 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V5 · 2026-10-10 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -24,7 +24,9 @@
   V4 : APPLICATION INSTALLABLE sur Android (PWA) : manifeste, icônes, service worker (marche sans internet après la première ouverture), bouton « Installer l'application »,
   stockage protégé demandé au téléphone, information si la page est ouverte comme un simple fichier (là, les commandes sont gardées mais moins bien protégées).
   Les commandes restent dans le stockage de l'application (localStorage + IndexedDB) : fermer l'application ne les efface pas.
-  Chaque commande porte un identifiant (id), une date de modification (maj) et, si renseigné, un numéro (tel : chiffres avec l'indicatif 225).
+  V5 : PAIEMENT « Payé / Non payé » sur chaque commande (à la saisie, sur la carte, dans la liste des livrées, dans le bilan et le fichier du jour) ;
+  présentation sobre (plus de pictogrammes dans l'interface) ; message « nouvelle version prête » avec bouton « Actualiser ».
+  Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
   :root { color-scheme: light dark;
@@ -264,12 +266,30 @@
   a.btn { display:flex; align-items:center; justify-content:center; min-height:54px; padding:0 18px; border-radius:999px; font-weight:700; font-size:17px; text-decoration:none; text-align:center;
           background:linear-gradient(180deg,#E3B964,#D4A24C); color:#1C120C; box-shadow:0 2px 0 rgba(120,80,10,.35); }
   a.btn[aria-disabled="true"] { opacity:.5; pointer-events:none; box-shadow:none; }
+
+  /* ===== V5 : présentation sobre, paiements ===== */
+  .rond { font-family:Georgia,"Times New Roman",serif; font-weight:700; font-style:italic; font-size:17px; letter-spacing:.5px; color:#1C120C; }
+  .navbas svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; display:block; margin:0 auto 3px; }
+  .nav-jour button[data-jour] { font-size:24px; line-height:1; padding-bottom:3px; }
+  .aide.ok { color:var(--ok); font-weight:600; }
+  .bascule { font-size:13px; font-weight:600; color:var(--doux); }
+  .livrees-tete.du #texteLivrees { color:var(--alerte); }
+  button.pay { min-height:40px; padding:0 14px; font-size:13px; border:1.5px solid var(--bord); background:transparent; color:var(--doux); font-weight:700; margin-right:6px; }
+  button.pay[aria-pressed="true"] { background:var(--ok); border-color:var(--ok); color:var(--livre-texte); }
+  button.pay.du { border-color:var(--alerte); color:var(--alerte); background:rgba(154,52,18,.1); }
+  .ligne-livree { grid-template-columns:minmax(0,1fr); }
+  .rang-livree { flex-wrap:wrap; }
+  .alerte button.principal { min-height:40px; }
+  .ligne .liens { grid-column:1 / -1; margin-left:0; padding-top:2px; }
+  .ligne .liens { gap:4px; }
+  .ligne .liens .pay, .ligne .liens .ecrire { margin-right:0; padding:0 12px; }
+  .ligne { row-gap:6px; }
 </style>
 </head>
 <body data-vue="saisir">
 
 <header class="appbar"><div class="appbar-in">
-  <div class="logo"><div class="rond" aria-hidden="true">🥞</div>
+  <div class="logo"><div class="rond" aria-hidden="true">AC</div>
     <div style="min-width:0"><h1>Commandes du soir</h1><div class="sous" id="dateSoiree">L’Atelier des Crêpes</div><div class="sauve-etat" id="etatSauve"></div></div></div>
   <div class="puces" aria-live="polite">
     <div class="puce"><b id="nbAttente">0</b><span>à livrer</span></div>
@@ -277,8 +297,9 @@
   </div>
 </div></header>
 
-<div class="alerte-zone"><div class="alerte" id="alerteStockage" hidden>⚠ Ce navigateur n’autorise pas la sauvegarde interne : utilise « Sauvegarder le fichier du jour » (Outils) après chaque commande, sinon elles seront perdues à la fermeture.</div>
-<div class="alerte" id="alerteFichier" hidden>ℹ Cette page est ouverte comme un simple fichier : elle garde les commandes, mais moins bien protégées qu’avec l’application installée (autre navigateur, nettoyage de Chrome, fichier supprimé…). Pense au « fichier du jour » en fin de soirée.</div>
+<div class="alerte-zone"><div class="alerte" id="alerteStockage" hidden>Ce navigateur n’autorise pas la sauvegarde interne : utilise « Sauvegarder le fichier du jour » (Outils) après chaque commande, sinon elles seront perdues à la fermeture.</div>
+<div class="alerte" id="alerteFichier" hidden>Cette page est ouverte comme un simple fichier : elle garde les commandes, mais moins bien protégées qu’avec l’application installée (autre navigateur, nettoyage de Chrome, fichier supprimé…). Pense au « fichier du jour » en fin de soirée.</div>
+<div class="alerte" id="alerteMaj" hidden><span>Une nouvelle version de l’application est prête.</span><button type="button" class="principal" id="btnMaj">Actualiser</button></div>
 <div class="alerte" id="alerteVeille" hidden><span id="texteVeille"></span><button type="button" class="principal" id="btnVeille">Voir ce jour</button></div></div>
 
 <noscript><p style="padding:16px">Cette page a besoin de JavaScript.</p></noscript>
@@ -287,8 +308,8 @@
 
   <!-- ===================== SAISIE ===================== -->
   <section class="bloc" id="vueSaisir" aria-labelledby="titreSaisie">
-    <h2 id="titreSaisie"><span class="pastille">+</span><span id="titreSaisieTexte">Nouvelle commande</span></h2>
-    <div class="bandeau-edition" id="bandeauEdition" hidden><span>✎ Modification d’une commande</span><button type="button" class="lien" id="btnAnnulerEdition">Annuler</button></div>
+    <h2 id="titreSaisie"><span id="titreSaisieTexte">Nouvelle commande</span></h2>
+    <div class="bandeau-edition" id="bandeauEdition" hidden><span>Modification d’une commande</span><button type="button" class="lien" id="btnAnnulerEdition">Annuler</button></div>
 
     <p class="jour-saisie" id="jourSaisie"></p>
     <div class="passe" id="avertJourPasse" hidden><span id="texteJourPasse"></span> <button type="button" class="lien" id="btnRetourAuj">Revenir à aujourd’hui</button></div>
@@ -309,9 +330,11 @@
     <div id="zonePacks"></div>
     <p class="aide">Après l’enregistrement, le site et la résidence restent choisis : tu n’as plus qu’à taper la chambre suivante.</p>
 
-    <label class="etiquette" for="telClient">Numéro du client <small style="font-weight:600;color:var(--doux)">(facultatif : tu peux l’ajouter plus tard)</small></label>
+    <label class="etiquette" for="telClient">Numéro du client <small style="font-weight:600;color:var(--doux)">(facultatif)</small></label>
     <input type="text" id="telClient" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
     <p class="aide" id="aideTel"></p>
+
+    <label class="case" style="margin-top:12px"><input type="checkbox" id="dejaPaye"> <span>Déjà payé <small style="color:var(--doux);font-weight:600">(paiement reçu avant la livraison)</small></span></label>
 
     <div class="barre-saisie">
       <p class="attention" id="doublon" hidden></p>
@@ -325,7 +348,7 @@
   <section class="bloc" id="vueListe" aria-labelledby="titreListe">
     <div class="nav-jour" id="navJourListe"></div>
     <div class="entete">
-      <h2 id="titreListe"><span class="pastille">≡</span>À livrer</h2>
+      <h2 id="titreListe">À livrer</h2>
       <div class="filtres" role="group" aria-label="Filtrer par site" id="filtres">
         <button type="button" data-f="tous" aria-pressed="true">Tous</button>
         <button type="button" data-f="C" aria-pressed="false">Centre</button>
@@ -335,7 +358,7 @@
     <div class="totaux" id="totaux" aria-live="polite"></div>
     <div id="liste"></div>
 
-    <button type="button" class="livrees-tete" id="btnLivrees" aria-expanded="true"><span id="texteLivrees">Livrées (0)</span><span aria-hidden="true" id="flecheLivrees">▾</span></button>
+    <button type="button" class="livrees-tete" id="btnLivrees" aria-expanded="true"><span id="texteLivrees">Livrées (0)</span><span class="bascule" id="flecheLivrees">Masquer</span></button>
     <div class="liste-livrees" id="listeLivrees"></div>
 
     <details class="outils" id="outils">
@@ -343,7 +366,7 @@
 
       <span class="etiquette" style="margin-top:6px">Application sur le téléphone</span>
       <p class="aide" id="etatAppli"></p>
-      <div class="rang"><button type="button" class="principal" id="btnInstaller" hidden>📲 Installer l’application</button></div>
+      <div class="rang"><button type="button" class="principal" id="btnInstaller" hidden>Installer l’application</button></div>
       <p class="aide" id="etatStockage"></p>
 
 
@@ -356,21 +379,21 @@
         <button type="button" id="btnPartager" hidden>Partager…</button>
       </div>
       <div class="retour" id="retourListe" role="status"></div>
-      <p class="aide">Le texte est déjà mis en forme pour WhatsApp (gras sur le site, la résidence et la chambre), avec seulement les commandes <b>à livrer</b> du jour affiché. Sans numéro enregistré, WhatsApp te laisse choisir la personne. Tu peux la renvoyer autant de fois que tu veux, la saisie continue normalement.</p>
+      <p class="aide">Seules les commandes <b>à livrer</b> du jour affiché sont envoyées, mises en forme pour WhatsApp. Sans numéro enregistré, WhatsApp te laisse choisir la personne.</p>
       <label class="case"><input type="checkbox" id="avecNumeros"> <span>Ajouter le numéro des clients dans la liste (décoché par défaut : les numéros sont confidentiels)</span></label>
 
       <span class="etiquette">Fichier du jour sur le téléphone (un seul par jour)</span>
       <div class="rang">
-        <button type="button" class="principal" id="btnSauveJour">💾 Sauvegarder le fichier du jour</button>
-        <button type="button" id="btnSauveTout">💾 Tout sauvegarder (tous les jours)</button>
+        <button type="button" class="principal" id="btnSauveJour">Sauvegarder le fichier du jour</button>
+        <button type="button" id="btnSauveTout">Tout sauvegarder (tous les jours)</button>
       </div>
       <div class="retour" id="retourSauve" role="status"></div>
       <p class="aide" id="infoSauve"></p>
-      <p class="aide">Les commandes sont <b>enregistrées en continu</b> dans le téléphone, à 3 endroits, à chaque action : tu n’as rien à faire pour ne rien perdre. Le fichier est une sécurité en plus : <b>un seul par jour</b>, nommé <b>atelier-commandes_AAAA-MM-JJ.json</b>, dans le dossier <b>Téléchargements</b>. Touche le bouton <b>une fois en fin de soirée</b> (ou envoie le bilan : le fichier est créé en même temps). Un téléphone ne permet pas à une page de réécrire un fichier qui existe déjà : si tu le refais après de nouvelles commandes, Chrome ajoute (1) au nom, et le plus récent est le plus complet. La première fois, Chrome peut demander l’autorisation de télécharger : choisis <b>Autoriser</b>.</p>
-      <p class="aide">🔒 Si tu enregistres des numéros de clients, le fichier du jour les contient : il est <b>confidentiel</b>, ne le partage pas. Les numéros ne sont jamais dans le texte du bilan.</p>
+      <p class="aide">Les commandes sont <b>enregistrées en continu</b> dans le téléphone, à 3 endroits, à chaque action. Le fichier du jour (<b>atelier-commandes_AAAA-MM-JJ.json</b>, dossier <b>Téléchargements</b>) est une sauvegarde supplémentaire : touche le bouton <b>une fois en fin de soirée</b>, ou envoie le bilan (le fichier est créé en même temps). Un téléphone ne permet pas de réécrire un fichier existant : en le refaisant, Chrome ajoute (1) au nom ; le plus récent est le plus complet.</p>
+      <p class="aide"><b>Confidentiel :</b> si tu enregistres des numéros de clients, le fichier du jour les contient ; ne le partage pas. Les numéros ne sont jamais dans le texte du bilan.</p>
 
       <span class="etiquette">Restaurer depuis un fichier</span>
-      <div class="rang"><button type="button" id="btnFichier">📂 Choisir un fichier de sauvegarde</button></div>
+      <div class="rang"><button type="button" id="btnFichier">Choisir un fichier de sauvegarde</button></div>
       <input type="file" id="fichierRestaure" accept=".json,application/json" hidden>
       <div class="retour" id="retourFichier" role="status"></div>
       <p class="aide">Les commandes du fichier sont <b>ajoutées ou mises à jour</b>, jamais effacées : tu peux restaurer sans risque.</p>
@@ -379,10 +402,10 @@
       <div class="rang"><button type="button" id="btnCopierCode">Copier le code des commandes</button><button type="button" id="btnImporter">Importer le code collé</button></div>
       <textarea id="zoneCode" spellcheck="false" aria-label="Code des commandes" placeholder="Pour importer : colle ici le code reçu, puis touche « Importer »."></textarea>
       <div class="retour" id="retourCode" role="status"></div>
-      <p class="aide">Sur l’autre appareil, colle le code ici et touche « Importer » : les commandes sont <b>ajoutées ou mises à jour</b>, sans rien effacer. 🔒 Le code contient les numéros de clients : ne le partage qu’avec ta partenaire.</p>
+      <p class="aide">Sur l’autre appareil, colle le code ici et touche « Importer » : les commandes sont <b>ajoutées ou mises à jour</b>, sans rien effacer. <b>Confidentiel :</b> le code contient les numéros de clients ; ne le partage qu’avec ta partenaire.</p>
 
       <div class="zone-danger">
-        <h3>⚠ Zone dangereuse : le seul bouton de remise à zéro</h3>
+        <h3>Zone sensible : remise à zéro</h3>
         <p class="aide" id="texteZero">Il n’y a pas de « clôture » : chaque soirée a son propre enregistrement et le jour suivant démarre tout seul. Ce bouton efface seulement les commandes du jour affiché.</p>
         <div class="rang"><button type="button" class="danger" id="btnZero">Effacer les commandes de ce jour…</button></div>
         <div id="confirmeZero" hidden>
@@ -392,7 +415,7 @@
         <div id="blocRestaure" hidden>
           <span class="etiquette">Dernière suppression</span>
           <p class="aide" id="texteRestaure"></p>
-          <button type="button" id="btnRestaurer">↩ Restaurer ces commandes</button>
+          <button type="button" id="btnRestaurer">Restaurer ces commandes</button>
         </div>
       </div>
     </details>
@@ -400,14 +423,14 @@
 
   <!-- ===================== BILAN ===================== -->
   <section class="bloc" id="vueBilan" aria-labelledby="titreBilan">
-    <h2 id="titreBilan"><span class="pastille">Σ</span>Bilan</h2>
+    <h2 id="titreBilan">Bilan</h2>
     <div class="nav-jour" id="navJourBilan"></div>
     <div class="kpis" id="kpis" aria-live="polite"></div>
     <div id="detailBilan"></div>
     <div class="rang">
       <button type="button" class="principal" id="btnBilanWa">Envoyer le bilan sur WhatsApp</button>
       <button type="button" id="btnBilanCopier">Copier le bilan</button>
-      <button type="button" id="btnSauveBilan">💾 Sauvegarder le fichier du jour</button>
+      <button type="button" id="btnSauveBilan">Sauvegarder le fichier du jour</button>
     </div>
     <div class="retour" id="retourBilan" role="status"></div>
     <h3 class="st">Tous les jours</h3>
@@ -416,14 +439,14 @@
 </main>
 
 <nav class="navbas" aria-label="Navigation">
-  <button type="button" data-vue="saisir" aria-current="true"><b>➕</b>Saisir</button>
-  <button type="button" data-vue="liste" aria-current="false"><b>📋</b><span id="texteNavListe">Liste</span></button>
-  <button type="button" data-vue="bilan" aria-current="false"><b>📊</b>Bilan</button>
+  <button type="button" data-vue="saisir" aria-current="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Saisir</button>
+  <button type="button" data-vue="liste" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span id="texteNavListe">Liste</span></button>
+  <button type="button" data-vue="bilan" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Bilan</button>
 </nav>
 
 <div class="voile" id="voileEcrire" hidden>
   <div class="feuille" role="dialog" aria-modal="true" aria-labelledby="titreEcrire">
-    <div class="feuille-tete"><h2 id="titreEcrire"><span class="pastille">💬</span>Écrire au client</h2><button type="button" class="lien" id="btnFermerEcrire">Fermer ✕</button></div>
+    <div class="feuille-tete"><h2 id="titreEcrire">Écrire au client</h2><button type="button" class="lien" id="btnFermerEcrire">Fermer</button></div>
     <p class="resume" id="resumeEcrire"></p>
 
     <label class="etiquette" for="telPanneau" style="margin-top:6px">Numéro WhatsApp du client</label>
@@ -452,7 +475,7 @@
 
     <div class="feuille-pied">
       <p class="manque" id="raisonLien" aria-live="polite"></p>
-      <a class="btn" id="lienWa" target="_blank" rel="noopener noreferrer" aria-disabled="true">Ouvrir WhatsApp avec ce message</a>
+      <a class="btn" id="lienWa" target="_blank" rel="noopener noreferrer" aria-disabled="true">Ouvrir dans WhatsApp</a>
     </div>
   </div>
 </div>
@@ -617,8 +640,8 @@
     var q = {}, rien = true;
     PACKS.forEach(function (p) { q[p.id] = saisieQ[p.id]; if (saisieQ[p.id]) rien = false; });
     var ch = $("chambre").value;
-    var tl = $("telClient").value;
-    ecrire(CLE_BROUILLON, rien && !ch && !tl && !edition ? "" : JSON.stringify({ chambre: ch, tel: tl, q: q, edition: edition, jour: etat.jourVu }));
+    var tl = $("telClient").value, py = $("dejaPaye").checked;
+    ecrire(CLE_BROUILLON, rien && !ch && !tl && !py && !edition ? "" : JSON.stringify({ chambre: ch, tel: tl, paye: py, q: q, edition: edition, jour: etat.jourVu }));
   }
   function restaurerBrouillon() {
     var brut = lire(CLE_BROUILLON); if (!brut) return;
@@ -626,6 +649,7 @@
       var o = JSON.parse(brut); if (!o || o.jour !== etat.jourVu) return;
       if (o.chambre) $("chambre").value = String(o.chambre).toUpperCase().replace(/[^A-Z0-9\-\/ ]/g, "").slice(0, 8);
       if (o.tel) $("telClient").value = String(o.tel).replace(/[^0-9+ ().\-]/g, "").slice(0, 24);
+      $("dejaPaye").checked = !!o.paye;
       PACKS.forEach(function (p) { saisieQ[p.id] = Math.max(0, Math.min(99, parseInt(o.q && o.q[p.id], 10) || 0)); });
       if (o.edition && trouver(o.edition)) edition = o.edition;
     } catch (e) {}
@@ -660,7 +684,7 @@
     return a.t - b.t;
   }
   function enAttente() { return etat.commandes.filter(function (c) { return !c.livre; }).sort(comparer); }
-  function livrees() { return etat.commandes.filter(function (c) { return c.livre; }).sort(function (a, b) { return (b.tl || 0) - (a.tl || 0); }); }
+  function livrees() { return etat.commandes.filter(function (c) { return c.livre; }).sort(function (a, b) { return ((a.paye ? 1 : 0) - (b.paye ? 1 : 0)) || ((b.tl || 0) - (a.tl || 0)); }); }   // les non payées d'abord
   function somme(liste) {
     var q = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0 };
     liste.forEach(function (c) { PACKS.forEach(function (p) { q[p.id] += c.q[p.id] || 0; }); });
@@ -749,8 +773,8 @@
     var c = commandePanneau(); if (!c) { fermerEcrire(); return; }
     $("resumeEcrire").textContent = lieu(c) + " — " + libelle(c.q) + (c.livre ? " (livrée)" : "");
     var tn = normaliserTel($("telPanneau").value), m = messageParId(panneau.msg);
-    $("aideTelPanneau").textContent = tn.vide ? "Entre le numéro du client pour pouvoir ouvrir WhatsApp." : tn.erreur ? "⚠ " + tn.erreur : "✓ " + tn.joli + (tn.alerte ? " — " + tn.alerte : "");
-    $("aideTelPanneau").className = "aide" + (tn.erreur ? " attention" : "");
+    $("aideTelPanneau").textContent = tn.vide ? "Entre le numéro du client pour pouvoir ouvrir WhatsApp." : tn.erreur ? tn.erreur : "Numéro reconnu : " + tn.joli + (tn.alerte ? " — " + tn.alerte : "");
+    $("aideTelPanneau").className = "aide" + (tn.erreur ? " attention" : tn.vide ? "" : " ok");
     var b = $("btnEnregTel"), ancien = c.tel || "";
     if (tn.tel && tn.tel !== ancien) { b.hidden = false; b.textContent = "Enregistrer ce numéro"; }
     else if (tn.vide && ancien) { b.hidden = false; b.textContent = "Retirer le numéro de cette commande"; }
@@ -866,39 +890,39 @@
     if (!n.total) manque.push("le pack");
     var tn = normaliserTel($("telClient").value);
     if (tn.erreur) manque.push("un numéro valide (ou vide le champ)");
-    $("aideTel").textContent = tn.vide ? "Tu peux l’ajouter maintenant ou plus tard : touche « Écrire au client » sur la commande." : tn.erreur ? "⚠ " + tn.erreur : "✓ Numéro reconnu : " + tn.joli + (tn.alerte ? " — " + tn.alerte : "");
-    $("aideTel").className = "aide" + (tn.erreur ? " attention" : "");
+    $("aideTel").textContent = tn.vide ? "Tu peux aussi l’ajouter plus tard, avec « Message » sur la commande." : tn.erreur ? tn.erreur : "Numéro reconnu : " + tn.joli + (tn.alerte ? " — " + tn.alerte : "");
+    $("aideTel").className = "aide" + (tn.erreur ? " attention" : tn.vide ? "" : " ok");
     $("manque").textContent = manque.length ? "Il manque : " + manque.join(", ") + "." : "";
     $("manque").hidden = !manque.length; $("recap").hidden = !n.total;   // une seule ligne utile à la fois, pour garder la barre basse
     $("btnEnregistrer").disabled = manque.length > 0;
     var dup = (site && res && chambre) ? etat.commandes.filter(function (c) { return !c.livre && c.id !== edition && c.site === site && c.res === res && c.chambre === chambre.toUpperCase(); }).length : 0;
     $("doublon").hidden = !dup;
-    if (dup) $("doublon").textContent = "⚠ Déjà " + plur(dup, "commande", "commandes") + " en attente pour cette chambre.";
+    if (dup) $("doublon").textContent = "Déjà " + plur(dup, "commande", "commandes") + " en attente pour cette chambre.";
     $("bandeauEdition").hidden = !edition;
     $("titreSaisieTexte").textContent = edition ? "Modifier la commande" : "Nouvelle commande";
     $("btnEnregistrer").textContent = edition ? "Enregistrer la modification" : "Enregistrer la commande";
     var passe = etat.jourVu !== soireeCourante();
     $("jourSaisie").textContent = "Commande pour : " + nomJour(etat.jourVu) + (passe ? " (jour passé)" : " (aujourd’hui)");
     $("avertJourPasse").hidden = !passe;
-    if (passe) $("texteJourPasse").textContent = "⚠ Vous êtes sur un jour passé : la commande sera ajoutée à CE jour.";
+    if (passe) $("texteJourPasse").textContent = "Vous êtes sur un jour passé : la commande sera ajoutée à CE jour.";
     sauverBrouillon();
   }
   function viderSaisie() {
-    PACKS.forEach(function (p) { saisieQ[p.id] = 0; }); $("chambre").value = ""; $("telClient").value = ""; edition = null;
+    PACKS.forEach(function (p) { saisieQ[p.id] = 0; }); $("chambre").value = ""; $("telClient").value = ""; $("dejaPaye").checked = false; edition = null;
   }
   function enregistrer() {
     if ($("btnEnregistrer").disabled) return;
     var site = etat.saisie.site, res = etat.saisie.res, chambre = $("chambre").value.trim().toUpperCase();
     var q = {}; PACKS.forEach(function (p) { q[p.id] = saisieQ[p.id]; });
-    var maintenant = Date.now(), tel = normaliserTel($("telClient").value).tel || "";
+    var maintenant = Date.now(), tel = normaliserTel($("telClient").value).tel || "", paye = $("dejaPaye").checked;
     if (edition) {
       var id = edition;
       muter("Commande modifiée : " + SITES[site].nom + " · " + res + " · ch. " + chambre, function () {
         var c = etat.commandes.find(function (x) { return x.id === id; });
-        if (c) { c.site = site; c.res = res; c.chambre = chambre; c.q = q; c.tel = tel; c.maj = maintenant; }
+        if (c) { c.site = site; c.res = res; c.chambre = chambre; c.q = q; c.tel = tel; if (paye !== !!c.paye) { c.paye = paye; c.tp = paye ? maintenant : null; } c.maj = maintenant; }
       });
     } else {
-      var nouvelle = { id: "c" + maintenant.toString(36) + Math.random().toString(36).slice(2, 6), site: site, res: res, chambre: chambre, q: q, tel: tel, t: maintenant, maj: maintenant, livre: false, tl: null };
+      var nouvelle = { id: "c" + maintenant.toString(36) + Math.random().toString(36).slice(2, 6), site: site, res: res, chambre: chambre, q: q, tel: tel, paye: paye, tp: paye ? maintenant : null, t: maintenant, maj: maintenant, livre: false, tl: null };
       muter("Ajouté : " + SITES[site].nom + " · " + res + " · ch. " + chambre + " — " + libelle(q), function () { etat.commandes.push(nouvelle); });
     }
     viderSaisie(); majForm(); vibrer(25);
@@ -936,7 +960,7 @@
         cleGroupe = g;
         var membres = visibles.filter(function (x) { return x.site === c.site && x.res === c.res; });
         var sg = somme(membres);
-        var btnTout = el("button", { type: "button", "data-act": "groupe", "data-site": c.site, "data-res": c.res, text: "Tout livré ✓" });
+        var btnTout = el("button", { type: "button", "data-act": "groupe", "data-site": c.site, "data-res": c.res, text: "Tout marquer livré" });
         zone.append(carte = el("div", { class: "groupe " + SITES[c.site].classe },
           el("div", { class: "groupe-tete" },
             el("div", null, el("b", { text: "Résidence " + c.res }), el("small", { text: plur(membres.length, "commande", "commandes") + " · " + sg.nature + " Nature + " + sg.nutella + " Nutella" })),
@@ -948,27 +972,32 @@
         el("div", null,
           el("div", { class: "pack", text: libelle(c.q) }),
           el("div", { class: "compo", text: (avecPack ? composition(cc) + " · " : "") + plur(cc.total, "crêpe", "crêpes") }),
-          c.tel ? el("div", { class: "compo", text: "📞 " + joliTel(c.tel) }) : null,
-          el("div", { class: "liens" },
-            el("button", { type: "button", class: "lien ecrire", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "💬 Écrire" }),
-            el("button", { type: "button", class: "lien", "data-act": "modifier", "data-id": c.id, text: "Modifier" }),
-            el("button", { type: "button", class: "lien", "data-act": "supprimer", "data-id": c.id, text: "Supprimer" }))),
-        el("button", { type: "button", class: "livre", "data-act": "livrer", "data-id": c.id, "aria-label": "Marquer livrée : " + lieu(c), text: "✓ Livré" })));
+          c.tel ? el("div", { class: "compo", text: "Tél. " + joliTel(c.tel) }) : null,
+          null),
+        el("button", { type: "button", class: "livre", "data-act": "livrer", "data-id": c.id, "aria-label": "Marquer livrée : " + lieu(c), text: "Livré" }),
+        el("div", { class: "liens" },
+          el("button", { type: "button", class: "pay", "data-act": "payer", "data-id": c.id, "aria-pressed": String(!!c.paye), "aria-label": "Paiement : " + lieu(c), text: c.paye ? "Payé" : "Non payé" }),
+          el("button", { type: "button", class: "lien ecrire", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "Message" }),
+          el("button", { type: "button", class: "lien", "data-act": "modifier", "data-id": c.id, text: "Modifier" }),
+          el("button", { type: "button", class: "lien", "data-act": "supprimer", "data-id": c.id, text: "Supprimer" }))));
     });
     // Livrées (en bas)
     var fait = livrees();
-    $("texteLivrees").textContent = "Livrées (" + fait.length + ")";
+    var nbDu = fait.filter(function (c) { return !c.paye; }).length;
+    $("texteLivrees").textContent = "Livrées (" + fait.length + ")" + (nbDu ? " · " + nbDu + " à encaisser" : "");
+    $("btnLivrees").classList.toggle("du", nbDu > 0);
     $("btnLivrees").setAttribute("aria-expanded", String(ui.livreesOuvert));
-    $("flecheLivrees").textContent = ui.livreesOuvert ? "▾" : "▸";
+    $("flecheLivrees").textContent = ui.livreesOuvert ? "Masquer" : "Afficher";
     var zl = $("listeLivrees"); zl.replaceChildren();
     zl.hidden = !ui.livreesOuvert || !fait.length;
     $("btnLivrees").hidden = !fait.length;
     fait.forEach(function (c) {
       zl.append(el("div", { class: "ligne-livree" },
-        el("div", null, el("b", { text: "✓ " + SITES[c.site].nom + " · " + c.res + " · ch. " + c.chambre }), " — " + libelle(c.q), el("small", { text: "livrée à " + heureDe(c.tl || c.maj) })),
+        el("div", null, el("b", { text: SITES[c.site].nom + " · " + c.res + " · ch. " + c.chambre }), " — " + libelle(c.q), el("small", { text: "livrée à " + heureDe(c.tl || c.maj) })),
         el("div", { class: "rang-livree" },
-          el("button", { type: "button", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "💬" }),
-          el("button", { type: "button", "data-act": "remettre", "data-id": c.id, "aria-label": "Remettre en attente : " + lieu(c), text: "↩ Remettre" }))));
+          el("button", { type: "button", class: "pay" + (c.paye ? "" : " du"), "data-act": "payer", "data-id": c.id, "aria-pressed": String(!!c.paye), "aria-label": "Paiement : " + lieu(c), text: c.paye ? "Payé" : "Non payé" }),
+          el("button", { type: "button", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "Message" }),
+          el("button", { type: "button", "data-act": "remettre", "data-id": c.id, "aria-label": "Remettre en attente : " + lieu(c), text: "Remettre en attente" }))));
     });
   }
   function joursEnRetard() {   // jours passés qui ont encore des commandes non livrées
@@ -982,8 +1011,8 @@
   }
   function construireNavJour(zone) {
     var auj = soireeCourante(), v = etat.jourVu;
-    var prec = el("button", { type: "button", "data-jour": "-1", "aria-label": "Jour précédent", text: "◀" });
-    var suiv = el("button", { type: "button", "data-jour": "1", "aria-label": "Jour suivant", text: "▶" }); suiv.disabled = v >= auj;
+    var prec = el("button", { type: "button", "data-jour": "-1", "aria-label": "Jour précédent", text: "‹" });
+    var suiv = el("button", { type: "button", "data-jour": "1", "aria-label": "Jour suivant", text: "›" }); suiv.disabled = v >= auj;
     var morceaux = [prec, el("div", { class: "jour" }, nomJour(v), el("small", { text: v === auj ? "aujourd’hui" : frDate(v) + " · jour passé" })), suiv];
     if (v !== auj) morceaux.push(el("button", { type: "button", class: "principal", "data-jour": "0", text: "Aujourd’hui" }));
     zone.replaceChildren.apply(zone, morceaux);
@@ -1013,9 +1042,11 @@
   function chiffre(q) { var t = 0; PACKS.forEach(function (p) { t += (q[p.id] || 0) * PRIX[p.id]; }); return t; }
   function bilanDe(liste) {
     var q = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0 };
-    var b = { commandes: liste.length, livrees: 0, centre: 0, sud: 0, premiere: null, derniere: null, derniereLivraison: null, delaiMoyen: null, parRes: {} }, delais = [];
+    var b = { commandes: liste.length, livrees: 0, centre: 0, sud: 0, premiere: null, derniere: null, derniereLivraison: null, delaiMoyen: null, parRes: {}, payees: 0, dues: 0, nonLivreesNonPayees: 0, caPaye: 0, caDu: 0, caAttente: 0 }, delais = [];
     liste.forEach(function (c) {
       PACKS.forEach(function (p) { q[p.id] += c.q[p.id] || 0; });
+      var v = chiffre(c.q);
+      if (c.paye) { b.payees++; b.caPaye += v; } else if (c.livre) { b.dues++; b.caDu += v; } else { b.nonLivreesNonPayees++; b.caAttente += v; }
       if (c.livre) {
         b.livrees++;
         if (c.tl && c.tl >= c.t) delais.push(c.tl - c.t);
@@ -1027,7 +1058,7 @@
       var k = c.site + "|" + c.res; b.parRes[k] = (b.parRes[k] || 0) + 1;
     });
     var s = compte(q);
-    b.aLivrer = b.commandes - b.livrees;
+    b.aLivrer = b.commandes - b.livrees; b.nonPayees = b.commandes - b.payees;
     b.packs = { mini: q.mini, maxi: q.maxi, mega: q.mega }; b.unites = { nature: q.nature, nutella: q.nutella };
     b.nature = s.nature; b.nutella = s.nutella; b.crepes = s.total; b.caEstime = chiffre(q);
     if (delais.length) b.delaiMoyen = Math.round(delais.reduce(function (a, x) { return a + x; }, 0) / delais.length / 60000);
@@ -1056,6 +1087,10 @@
       var res = Object.keys(b.parRes).map(function (k) { var a = k.split("|"); return { site: a[0], res: a[1], n: b.parRes[k] }; })
         .sort(function (x, y) { return ORDRE_SITES.indexOf(x.site) - ORDRE_SITES.indexOf(y.site) || cleRes(x.site, x.res) - cleRes(y.site, y.res); });
       zone.append(
+        el("h3", { class: "st", text: "Paiements" }),
+        tableau(["Situation", "Commandes", "Montant estimé"], [["Payées", b.payees, fcfa(b.caPaye)], ["Livrées, non payées (à encaisser)", b.dues, fcfa(b.caDu)], ["Pas encore livrées, non payées", b.nonLivreesNonPayees, fcfa(b.caAttente)]],
+                ["Total", b.commandes, fcfa(b.caEstime)]),
+        el("p", { class: "estim", text: "Montants calculés avec les prix des packs, sans les frais de livraison : ce sont des estimations. Les paiements sont ceux que tu as marqués « Payé »." }),
         el("h3", { class: "st", text: "Ce qui a été commandé" }),
         tableau(["Produit", "Quantité"], [["MINI", b.packs.mini], ["MAXI", b.packs.maxi], ["MÉGA", b.packs.mega], ["Nature à l’unité", b.unites.nature], ["Nutella à l’unité", b.unites.nutella]],
                 ["Total des crêpes", b.crepes + " (" + b.nature + " Nature + " + b.nutella + " Nutella)"]),
@@ -1065,7 +1100,7 @@
         tableau(["Résidence", "Commandes"], res.map(function (r) { return [SITES[r.site].nom + " · " + r.res, r.n]; })),
         el("h3", { class: "st", text: "Ventes estimées" }),
         el("p", { class: "gros-chiffre", text: fcfa(b.caEstime) }),
-        el("p", { class: "estim", text: "Estimation calculée avec les prix (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F). Sans les frais de livraison, sans la crêpe offerte du 10 octobre, et sans vérifier les paiements." }),
+        el("p", { class: "estim", text: "Estimation calculée avec les prix (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F). Sans les frais de livraison et sans la crêpe offerte du 10 octobre ; les paiements sont suivis dans la section « Paiements »." }),
         el("h3", { class: "st", text: "Horaires" }),
         el("p", { class: "aide", text: "Première commande à " + heureDe(b.premiere) + " · dernière à " + heureDe(b.derniere) +
           (b.derniereLivraison ? " · dernière livraison à " + heureDe(b.derniereLivraison) : "") +
@@ -1075,28 +1110,30 @@
     var zj = $("tousJours"); zj.replaceChildren();
     if (!jours.length) zj.append(el("p", { class: "aide", text: "Aucun jour enregistré pour l’instant." }));
     else {
-      var tot = { c: 0, l: 0, cr: 0, ca: 0 };
+      var tot = { c: 0, l: 0, d: 0, cr: 0, ca: 0 };
       var lignes = jours.map(function (j) {
-        var x = bilanDe(etat.jours[j].commandes); tot.c += x.commandes; tot.l += x.livrees; tot.cr += x.crepes; tot.ca += x.caEstime;
+        var x = bilanDe(etat.jours[j].commandes); tot.c += x.commandes; tot.l += x.livrees; tot.d += x.dues; tot.cr += x.crepes; tot.ca += x.caEstime;
         var voir = el("button", { type: "button", "data-jour": j, text: j === etat.jourVu ? "affiché" : "Voir" }); voir.disabled = j === etat.jourVu;
-        return [nomJour(j), x.commandes, x.livrees, x.crepes, fcfa(x.caEstime), voir];
+        return [nomJour(j), x.commandes, x.livrees, x.dues, x.crepes, fcfa(x.caEstime), voir];
       });
-      zj.append(el("div", { class: "defile" }, tableau(["Jour", "Commandes", "Livrées", "Crêpes", "Ventes estimées", ""], lignes,
-        ["Total (" + plur(jours.length, "jour", "jours") + ")", tot.c, tot.l, tot.cr, fcfa(tot.ca), ""])));
+      zj.append(el("div", { class: "defile" }, tableau(["Jour", "Commandes", "Livrées", "À encaisser", "Crêpes", "Ventes estimées", ""], lignes,
+        ["Total (" + plur(jours.length, "jour", "jours") + ")", tot.c, tot.l, tot.d, tot.cr, fcfa(tot.ca), ""])));
     }
     if (etat.histo.length) zj.append(el("p", { class: "aide", text: "Soirées de la version 1 (résumés sans détail) : " + etat.histo.map(function (h) { return frDate(h.date) + " : " + h.commandes + " commandes"; }).join(" · ") + "." }));
   }
   $("tousJours").addEventListener("click", function (e) { var b = e.target.closest("button[data-jour]"); if (b && !b.disabled) changerJour(b.dataset.jour); });
   function texteBilan() {   // mis en forme pour WhatsApp : *gras*
     var b = bilanDe(etat.commandes), l = [];
-    l.push("🥞 *ATELIER DES CREPES* — bilan du *" + nomJour(etat.jourVu) + "*");
+    l.push("*L’ATELIER DES CRÊPES* — bilan du *" + nomJour(etat.jourVu) + "*");
     l.push("*" + plur(b.commandes, "commande", "commandes") + "* (" + plur(b.livrees, "livrée", "livrées") + ", " + b.aLivrer + " à livrer)");
-    l.push("🥞 *Crêpes : " + b.crepes + "* (" + b.nature + " Nature + " + b.nutella + " Nutella)");
-    l.push("• MINI : " + b.packs.mini + " · MAXI : " + b.packs.maxi + " · MÉGA : " + b.packs.mega);
-    l.push("• Nature à l’unité : " + b.unites.nature + " · Nutella à l’unité : " + b.unites.nutella);
-    l.push("📍 Centre : " + plur(b.centre, "commande", "commandes") + " · Sud : " + plur(b.sud, "commande", "commandes"));
-    l.push("💰 *Ventes estimées : " + fcfa(b.caEstime) + "* (sans la livraison)");
-    if (b.premiere) l.push("⏱ Première commande à " + heureDe(b.premiere) + " · dernière à " + heureDe(b.derniere) + (b.delaiMoyen != null ? " · livraison en moyenne " + b.delaiMoyen + " min" : ""));
+    l.push("*Crêpes : " + b.crepes + "* (" + b.nature + " Nature + " + b.nutella + " Nutella)");
+    l.push("MINI : " + b.packs.mini + " · MAXI : " + b.packs.maxi + " · MÉGA : " + b.packs.mega);
+    l.push("Nature à l’unité : " + b.unites.nature + " · Nutella à l’unité : " + b.unites.nutella);
+    l.push("Centre : " + plur(b.centre, "commande", "commandes") + " · Sud : " + plur(b.sud, "commande", "commandes"));
+    l.push("*Ventes estimées : " + fcfa(b.caEstime) + "* (sans la livraison)");
+    l.push("Paiements : " + plur(b.payees, "payée", "payées") + " (" + fcfa(b.caPaye) + ") · " + plur(b.dues, "livrée non payée", "livrées non payées") + " (" + fcfa(b.caDu) + ")" +
+      (b.nonLivreesNonPayees ? " · " + plur(b.nonLivreesNonPayees, "pas encore livrée", "pas encore livrées") + " (" + fcfa(b.caAttente) + ")" : ""));
+    if (b.premiere) l.push("Première commande à " + heureDe(b.premiere) + " · dernière à " + heureDe(b.derniere) + (b.delaiMoyen != null ? " · livraison en moyenne " + b.delaiMoyen + " min" : ""));
     return l.join("\n");
   }
   function rendre() { rendreEntete(); rendreListe(); rendreBilan(); majForm(); majZoneRestaure(); }
@@ -1116,13 +1153,14 @@
       var membres = etat.commandes.filter(function (x) { return !x.livre && x.site === b.dataset.site && x.res === b.dataset.res; });
       muter("Résidence " + b.dataset.res + " : " + plur(membres.length, "commande livrée", "commandes livrées"), function () { membres.forEach(function (x) { x.livre = true; x.tl = maintenant; x.maj = maintenant; }); });
     }
+    else if (act === "payer" && c) muter(c.paye ? "Marquée non payée : " + lieu(c) : "Payée : " + lieu(c), function () { c.paye = !c.paye; c.tp = c.paye ? maintenant : null; c.maj = maintenant; });
     else if (act === "ecrire" && c) { ouvrirEcrire(c.id); }
     else if (act === "modifier" && c) {
-      edition = c.id; etat.saisie.site = c.site; etat.saisie.res = c.res; $("chambre").value = c.chambre; $("telClient").value = c.tel ? joliTel(c.tel) : "";
+      edition = c.id; etat.saisie.site = c.site; etat.saisie.res = c.res; $("chambre").value = c.chambre; $("telClient").value = c.tel ? joliTel(c.tel) : ""; $("dejaPaye").checked = !!c.paye;
       PACKS.forEach(function (p) { saisieQ[p.id] = c.q[p.id] || 0; });
       choisirVue("saisir"); majForm(); window.scrollTo({ top: 0 }); $("chambre").focus();
     }
-    if (act === "livrer" || act === "groupe") noterChangement();
+    if (act === "livrer" || act === "groupe" || act === "payer") noterChangement();
   }
   $("btnAnnulerEdition").addEventListener("click", function () { viderSaisie(); majForm(); });
   $("filtres").addEventListener("click", function (e) { var b = e.target.closest("button[data-f]"); if (!b) return; ui.filtre = b.dataset.f; sauverUi(); rendreListe(); });
@@ -1151,19 +1189,20 @@
   });
   $("btnEnregistrer").addEventListener("click", enregistrer);
   $("telClient").addEventListener("input", majForm);
+  $("dejaPaye").addEventListener("change", majForm);
 
   /* ---------- Outils : texte, partage, code, clôture ---------- */
   function texteListe() {   // mis en forme pour WhatsApp : *gras*
     var att = enAttente(), s = somme(att), lignes = [];
-    lignes.push("🥞 *ATELIER DES CREPES* — commandes du " + frDate(etat.soiree));
+    lignes.push("*L’ATELIER DES CRÊPES* — commandes du " + frDate(etat.soiree));
     lignes.push("*" + plur(att.length, "commande à livrer", "commandes à livrer") + "* · à préparer : *" + s.nature + " Nature + " + s.nutella + " Nutella*");
     ORDRE_SITES.forEach(function (site) {
       var duSite = att.filter(function (c) { return c.site === site; }); if (!duSite.length) return;
       lignes.push("", "*" + SITES[site].nom.toUpperCase() + " — dès " + SITES[site].heure + "* (" + plur(duSite.length, "commande", "commandes") + ")");
       var resActuelle = null;
       duSite.forEach(function (c) {
-        if (c.res !== resActuelle) { resActuelle = c.res; lignes.push("", "📍 *Résidence " + c.res + "*"); }
-        lignes.push("   • ch. *" + c.chambre + "* : " + libelle(c.q) + (ui.avecNumeros && c.tel ? " · 📞 " + joliTel(c.tel) : ""));
+        if (c.res !== resActuelle) { resActuelle = c.res; lignes.push("", "*Résidence " + c.res + "*"); }
+        lignes.push("   • ch. *" + c.chambre + "* : " + libelle(c.q) + (ui.avecNumeros && c.tel ? " · tél. " + joliTel(c.tel) : ""));
       });
     });
     return lignes.join("\n");
@@ -1211,7 +1250,7 @@
     var q = {}, total = 0; PACKS.forEach(function (p) { var n = Math.max(0, Math.min(99, parseInt(c.q && c.q[p.id], 10) || 0)); q[p.id] = n; total += n; });
     if (!total) return null;
     var t = Number(c.t) || Date.now();
-    return { id: c.id, site: c.site, res: String(c.res), chambre: ch, q: q, tel: normaliserTel(c.tel).tel || "", t: t, maj: Number(c.maj) || t, livre: !!c.livre, tl: c.livre ? (Number(c.tl) || Number(c.maj) || t) : null };
+    return { id: c.id, site: c.site, res: String(c.res), chambre: ch, q: q, tel: normaliserTel(c.tel).tel || "", paye: !!c.paye, tp: c.paye ? (Number(c.tp) || Number(c.maj) || t) : null, t: t, maj: Number(c.maj) || t, livre: !!c.livre, tl: c.livre ? (Number(c.tl) || Number(c.maj) || t) : null };
   }
   function retourCode(message, type) { var r = $("retourCode"); r.textContent = message; r.className = "retour " + (type || ""); }
   function retourFichier(message, type) { var r = $("retourFichier"); r.textContent = message; r.className = "retour " + (type || ""); }
@@ -1271,13 +1310,13 @@
   }
   function majEtatSauve() {
     var s = suiviLire(etat.jourVu), n = etat.commandes.length;
-    var t = !stockageOK ? "⚠ Sauvegarde du navigateur impossible" : "✓ Enregistré " + heureDe(etat.maj || Date.now());
-    if (s.dernier) t += " · 💾 fichier du jour " + heureDe(s.dernier) + (s.depuis ? " (" + plur(s.depuis, "modification depuis", "modifications depuis") + ")" : " à jour");
-    else if (n) t += " · 💾 fichier du jour pas encore créé";
-    if (n && !enAttente().length && (!s.dernier || s.depuis)) t += " · ⚠ soirée finie ? pensez au fichier du jour (onglet Bilan)";
+    var t = !stockageOK ? "Sauvegarde du navigateur impossible" : "Enregistré à " + heureDe(etat.maj || Date.now());
+    if (s.dernier) t += " · fichier du jour de " + heureDe(s.dernier) + (s.depuis ? " (" + plur(s.depuis, "modification depuis", "modifications depuis") + ")" : ", à jour");
+    else if (n) t += " · fichier du jour non créé";
+    if (n && !enAttente().length && (!s.dernier || s.depuis)) t += " · pense au fichier du jour (onglet Bilan)";
     $("etatSauve").textContent = t;
     $("infoSauve").textContent = s.dernier ? "Fichier de ce jour : créé à " + heureDe(s.dernier) + ". " + (s.depuis ? plur(s.depuis, "modification depuis.", "modifications depuis.") : "Rien de nouveau depuis.") : (n ? "Pas encore de fichier pour ce jour." : "Aucune commande ce jour-là.");
-    var libelle = s.dernier && s.depuis ? "💾 Mettre à jour le fichier du jour" : "💾 Sauvegarder le fichier du jour";
+    var libelle = s.dernier && s.depuis ? "Mettre à jour le fichier du jour" : "Sauvegarder le fichier du jour";
     $("btnSauveJour").textContent = libelle; $("btnSauveBilan").textContent = libelle;
   }
   $("btnSauveJour").addEventListener("click", function () { sauvegarderJourSiBesoin(retourSauve); });
@@ -1381,10 +1420,20 @@
   var enAppli = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
   var enFichier = location.protocol === "file:" || location.protocol === "content:";
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
-    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+    var avaitControleur = !!navigator.serviceWorker.controller;
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").then(function (reg) {
+        document.addEventListener("visibilitychange", function () { if (!document.hidden) reg.update().catch(function () {}); });   // l'application ouverte longtemps cherche aussi les mises à jour
+      }).catch(function () {});
+    });
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!avaitControleur) { avaitControleur = true; return; }   // première installation : rien à proposer
+      $("alerteMaj").hidden = false;
+    });
+    $("btnMaj").addEventListener("click", function () { location.reload(); });   // le brouillon du formulaire est gardé
   }
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); invitation = e; majAppli(); });
-  window.addEventListener("appinstalled", function () { invitation = null; enAppli = true; majAppli(); toast("Application installée : ouvre-la depuis l’icône 🥞 de l’écran d’accueil."); });
+  window.addEventListener("appinstalled", function () { invitation = null; enAppli = true; majAppli(); toast("Application installée : ouvre-la depuis son icône sur l’écran d’accueil."); });
   $("btnInstaller").addEventListener("click", function () {
     if (!invitation) return;
     invitation.prompt();
@@ -1393,15 +1442,15 @@
   function majAppli() {
     $("alerteFichier").hidden = !enFichier;
     var t;
-    if (enAppli) t = "✓ Tu utilises l’application installée : les commandes restent dans le téléphone, même quand l’application est fermée.";
-    else if (enFichier) t = "ℹ Cette page est ouverte comme un simple fichier : elle garde les commandes, mais moins bien protégées qu’une application installée. Le « fichier du jour » en fin de soirée reste ta sauvegarde.";
+    if (enAppli) t = "Tu utilises l’application installée : les commandes restent dans le téléphone, même quand l’application est fermée.";
+    else if (enFichier) t = "Cette page est ouverte comme un simple fichier : elle garde les commandes, mais moins bien protégées qu’une application installée. Le « fichier du jour » en fin de soirée reste ta sauvegarde.";
     else if (invitation) t = "Touche le bouton ci-dessous pour installer l’application sur l’écran d’accueil.";
     else t = "Pour l’installer : menu ⋮ de Chrome, puis « Installer l’application » (ou « Ajouter à l’écran d’accueil »).";
     $("etatAppli").textContent = t;
     $("btnInstaller").hidden = !invitation;
     try {
       if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(function (p) {
-        $("etatStockage").textContent = p ? "🔒 Stockage protégé : le téléphone ne supprimera pas les commandes pour libérer de la place."
+        $("etatStockage").textContent = p ? "Stockage protégé : le téléphone ne supprimera pas les commandes pour libérer de la place."
           : "Stockage non protégé : si le téléphone manque de place, il pourrait supprimer des données. L’application installée est protégée automatiquement.";
       });
     } catch (e) {}
