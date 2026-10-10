@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1C120C">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="color-scheme" content="light dark">
+<title>Commandes du soir</title>
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<!--
+  AUT-05 · V4 · 2026-10-10 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
+  envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
+  V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
+  écriture à chaque action à trois endroits du téléphone (localStorage, copie précédente, IndexedDB) + brouillon du formulaire ;
+  UN SEUL fichier JSON par jour (bouton « fichier du jour », ou envoi du bilan) ; UN SEUL bouton de remise à zéro (zone rouge, sauvegarde avant, restauration 30 jours).
+  V3 : NUMÉRO DU CLIENT (facultatif) sur chaque commande, saisi à la commande ou plus tard ; bouton « Écrire au client » : 10 messages prédéfinis du livreur
+  (MSG-LIV-01 V2, première ligne « Bonsoir, je suis le livreur de l'Atelier des Crêpes. ») qui ouvrent la conversation WhatsApp du client (lien wa.me) sans
+  enregistrer son contact. Les numéros sont des données clients : jamais dans le bilan ; absents de la liste envoyée à la partenaire sauf case cochée ;
+  présents dans le fichier JSON du jour (à ne pas partager).
+  V4 : APPLICATION INSTALLABLE sur Android (PWA) : manifeste, icônes, service worker (marche sans internet après la première ouverture), bouton « Installer l'application »,
+  stockage protégé demandé au téléphone, information si la page est ouverte comme un simple fichier (là, les commandes sont gardées mais moins bien protégées).
+  Les commandes restent dans le stockage de l'application (localStorage + IndexedDB) : fermer l'application ne les efface pas.
+  Chaque commande porte un identifiant (id), une date de modification (maj) et, si renseigné, un numéro (tel : chiffres avec l'indicatif 225).
+-->
+<style>
+  :root { color-scheme: light dark;
+          --fond:#F7EFE3; --carte:#FFFFFF; --carte2:#FBF5EC; --encre:#1C120C; --doux:#6B5A4A; --bord:rgba(60,40,20,.14);
+          --or:#D4A24C; --or2:#E8C47E; --accent:#8A6420; --ok:#2F6B1F; --alerte:#9A3412; --gris:#E7DDCF;
+          --centre:#8A6420; --sud:#1F6B70; --livre-fond:#2F6B1F; --livre-texte:#FFFFFF;
+          --ombre:0 1px 2px rgba(40,25,10,.06), 0 10px 28px rgba(40,25,10,.08);
+          --rayon:16px; --cacao:#1C120C; --cacao2:#2B1C13; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fond:#140D08; --carte:#241912; --carte2:#2C1F16; --encre:#F6EBDC; --doux:#CDB9A0; --bord:rgba(246,235,220,.14);
+            --accent:#E8C47E; --ok:#A7E27A; --alerte:#FDBA74; --gris:#3A2B20; --centre:#E8C47E; --sud:#7FD3D8;
+            --livre-fond:#A7E27A; --livre-texte:#10240A; --ombre:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35); }
+  }
+  *, *::before, *::after { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--fond); color:var(--encre); -webkit-tap-highlight-color:transparent;
+         font:16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+         padding-bottom:calc(100px + env(safe-area-inset-bottom)); }
+  button, input, textarea { touch-action:manipulation; font:inherit; }
+
+  /* ===== Barre du haut ===== */
+  .appbar { position:sticky; top:0; z-index:30; color:#F6EBDC; background:linear-gradient(180deg,var(--cacao),var(--cacao2));
+            border-bottom:1px solid rgba(232,196,126,.25);
+            padding:calc(10px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); }
+  .appbar-in { max-width:1180px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .logo { display:flex; align-items:center; gap:12px; min-width:0; }
+  .rond { flex:none; width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-size:20px;
+          background:radial-gradient(circle at 30% 25%, #E8C47E, #B8862F); box-shadow:0 0 0 2px rgba(232,196,126,.35); }
+  h1 { font-family:Georgia, "Playfair Display", serif; font-size:20px; line-height:1.1; margin:0; color:var(--or2); letter-spacing:.3px; }
+  .sous { font-size:12px; color:#CDB9A0; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .puces { display:flex; gap:8px; flex:none; }
+  .puce { text-align:center; padding:4px 12px; border-radius:12px; background:rgba(232,196,126,.12); border:1px solid rgba(232,196,126,.3); min-width:64px; }
+  .puce b { display:block; font-size:20px; line-height:1.1; color:#F6EBDC; }
+  .puce span { font-size:11px; color:#CDB9A0; }
+
+  /* ===== Mise en page ===== */
+  .app { max-width:1180px; margin:0 auto; padding:16px max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); display:grid; gap:14px; grid-template-columns:minmax(0,1fr); }
+  .bloc { background:var(--carte); border:1px solid var(--bord); border-radius:var(--rayon); padding:16px; box-shadow:var(--ombre); min-width:0; }
+  @media (max-width:899px) {
+    body[data-vue="saisir"] #vueListe { display:none; }
+    body[data-vue="liste"] #vueSaisir { display:none; }
+  }
+  @media (min-width:900px) {
+    body { padding-bottom:60px; }
+    .app { grid-template-columns:minmax(340px, 420px) minmax(0,1fr); gap:18px; align-items:start; padding-top:22px; }
+    #vueSaisir { position:sticky; top:84px; }
+    .navbas { display:none !important; }
+  }
+  h2 { display:flex; align-items:center; gap:10px; font-size:17px; margin:0 0 12px; font-weight:800; }
+  h2 .pastille { flex:none; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-size:14px; font-weight:800; background:var(--or); color:#1C120C; }
+  .etiquette { display:block; font-weight:700; font-size:14px; margin:16px 0 6px; }
+  #etSite { margin-top:0; }
+  .aide { font-size:13px; color:var(--doux); margin:6px 0 0; }
+
+  /* ===== Boutons ===== */
+  button { font-weight:700; font-size:15px; border:0; border-radius:999px; padding:0 18px; min-height:46px; cursor:pointer; color:var(--encre); background:var(--gris);
+           display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:transform .08s, filter .15s, background .15s; }
+  button:active { transform:scale(.97); }
+  @media (hover:hover) { button:hover { filter:brightness(1.06); } }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline:2px solid var(--or); outline-offset:2px; }
+  button.principal { background:linear-gradient(180deg,#E3B964,#D4A24C); color:#1C120C; box-shadow:0 2px 0 rgba(120,80,10,.35); }
+  button.gros { min-height:54px; font-size:17px; width:100%; }
+  button.lien { background:transparent; color:var(--doux); padding:0 6px; min-height:40px; font-size:14px; font-weight:600; text-decoration:underline; text-underline-offset:3px; }
+  button.danger { background:transparent; color:var(--alerte); border:1.5px solid var(--alerte); }
+  button:disabled { cursor:default; opacity:.55; box-shadow:none; }
+
+  /* ===== Saisie ===== */
+  .segmente { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; background:var(--carte2); border:1px solid var(--bord); border-radius:999px; }
+  .segmente button { background:transparent; min-height:48px; color:var(--doux); font-size:16px; }
+  .segmente button[aria-pressed="true"] { background:linear-gradient(180deg,#E3B964,#D4A24C); color:#1C120C; box-shadow:0 2px 0 rgba(120,80,10,.3); }
+  .segmente small { font-weight:600; opacity:.85; }
+  .puces-res { display:grid; grid-template-columns:repeat(auto-fill, minmax(50px, 1fr)); gap:8px; }
+  .puces-res button { border-radius:14px; min-height:48px; padding:0; font-size:17px; background:var(--carte2); border:1.5px solid var(--bord); }
+  .puces-res button[aria-pressed="true"] { background:var(--encre); color:var(--fond); border-color:var(--encre); }
+  .invite { padding:14px; border:1.5px dashed var(--bord); border-radius:14px; color:var(--doux); font-size:14px; text-align:center; }
+  input[type=text], textarea { width:100%; font-size:16px; color:var(--encre); background:var(--carte2); border:1.5px solid var(--bord); border-radius:12px; padding:11px 12px; min-height:50px; appearance:none; -webkit-appearance:none; }
+  input.chambre { font-size:22px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
+  textarea { min-height:110px; resize:vertical; font-size:13px; }
+  .pas { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--bord); }
+  .pas:last-of-type { border-bottom:0; }
+  .pas-nom b { display:block; font-size:16px; }
+  .pas-nom span { font-size:13px; color:var(--doux); }
+  .pas-ctrl { display:flex; align-items:center; gap:6px; flex:none; }
+  .pas-ctrl button { width:48px; height:48px; min-height:48px; padding:0; border-radius:50%; font-size:24px; line-height:1; background:var(--gris); }
+  .pas-ctrl output { min-width:34px; text-align:center; font-size:22px; font-weight:800; }
+  .pas.actif .pas-nom b { color:var(--accent); }
+  .recap { margin:12px 0 4px; padding:10px 12px; border-radius:12px; background:var(--carte2); border:1px solid var(--bord); font-size:15px; min-height:44px; }
+  .recap strong { color:var(--accent); }
+  .manque { font-size:14px; color:var(--alerte); margin:8px 0 0; font-weight:600; }
+  .attention { font-size:14px; color:var(--alerte); margin:8px 0 0; }
+  .bandeau-edition { margin:0 0 12px; padding:8px 12px; border-radius:12px; background:rgba(212,162,76,.18); border:1px solid var(--or); font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+
+  /* ===== Confort téléphone (Samsung Galaxy Note 10+ : écran haut, une main) ===== */
+  html, body { overscroll-behavior-y:none; }
+  .pas-unites { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .pas.v { flex-direction:column; align-items:stretch; gap:6px; padding:10px; border:1px solid var(--bord); border-radius:14px; background:var(--carte2); }
+  .pas.v .pas-ctrl { justify-content:space-between; }
+  .pas.v .pas-ctrl button { width:46px; height:46px; min-height:46px; }
+  .barre-saisie { position:sticky; bottom:calc(76px + env(safe-area-inset-bottom)); z-index:5; margin:14px -16px -16px; padding:10px 16px 16px;
+                  background:var(--carte); border-top:1px solid var(--bord); border-radius:0 0 var(--rayon) var(--rayon); box-shadow:0 -10px 18px rgba(40,25,10,.08); }
+  .barre-saisie .recap { margin:0 0 8px; min-height:0; padding:0; background:none; border:0; font-size:14px; line-height:1.35; }
+  .barre-saisie .manque, .barre-saisie .attention { margin:0 0 6px; font-size:14px; line-height:1.35; }
+  .puces-res { gap:6px; }
+  .puces-res button { min-height:44px; }
+  .ligne { gap:10px; }
+  .ch { min-width:50px; }
+  button.livre { min-width:90px; }
+  button.lien { padding:0 4px; font-size:13px; }
+  .liens { margin-left:-4px; gap:2px; }
+  body.clavier .navbas { display:none; }
+  body.clavier .barre-saisie { bottom:8px; }
+  @media (min-width:900px) { .barre-saisie { bottom:12px; } }
+
+  /* ===== Liste ===== */
+  .entete { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .entete h2 { margin:0; }
+  .filtres { display:flex; gap:6px; flex-wrap:wrap; }
+  .filtres button { min-height:42px; padding:0 14px; font-size:14px; background:var(--carte2); border:1px solid var(--bord); }
+  .filtres button[aria-pressed="true"] { background:var(--encre); color:var(--fond); border-color:var(--encre); }
+  .totaux { padding:10px 12px; border-radius:12px; background:var(--carte2); border:1px solid var(--bord); margin-bottom:12px; font-size:15px; }
+  .totaux b { color:var(--accent); }
+  .site-titre { margin:18px 0 8px; font-size:13px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--doux); display:flex; align-items:center; gap:8px; }
+  .site-titre::after { content:""; flex:1; height:1px; background:var(--bord); }
+  .groupe { border:1px solid var(--bord); border-left:6px solid var(--centre); border-radius:14px; background:var(--carte); margin-bottom:12px; overflow:hidden; }
+  .groupe.sud { border-left-color:var(--sud); }
+  .groupe-tete { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background:var(--carte2); border-bottom:1px solid var(--bord); flex-wrap:wrap; }
+  .groupe-tete b { font-size:17px; }
+  .groupe-tete small { color:var(--doux); font-size:13px; display:block; }
+  .groupe-tete button { min-height:40px; font-size:13px; padding:0 14px; }
+  .ligne { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:12px; align-items:center; padding:12px; border-bottom:1px solid var(--bord); }
+  .ligne:last-child { border-bottom:0; }
+  .ch { text-align:center; min-width:56px; }
+  .ch small { display:block; font-size:11px; color:var(--doux); text-transform:uppercase; letter-spacing:.08em; }
+  .ch b { font-size:28px; line-height:1; font-variant-numeric:tabular-nums; }
+  .pack { font-weight:800; font-size:17px; overflow-wrap:anywhere; }
+  .compo { font-size:13px; color:var(--doux); }
+  .liens { display:flex; align-items:center; gap:4px; margin-left:-6px; flex-wrap:wrap; }
+  .ch .heure { display:block; margin-top:4px; font-size:11px; color:var(--doux); }
+  button.livre { background:var(--livre-fond); color:var(--livre-texte); min-height:54px; min-width:96px; padding:0 14px; font-size:16px; box-shadow:0 2px 0 rgba(0,0,0,.18); }
+  .livrees-tete { width:100%; margin-top:18px; justify-content:space-between; border-radius:14px; background:var(--carte2); border:1px solid var(--bord); min-height:50px; }
+  .ligne-livree { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; padding:8px 12px; border-bottom:1px solid var(--bord); color:var(--doux); }
+  .ligne-livree b { color:var(--encre); }
+  .ligne-livree small { display:block; font-size:12px; }
+  .ligne-livree button { min-height:44px; font-size:14px; padding:0 14px; }
+  .liste-livrees { border:1px solid var(--bord); border-radius:14px; overflow:hidden; margin-top:8px; background:var(--carte); }
+  .liste-livrees .ligne-livree:last-child { border-bottom:0; }
+  .vide { text-align:center; padding:30px 16px; color:var(--doux); }
+  .vide b { display:block; font-size:18px; color:var(--encre); margin-bottom:4px; }
+
+  /* ===== Outils ===== */
+  details.outils { margin-top:18px; border:1px solid var(--bord); border-radius:14px; background:var(--carte2); padding:0 14px; }
+  details.outils summary { font-weight:800; cursor:pointer; min-height:50px; display:flex; align-items:center; }
+  details.outils[open] summary { margin-bottom:6px; }
+  .rang { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  .rang button { min-height:44px; font-size:14px; }
+  .retour { font-size:14px; margin:6px 0 10px; min-height:20px; font-weight:600; }
+  .retour.erreur { color:var(--alerte); }
+  .retour.ok { color:var(--ok); }
+  .histo { list-style:none; margin:6px 0 14px; padding:0; font-size:14px; }
+  .histo li { padding:6px 0; border-bottom:1px solid var(--bord); }
+
+  /* ===== Alerte, toast, navigation du bas ===== */
+  .alerte { max-width:1180px; margin:12px auto 0; padding:10px 14px; border-radius:12px; background:rgba(154,52,18,.12); border:1px solid var(--alerte); color:var(--alerte); font-weight:600; font-size:14px;
+            display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  .alerte-zone { padding:0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
+  .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(84px + env(safe-area-inset-bottom)); z-index:60; max-width:min(560px, calc(100vw - 24px)); width:max-content;
+           background:#1C120C; color:#F6EBDC; border:1px solid rgba(232,196,126,.4); border-radius:14px; padding:8px 8px 8px 16px; display:flex; align-items:center; gap:10px; box-shadow:0 10px 30px rgba(0,0,0,.4); font-size:15px; }
+  .toast button { background:#E8C47E; color:#1C120C; min-height:42px; padding:0 14px; }
+  @media (min-width:900px) { .toast { bottom:24px; } }
+  .navbas { position:fixed; left:0; right:0; bottom:0; z-index:40; display:grid; grid-template-columns:1fr 1fr; gap:8px;
+            padding:8px max(12px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+            background:linear-gradient(180deg,var(--cacao2),var(--cacao)); border-top:1px solid rgba(232,196,126,.25); }
+  .navbas button { background:transparent; color:#CDB9A0; border-radius:14px; min-height:54px; flex-direction:column; gap:0; font-size:13px; line-height:1.2; }
+  .navbas button b { font-size:20px; line-height:1.1; }
+  .navbas button[aria-current="true"] { background:rgba(232,196,126,.18); color:#F6EBDC; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } button:active { transform:none; } }
+
+  /* ===== V2 : jours, bilan, sauvegardes, zone dangereuse ===== */
+  .navbas { grid-template-columns:1fr 1fr 1fr; }
+  @media (max-width:899px) {
+    body[data-vue="saisir"] #vueBilan, body[data-vue="liste"] #vueBilan { display:none; }
+    body[data-vue="bilan"] #vueSaisir, body[data-vue="bilan"] #vueListe { display:none; }
+  }
+  @media (min-width:900px) { #vueBilan { grid-column:2; } #vueSaisir { grid-row:1 / span 2; } }
+  .appbar .sous { white-space:normal; line-height:1.25; }
+  .sauve-etat { font-size:12px; color:#CDB9A0; margin-top:1px; line-height:1.25; }
+  .nav-jour { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 12px; padding:6px; border:1px solid var(--bord); border-radius:999px; background:var(--carte2); }
+  .nav-jour button { min-height:42px; padding:0 14px; flex:none; }
+  .nav-jour .jour { font-weight:800; text-align:center; flex:1; font-size:15px; line-height:1.2; }
+  .nav-jour .jour::first-letter { text-transform:uppercase; }
+  .nav-jour .jour small { display:block; font-weight:600; color:var(--doux); font-size:12px; text-transform:none; }
+  .passe { margin:0 0 12px; padding:8px 12px; border-radius:12px; background:rgba(154,52,18,.12); border:1px solid var(--alerte); color:var(--alerte); font-weight:700; font-size:14px; }
+  .jour-saisie { font-size:13px; font-weight:700; color:var(--accent); margin:0 0 10px; }
+  .kpis { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+  .kpi { text-align:center; padding:10px 4px; border-radius:12px; background:var(--carte2); border:1px solid var(--bord); }
+  .kpi b { display:block; font-size:24px; line-height:1.1; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .kpi span { font-size:12px; color:var(--doux); }
+  .defile { overflow-x:auto; }
+  table.bilan { width:100%; border-collapse:collapse; font-size:14px; margin:4px 0 12px; }
+  table.bilan th, table.bilan td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--bord); vertical-align:middle; }
+  table.bilan th { font-size:12px; color:var(--doux); text-transform:uppercase; letter-spacing:.06em; }
+  table.bilan td.n, table.bilan th.n { text-align:right; font-variant-numeric:tabular-nums; }
+  table.bilan tfoot td { font-weight:800; border-top:2px solid var(--bord); border-bottom:0; }
+  table.bilan button { min-height:36px; font-size:13px; padding:0 12px; }
+  h3.st { font-size:15px; margin:16px 0 2px; }
+  .gros-chiffre { font-size:30px; font-weight:800; color:var(--accent); margin:2px 0 0; font-variant-numeric:tabular-nums; }
+  .estim { font-size:12.5px; color:var(--doux); margin:0 0 12px; }
+  .zone-danger { margin:18px 0 14px; padding:12px 14px; border:2px solid var(--alerte); border-radius:14px; background:rgba(154,52,18,.07); }
+  .zone-danger h3 { margin:0 0 4px; font-size:15px; color:var(--alerte); }
+  button.danger.plein { background:var(--alerte); color:#fff; border-color:var(--alerte); }
+  #confirmeZero { margin-top:10px; padding:12px; border-radius:12px; background:var(--carte); border:2px solid var(--alerte); }
+  #confirmeZero p { margin:0 0 8px; font-weight:600; }
+  select.petit { width:100%; font-size:15px; min-height:46px; border-radius:12px; padding:0 10px; background:var(--carte2); color:var(--encre); border:1.5px solid var(--bord); }
+
+  /* ===== V3 : numéro du client, écrire au client ===== */
+  .case { display:flex; gap:10px; align-items:flex-start; font-size:14px; margin:10px 0 0; }
+  .case input { width:22px; height:22px; flex:none; margin-top:1px; }
+  button.lien.ecrire { color:var(--encre); font-weight:800; font-size:14px; text-decoration:none; background:var(--carte2); border:1.5px solid var(--or); padding:0 14px; min-height:44px; margin-right:6px; white-space:nowrap; }
+  .rang-livree { display:flex; gap:6px; align-items:center; }
+  .rang-livree button { min-height:44px; font-size:14px; padding:0 14px; }
+  body.feuille-ouverte { overflow:hidden; }
+  .voile { position:fixed; inset:0; z-index:80; background:rgba(20,10,5,.55); display:flex; align-items:flex-end; justify-content:center; }
+  .feuille { width:100%; max-width:560px; max-height:94vh; max-height:94dvh; overflow-y:auto; background:var(--carte); color:var(--encre); border-radius:22px 22px 0 0;
+             padding:14px 16px 0; box-shadow:0 -12px 40px rgba(0,0,0,.4); overscroll-behavior:contain; }
+  .feuille-pied { position:sticky; bottom:0; margin:12px -16px 0; padding:10px 16px calc(14px + env(safe-area-inset-bottom)); background:var(--carte); border-top:1px solid var(--bord); }
+  .feuille-pied .manque { margin:0 0 6px; }
+  @media (min-width:900px) { .voile { align-items:center; } .feuille { border-radius:22px; } }
+  .feuille-tete { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .feuille-tete h2 { margin:0; }
+  .resume { font-size:14px; color:var(--doux); margin:2px 0 8px; font-weight:600; }
+  .msg-groupe { font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--doux); margin:12px 0 6px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  #choixMessages button { border-radius:999px; min-height:44px; padding:0 14px; font-size:15px; background:var(--carte2); border:1px solid var(--bord); font-weight:600; }
+  #choixMessages button[aria-pressed="true"] { background:var(--encre); color:var(--fond); border-color:var(--encre); }
+  #apercuMsg { min-height:150px; font-size:15px; line-height:1.4; }
+  a.btn { display:flex; align-items:center; justify-content:center; min-height:54px; padding:0 18px; border-radius:999px; font-weight:700; font-size:17px; text-decoration:none; text-align:center;
+          background:linear-gradient(180deg,#E3B964,#D4A24C); color:#1C120C; box-shadow:0 2px 0 rgba(120,80,10,.35); }
+  a.btn[aria-disabled="true"] { opacity:.5; pointer-events:none; box-shadow:none; }
+</style>
+</head>
+<body data-vue="saisir">
+
+<header class="appbar"><div class="appbar-in">
+  <div class="logo"><div class="rond" aria-hidden="true">🥞</div>
+    <div style="min-width:0"><h1>Commandes du soir</h1><div class="sous" id="dateSoiree">L’Atelier des Crêpes</div><div class="sauve-etat" id="etatSauve"></div></div></div>
+  <div class="puces" aria-live="polite">
+    <div class="puce"><b id="nbAttente">0</b><span>à livrer</span></div>
+    <div class="puce"><b id="nbLivrees">0</b><span>livrées</span></div>
+  </div>
+</div></header>
+
+<div class="alerte-zone"><div class="alerte" id="alerteStockage" hidden>⚠ Ce navigateur n’autorise pas la sauvegarde interne : utilise « Sauvegarder le fichier du jour » (Outils) après chaque commande, sinon elles seront perdues à la fermeture.</div>
+<div class="alerte" id="alerteFichier" hidden>ℹ Cette page est ouverte comme un simple fichier : elle garde les commandes, mais moins bien protégées qu’avec l’application installée (autre navigateur, nettoyage de Chrome, fichier supprimé…). Pense au « fichier du jour » en fin de soirée.</div>
+<div class="alerte" id="alerteVeille" hidden><span id="texteVeille"></span><button type="button" class="principal" id="btnVeille">Voir ce jour</button></div></div>
+
+<noscript><p style="padding:16px">Cette page a besoin de JavaScript.</p></noscript>
+
+<main class="app">
+
+  <!-- ===================== SAISIE ===================== -->
+  <section class="bloc" id="vueSaisir" aria-labelledby="titreSaisie">
+    <h2 id="titreSaisie"><span class="pastille">+</span><span id="titreSaisieTexte">Nouvelle commande</span></h2>
+    <div class="bandeau-edition" id="bandeauEdition" hidden><span>✎ Modification d’une commande</span><button type="button" class="lien" id="btnAnnulerEdition">Annuler</button></div>
+
+    <p class="jour-saisie" id="jourSaisie"></p>
+    <div class="passe" id="avertJourPasse" hidden><span id="texteJourPasse"></span> <button type="button" class="lien" id="btnRetourAuj">Revenir à aujourd’hui</button></div>
+
+    <span class="etiquette" id="etSite">Site</span>
+    <div class="segmente" role="group" aria-labelledby="etSite">
+      <button type="button" data-site="C" aria-pressed="false">Centre <small>· 19h30</small></button>
+      <button type="button" data-site="S" aria-pressed="false">Sud <small>· 20h30</small></button>
+    </div>
+
+    <span class="etiquette" id="etRes">Résidence</span>
+    <div id="zoneRes" role="group" aria-labelledby="etRes"></div>
+
+    <label class="etiquette" for="chambre">Chambre</label>
+    <input type="text" id="chambre" class="chambre" inputmode="numeric" maxlength="8" autocomplete="off" autocapitalize="characters" enterkeyhint="done" placeholder="ex. 61">
+
+    <span class="etiquette">Pack</span>
+    <div id="zonePacks"></div>
+    <p class="aide">Après l’enregistrement, le site et la résidence restent choisis : tu n’as plus qu’à taper la chambre suivante.</p>
+
+    <label class="etiquette" for="telClient">Numéro du client <small style="font-weight:600;color:var(--doux)">(facultatif : tu peux l’ajouter plus tard)</small></label>
+    <input type="text" id="telClient" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
+    <p class="aide" id="aideTel"></p>
+
+    <div class="barre-saisie">
+      <p class="attention" id="doublon" hidden></p>
+      <div class="recap" id="recap" aria-live="polite"></div>
+      <p class="manque" id="manque" aria-live="polite" hidden></p>
+      <button type="button" class="principal gros" id="btnEnregistrer" disabled>Enregistrer la commande</button>
+    </div>
+  </section>
+
+  <!-- ===================== LISTE ===================== -->
+  <section class="bloc" id="vueListe" aria-labelledby="titreListe">
+    <div class="nav-jour" id="navJourListe"></div>
+    <div class="entete">
+      <h2 id="titreListe"><span class="pastille">≡</span>À livrer</h2>
+      <div class="filtres" role="group" aria-label="Filtrer par site" id="filtres">
+        <button type="button" data-f="tous" aria-pressed="true">Tous</button>
+        <button type="button" data-f="C" aria-pressed="false">Centre</button>
+        <button type="button" data-f="S" aria-pressed="false">Sud</button>
+      </div>
+    </div>
+    <div class="totaux" id="totaux" aria-live="polite"></div>
+    <div id="liste"></div>
+
+    <button type="button" class="livrees-tete" id="btnLivrees" aria-expanded="true"><span id="texteLivrees">Livrées (0)</span><span aria-hidden="true" id="flecheLivrees">▾</span></button>
+    <div class="liste-livrees" id="listeLivrees"></div>
+
+    <details class="outils" id="outils">
+      <summary>Outils : envoyer, sauvegarder, restaurer</summary>
+
+      <span class="etiquette" style="margin-top:6px">Application sur le téléphone</span>
+      <p class="aide" id="etatAppli"></p>
+      <div class="rang"><button type="button" class="principal" id="btnInstaller" hidden>📲 Installer l’application</button></div>
+      <p class="aide" id="etatStockage"></p>
+
+
+      <span class="etiquette">Envoyer la liste à ta partenaire</span>
+      <label class="aide" for="numPartenaire" style="display:block;margin:0 0 6px">Son numéro WhatsApp (gardé sur cet appareil ; facultatif)</label>
+      <input type="text" id="numPartenaire" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
+      <div class="rang">
+        <button type="button" class="principal" id="btnEnvoyerWa">Envoyer sur WhatsApp</button>
+        <button type="button" id="btnCopierListe">Copier le texte</button>
+        <button type="button" id="btnPartager" hidden>Partager…</button>
+      </div>
+      <div class="retour" id="retourListe" role="status"></div>
+      <p class="aide">Le texte est déjà mis en forme pour WhatsApp (gras sur le site, la résidence et la chambre), avec seulement les commandes <b>à livrer</b> du jour affiché. Sans numéro enregistré, WhatsApp te laisse choisir la personne. Tu peux la renvoyer autant de fois que tu veux, la saisie continue normalement.</p>
+      <label class="case"><input type="checkbox" id="avecNumeros"> <span>Ajouter le numéro des clients dans la liste (décoché par défaut : les numéros sont confidentiels)</span></label>
+
+      <span class="etiquette">Fichier du jour sur le téléphone (un seul par jour)</span>
+      <div class="rang">
+        <button type="button" class="principal" id="btnSauveJour">💾 Sauvegarder le fichier du jour</button>
+        <button type="button" id="btnSauveTout">💾 Tout sauvegarder (tous les jours)</button>
+      </div>
+      <div class="retour" id="retourSauve" role="status"></div>
+      <p class="aide" id="infoSauve"></p>
+      <p class="aide">Les commandes sont <b>enregistrées en continu</b> dans le téléphone, à 3 endroits, à chaque action : tu n’as rien à faire pour ne rien perdre. Le fichier est une sécurité en plus : <b>un seul par jour</b>, nommé <b>atelier-commandes_AAAA-MM-JJ.json</b>, dans le dossier <b>Téléchargements</b>. Touche le bouton <b>une fois en fin de soirée</b> (ou envoie le bilan : le fichier est créé en même temps). Un téléphone ne permet pas à une page de réécrire un fichier qui existe déjà : si tu le refais après de nouvelles commandes, Chrome ajoute (1) au nom, et le plus récent est le plus complet. La première fois, Chrome peut demander l’autorisation de télécharger : choisis <b>Autoriser</b>.</p>
+      <p class="aide">🔒 Si tu enregistres des numéros de clients, le fichier du jour les contient : il est <b>confidentiel</b>, ne le partage pas. Les numéros ne sont jamais dans le texte du bilan.</p>
+
+      <span class="etiquette">Restaurer depuis un fichier</span>
+      <div class="rang"><button type="button" id="btnFichier">📂 Choisir un fichier de sauvegarde</button></div>
+      <input type="file" id="fichierRestaure" accept=".json,application/json" hidden>
+      <div class="retour" id="retourFichier" role="status"></div>
+      <p class="aide">Les commandes du fichier sont <b>ajoutées ou mises à jour</b>, jamais effacées : tu peux restaurer sans risque.</p>
+
+      <span class="etiquette">Transférer vers un autre appareil</span>
+      <div class="rang"><button type="button" id="btnCopierCode">Copier le code des commandes</button><button type="button" id="btnImporter">Importer le code collé</button></div>
+      <textarea id="zoneCode" spellcheck="false" aria-label="Code des commandes" placeholder="Pour importer : colle ici le code reçu, puis touche « Importer »."></textarea>
+      <div class="retour" id="retourCode" role="status"></div>
+      <p class="aide">Sur l’autre appareil, colle le code ici et touche « Importer » : les commandes sont <b>ajoutées ou mises à jour</b>, sans rien effacer. 🔒 Le code contient les numéros de clients : ne le partage qu’avec ta partenaire.</p>
+
+      <div class="zone-danger">
+        <h3>⚠ Zone dangereuse : le seul bouton de remise à zéro</h3>
+        <p class="aide" id="texteZero">Il n’y a pas de « clôture » : chaque soirée a son propre enregistrement et le jour suivant démarre tout seul. Ce bouton efface seulement les commandes du jour affiché.</p>
+        <div class="rang"><button type="button" class="danger" id="btnZero">Effacer les commandes de ce jour…</button></div>
+        <div id="confirmeZero" hidden>
+          <p id="resumeZero"></p>
+          <div class="rang"><button type="button" class="danger plein" id="btnZeroOui">Sauvegarder le fichier, puis effacer</button><button type="button" id="btnZeroNon">Annuler</button></div>
+        </div>
+        <div id="blocRestaure" hidden>
+          <span class="etiquette">Dernière suppression</span>
+          <p class="aide" id="texteRestaure"></p>
+          <button type="button" id="btnRestaurer">↩ Restaurer ces commandes</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== BILAN ===================== -->
+  <section class="bloc" id="vueBilan" aria-labelledby="titreBilan">
+    <h2 id="titreBilan"><span class="pastille">Σ</span>Bilan</h2>
+    <div class="nav-jour" id="navJourBilan"></div>
+    <div class="kpis" id="kpis" aria-live="polite"></div>
+    <div id="detailBilan"></div>
+    <div class="rang">
+      <button type="button" class="principal" id="btnBilanWa">Envoyer le bilan sur WhatsApp</button>
+      <button type="button" id="btnBilanCopier">Copier le bilan</button>
+      <button type="button" id="btnSauveBilan">💾 Sauvegarder le fichier du jour</button>
+    </div>
+    <div class="retour" id="retourBilan" role="status"></div>
+    <h3 class="st">Tous les jours</h3>
+    <div id="tousJours"></div>
+  </section>
+</main>
+
+<nav class="navbas" aria-label="Navigation">
+  <button type="button" data-vue="saisir" aria-current="true"><b>➕</b>Saisir</button>
+  <button type="button" data-vue="liste" aria-current="false"><b>📋</b><span id="texteNavListe">Liste</span></button>
+  <button type="button" data-vue="bilan" aria-current="false"><b>📊</b>Bilan</button>
+</nav>
+
+<div class="voile" id="voileEcrire" hidden>
+  <div class="feuille" role="dialog" aria-modal="true" aria-labelledby="titreEcrire">
+    <div class="feuille-tete"><h2 id="titreEcrire"><span class="pastille">💬</span>Écrire au client</h2><button type="button" class="lien" id="btnFermerEcrire">Fermer ✕</button></div>
+    <p class="resume" id="resumeEcrire"></p>
+
+    <label class="etiquette" for="telPanneau" style="margin-top:6px">Numéro WhatsApp du client</label>
+    <input type="text" id="telPanneau" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
+    <p class="aide" id="aideTelPanneau"></p>
+    <div class="rang"><button type="button" id="btnEnregTel" hidden></button></div>
+
+    <span class="etiquette">Message</span>
+    <div id="choixMessages"></div>
+    <div id="blocMinutes" hidden>
+      <label class="etiquette" for="minutesMsg">Dans combien de minutes ?</label>
+      <input type="text" id="minutesMsg" inputmode="numeric" maxlength="3" autocomplete="off" value="10">
+    </div>
+
+    <label class="etiquette" for="apercuMsg">Texte qui sera envoyé <small style="font-weight:600;color:var(--doux)">(tu peux le modifier)</small></label>
+    <textarea id="apercuMsg" spellcheck="true"></textarea>
+
+    <span class="etiquette">Je suis</span>
+    <div class="segmente" role="group" aria-label="Le livreur ou la livreuse">
+      <button type="button" data-livreur="m" aria-pressed="true">Le livreur</button>
+      <button type="button" data-livreur="f" aria-pressed="false">La livreuse</button>
+    </div>
+
+    <div class="rang"><button type="button" id="btnCopierMsg">Copier le message</button></div>
+    <p class="aide">WhatsApp s’ouvre sur la conversation du client, message déjà écrit : il reste à appuyer sur « Envoyer ». Son contact n’est pas enregistré dans ton téléphone. Si WhatsApp et WhatsApp Business sont installés, Android peut te demander lequel ouvrir.</p>
+
+    <div class="feuille-pied">
+      <p class="manque" id="raisonLien" aria-live="polite"></p>
+      <a class="btn" id="lienWa" target="_blank" rel="noopener noreferrer" aria-disabled="true">Ouvrir WhatsApp avec ce message</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastTexte"></span><button type="button" id="toastAnnuler">Annuler</button></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Données de référence ---------- */
+  var CLE = "atelier_commandes_v1", CLE_UI = "atelier_commandes_ui_v1";
+  var LETTRES = "ABCDEFGHJKLMNOPQR".split("");                 // Centre : A à R, sans I
+  var NOMBRES = []; for (var i = 1; i <= 17; i++) NOMBRES.push(String(i));   // Sud : 1 à 17
+  var SITES = { C: { nom: "Centre", heure: "19h30", residences: LETTRES, classe: "" },
+                S: { nom: "Sud", heure: "20h30", residences: NOMBRES, classe: "sud" } };
+  var ORDRE_SITES = ["C", "S"];
+  var PACKS = [
+    { id: "mini", nom: "MINI", nature: 3, nutella: 1, note: "3 Nature + 1 Nutella" },
+    { id: "maxi", nom: "MAXI", nature: 2, nutella: 3, note: "2 Nature + 3 Nutella" },
+    { id: "mega", nom: "MÉGA", nature: 4, nutella: 6, note: "4 Nature + 6 Nutella" },
+    { id: "nature", nom: "Nature", nature: 1, nutella: 0, note: "crêpe à l’unité", unite: true },
+    { id: "nutella", nom: "Nutella", nature: 0, nutella: 1, note: "crêpe à l’unité", unite: true }
+  ];
+
+  var PRIX = { mini: 500, maxi: 800, mega: 1500, nature: 150, nutella: 200 };   // prix de vente (D-022), sans les frais de livraison
+  var DECALAGE_H = 4;   // une soirée finit à 4 h du matin : une commande passée à 0 h 30 compte pour la soirée de la veille
+  var JOURS_FR = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  var MOIS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+
+  /* ---------- Outils ---------- */
+  function $(id) { return document.getElementById(id); }
+  function el(tag, attrs) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    }
+    for (var j = 2; j < arguments.length; j++) { var n = arguments[j]; if (n == null) continue; e.append(n.nodeType ? n : document.createTextNode(n)); }
+    return e;
+  }
+  function p2(n) { return String(n).padStart(2, "0"); }
+  function ymd(d) { return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()); }
+  function frDate(s) { var a = s.split("-"); return a[2] + "/" + a[1] + "/" + a[0]; }
+  function heureDe(ms) { var d = new Date(ms); return p2(d.getHours()) + ":" + p2(d.getMinutes()); }
+  function plur(n, un, plusieurs) { return n + " " + (n > 1 ? plusieurs : un); }
+
+  function dateDe(iso) { var a = iso.split("-"); return new Date(Number(a[0]), Number(a[1]) - 1, Number(a[2])); }
+  function nomJour(iso) { var d = dateDe(iso); return JOURS_FR[d.getDay()] + " " + d.getDate() + (d.getDate() === 1 ? "er" : "") + " " + MOIS_FR[d.getMonth()]; }
+  function addJours(iso, n) { var d = dateDe(iso); d.setDate(d.getDate() + n); return ymd(d); }
+  function soireeDe(ms) { return ymd(new Date(ms - DECALAGE_H * 3600000)); }
+  function soireeCourante() { return soireeDe(Date.now()); }
+  function fcfa(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " F"; }
+  function dateHeure(ms) { var d = new Date(ms); return ymd(d) + "_" + p2(d.getHours()) + "h" + p2(d.getMinutes()); }
+
+  /* ---------- État et sauvegarde (une soirée = un enregistrement daté) ---------- */
+  var stockageOK = true, avertissements = [];
+  var CLE = "atelier_commandes_v2", CLE_PREC = "atelier_commandes_v2_prec", CLE_BROUILLON = "atelier_commandes_v2_brouillon";
+  var CLE_V1 = "atelier_commandes_v1", CLE_UI = "atelier_commandes_ui_v1";
+  function lire(cle) { try { return localStorage.getItem(cle); } catch (e) { stockageOK = false; return null; } }
+  function ecrire(cle, val) { try { localStorage.setItem(cle, val); return true; } catch (e) { stockageOK = false; return false; } }
+  function brancher(e) {   // « commandes » et « soiree » désignent toujours le jour affiché
+    Object.defineProperty(e, "soiree", { get: function () { return this.jourVu; }, set: function (v) { this.jourVu = v; }, enumerable: false, configurable: true });
+    Object.defineProperty(e, "commandes", {
+      get: function () { return (this.jours[this.jourVu] || (this.jours[this.jourVu] = { commandes: [] })).commandes; },
+      set: function (v) { (this.jours[this.jourVu] || (this.jours[this.jourVu] = { commandes: [] })).commandes = v; },
+      enumerable: false, configurable: true });
+    return e;
+  }
+  function vide() { return brancher({ v: 2, maj: 0, jours: {}, corbeille: [], histo: [], saisie: { site: "", res: "" }, sauvegarde: { jours: {} }, jourVu: soireeCourante() }); }
+  function lireEtat(brut) {   // texte JSON -> état, ou null s'il est illisible
+    try {
+      var o = JSON.parse(brut);
+      if (!o || typeof o.jours !== "object" || o.jours === null || Array.isArray(o.jours)) return null;
+      var b = vide();
+      ["jours", "corbeille", "histo", "saisie", "sauvegarde", "maj"].forEach(function (k) { if (k in o) b[k] = o[k]; });
+      if (!Array.isArray(b.corbeille)) b.corbeille = [];
+      if (!Array.isArray(b.histo)) b.histo = [];
+      if (!b.saisie || typeof b.saisie !== "object") b.saisie = { site: "", res: "" };
+      if (!b.sauvegarde || typeof b.sauvegarde !== "object") b.sauvegarde = { jours: {} };
+      if (!b.sauvegarde.jours || typeof b.sauvegarde.jours !== "object") b.sauvegarde.jours = {};
+      Object.keys(b.jours).forEach(function (j) { if (!b.jours[j] || !Array.isArray(b.jours[j].commandes)) b.jours[j] = { commandes: [] }; });
+      return b;
+    } catch (e) { return null; }
+  }
+  function migrerV1() {   // première ouverture de la V2 : on reprend les commandes de la V1 (qui reste intacte dans le navigateur)
+    var brut = lire(CLE_V1); if (!brut) return null;
+    try {
+      var o = JSON.parse(brut); if (!o || !Array.isArray(o.commandes)) return null;
+      var e = vide(), jour = /^\d{4}-\d{2}-\d{2}$/.test(o.soiree || "") ? o.soiree : soireeCourante();
+      var liste = o.commandes.map(validerCommande).filter(Boolean);
+      if (liste.length) e.jours[jour] = { commandes: liste };
+      if (Array.isArray(o.histo)) e.histo = o.histo;
+      if (o.saisie && typeof o.saisie === "object") e.saisie = o.saisie;
+      if (liste.length) avertissements.push("Les " + plur(liste.length, "commande", "commandes") + " de la version 1 ont été reprises (" + nomJour(jour) + ").");
+      return e;
+    } catch (x) { return null; }
+  }
+  function charger() {
+    var brut = lire(CLE), e = brut ? lireEtat(brut) : null;
+    if (brut && !e) ecrire(CLE + "_corrompu", brut);   // jamais écraser sans garder une copie
+    if (!e) {
+      var prec = lire(CLE_PREC), ep = prec ? lireEtat(prec) : null;
+      if (ep) { e = ep; avertissements.push("Les commandes ont été retrouvées dans la copie précédente du téléphone."); }
+    }
+    return e || migrerV1() || vide();
+  }
+  var etat = charger();
+  var ui = { filtre: "tous", vue: "saisir", livreesOuvert: true, partenaire: "", livreur: "m", dernierMsg: "m1", avecNumeros: false };
+  try { var u = JSON.parse(lire(CLE_UI) || "{}"); for (var cle in u) if (cle in ui) ui[cle] = u[cle]; } catch (e) {}
+  function sauverUi() { ecrire(CLE_UI, JSON.stringify(ui)); }
+
+  /* Copie de secours (IndexedDB) : si le navigateur perd son stockage principal, les commandes sont retrouvées ici */
+  function idb(op, val) {
+    return new Promise(function (ok) {
+      try {
+        var r = indexedDB.open("atelier_commandes", 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore("kv"); };
+        r.onerror = function () { ok(null); };
+        r.onsuccess = function () {
+          var db = r.result;
+          try {
+            var st = db.transaction("kv", op === "get" ? "readonly" : "readwrite").objectStore("kv");
+            var q = op === "get" ? st.get("etat") : st.put(val, "etat");
+            q.onsuccess = function () { ok(q.result === undefined ? null : q.result); db.close(); };
+            q.onerror = function () { ok(null); db.close(); };
+          } catch (e) { ok(null); }
+        };
+      } catch (e) { ok(null); }
+    });
+  }
+  var idbPret = false;   // la copie de secours n'est écrite qu'après avoir été lue : jamais d'état vide par-dessus
+  function donnees() {
+    return JSON.stringify({ v: 2, maj: etat.maj, jours: etat.jours, corbeille: etat.corbeille, histo: etat.histo, saisie: etat.saisie, sauvegarde: etat.sauvegarde });
+  }
+  function nettoyer() {   // jours vides oubliés ; corbeille : 30 jours, 20 suppressions au plus
+    Object.keys(etat.jours).forEach(function (j) { if (!etat.jours[j].commandes.length && j !== etat.jourVu) delete etat.jours[j]; });
+    var limite = Date.now() - 30 * 86400000;
+    etat.corbeille = etat.corbeille.filter(function (x) { return x && x.efface > limite; }).slice(0, 20);
+  }
+  function sauver() {   // appelée après CHAQUE action : localStorage + copie précédente + IndexedDB
+    etat.maj = Date.now(); nettoyer();
+    var s = donnees(), avant = lire(CLE);
+    if (avant && avant !== s) ecrire(CLE_PREC, avant);
+    ecrire(CLE, s); if (idbPret) idb("put", s);
+    $("alerteStockage").hidden = stockageOK;
+    majEtatSauve();
+  }
+  function secoursIdb() {   // localStorage vide mais copie de secours pleine : on restaure ; ensuite seulement on écrit dans la copie
+    var nb = function (x) { return Object.keys(x.jours).reduce(function (a, j) { return a + x.jours[j].commandes.length; }, 0) + x.corbeille.length; };
+    var termine = function () { idbPret = true; sauver(); rendre(); };
+    setTimeout(function () { if (!idbPret) { idbPret = true; } }, 3000);   // si IndexedDB ne répond pas, on n'attend pas
+    idb("get").then(function (s) {
+      var e = s ? lireEtat(s) : null;
+      if (e && nb(etat) === 0 && nb(e) > 0) { etat = e; toast("Commandes retrouvées dans la copie de secours du téléphone."); }
+      termine();
+    });
+  }
+  /* Formulaire à moitié rempli : conservé si la page est rafraîchie ou quittée */
+  function sauverBrouillon() {
+    var q = {}, rien = true;
+    PACKS.forEach(function (p) { q[p.id] = saisieQ[p.id]; if (saisieQ[p.id]) rien = false; });
+    var ch = $("chambre").value;
+    var tl = $("telClient").value;
+    ecrire(CLE_BROUILLON, rien && !ch && !tl && !edition ? "" : JSON.stringify({ chambre: ch, tel: tl, q: q, edition: edition, jour: etat.jourVu }));
+  }
+  function restaurerBrouillon() {
+    var brut = lire(CLE_BROUILLON); if (!brut) return;
+    try {
+      var o = JSON.parse(brut); if (!o || o.jour !== etat.jourVu) return;
+      if (o.chambre) $("chambre").value = String(o.chambre).toUpperCase().replace(/[^A-Z0-9\-\/ ]/g, "").slice(0, 8);
+      if (o.tel) $("telClient").value = String(o.tel).replace(/[^0-9+ ().\-]/g, "").slice(0, 24);
+      PACKS.forEach(function (p) { saisieQ[p.id] = Math.max(0, Math.min(99, parseInt(o.q && o.q[p.id], 10) || 0)); });
+      if (o.edition && trouver(o.edition)) edition = o.edition;
+    } catch (e) {}
+  }
+
+  /* ---------- Calculs ---------- */
+  function compte(q) {
+    var nature = 0, nutella = 0;
+    PACKS.forEach(function (p) { var n = q[p.id] || 0; nature += n * p.nature; nutella += n * p.nutella; });
+    return { nature: nature, nutella: nutella, total: nature + nutella };
+  }
+  function libelle(q) {
+    var parts = [];
+    PACKS.forEach(function (p) {
+      var n = q[p.id] || 0; if (!n) return;
+      parts.push(p.unite ? n + " " + p.nom : (n > 1 ? n + " × " + p.nom : p.nom));
+    });
+    return parts.join(" + ");
+  }
+  function composition(c) {
+    var t = []; if (c.nature) t.push(c.nature + " Nature"); if (c.nutella) t.push(c.nutella + " Nutella");
+    return t.join(" + ");
+  }
+  function cleRes(site, res) { return SITES[site].residences.indexOf(String(res)); }
+  function cleChambre(ch) { var m = /\d+/.exec(ch); return m ? parseInt(m[0], 10) : Infinity; }
+  function comparer(a, b) {
+    var s = ORDRE_SITES.indexOf(a.site) - ORDRE_SITES.indexOf(b.site); if (s) return s;
+    var r = cleRes(a.site, a.res) - cleRes(b.site, b.res); if (r) return r;
+    var x = cleChambre(a.chambre), y = cleChambre(b.chambre);
+    if (x !== y) return x < y ? -1 : 1;
+    var t = a.chambre.localeCompare(b.chambre, "fr", { numeric: true }); if (t) return t;
+    return a.t - b.t;
+  }
+  function enAttente() { return etat.commandes.filter(function (c) { return !c.livre; }).sort(comparer); }
+  function livrees() { return etat.commandes.filter(function (c) { return c.livre; }).sort(function (a, b) { return (b.tl || 0) - (a.tl || 0); }); }
+  function somme(liste) {
+    var q = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0 };
+    liste.forEach(function (c) { PACKS.forEach(function (p) { q[p.id] += c.q[p.id] || 0; }); });
+    return compte(q);
+  }
+  function lieu(c) { return SITES[c.site].nom + " · Résidence " + c.res + " · ch. " + c.chambre; }
+
+  /* ---------- Numéro du client (facultatif) ---------- */
+  function joliTel(tel) {
+    if (tel.indexOf("225") === 0 && tel.length === 13) return tel.slice(3).replace(/(\d{2})(?=\d)/g, "$1 ");
+    return "+" + tel;
+  }
+  function normaliserTel(brut) {   // -> { vide } | { tel: chiffres avec indicatif, joli, alerte } | { erreur }
+    var s = String(brut == null ? "" : brut).trim();
+    if (!s) return { vide: true, tel: "" };
+    if (/[^0-9+ ().\-]/.test(s)) return { erreur: "Seuls les chiffres sont acceptés, par exemple 07 12 34 56 78." };
+    var inter = /^(\+|00)/.test(s), n = s.replace(/\D/g, "");
+    if (/^00/.test(s)) n = n.slice(2);
+    var ok = function (tel, alerte) { return { tel: tel, joli: joliTel(tel), alerte: alerte || "" }; };
+    if (n.indexOf("225") === 0) {
+      if (n.length === 13) return ok(n);
+      return { erreur: "Après 225, il faut 10 chiffres (07 12 34 56 78) : il y en a " + (n.length - 3) + "." };
+    }
+    if (inter) {
+      if (n.length >= 8 && n.length <= 15) return ok(n, "numéro étranger");
+      return { erreur: "Numéro international incomplet ou trop long." };
+    }
+    if (n.length < 10) return { erreur: "Numéro incomplet : " + n.length + " chiffre" + (n.length > 1 ? "s" : "") + " sur 10 (exemple : 07 12 34 56 78)." };
+    if (n.length > 10) return { erreur: "Trop de chiffres : " + n.length + " au lieu de 10 (exemple : 07 12 34 56 78)." };
+    if (n.charAt(0) !== "0") return { erreur: "Un numéro de 10 chiffres commence par 0 (01, 05 ou 07)." };
+    return ok("225" + n, "157".indexOf(n.charAt(1)) < 0 ? "vérifie : les numéros mobiles commencent par 01, 05 ou 07" : "");
+  }
+
+  /* ---------- Messages du livreur (MSG-LIV-01 V2) ---------- */
+  var MESSAGES = [
+    { id: "m1", groupe: "Avant d’arriver", titre: "En route", texte: "Votre commande est en route 🥞 Je serai devant votre porte d’ici peu : merci de garder votre téléphone près de vous." },
+    { id: "m2", groupe: "Avant d’arriver", titre: "Tournée du Sud (patience)", site: "S", texte: "Ma tournée de livraison au Sud est en cours 🥞 Je livre les commandes les unes après les autres et la vôtre arrive bientôt. Merci de votre patience !" },
+    { id: "m3", groupe: "Avant d’arriver", titre: "Presque arrivé", texte: "J’arrive : votre commande sera chez vous dans quelques minutes 🥞 Merci de vous rapprocher de la porte de votre chambre." },
+    { id: "m4", groupe: "Sur place", titre: "Devant la chambre", texte: "Je suis devant la chambre {chambre} avec votre commande 🥞 Pouvez-vous m’ouvrir ?" },
+    { id: "m5", groupe: "Sur place", titre: "Personne ne répond", texte: "Je suis devant la chambre {chambre} avec votre commande, mais personne ne répond. Êtes-vous là ? Dites-moi si je patiente quelques minutes ou si je repasse un peu plus tard. Merci !" },
+    { id: "m6", groupe: "Sur place", titre: "Chambre introuvable", texte: "Je n’arrive pas à trouver votre chambre pour vous livrer votre commande. Pouvez-vous m’indiquer le bâtiment, l’étage ou un repère près de chez vous ? Merci !" },
+    { id: "m7", groupe: "Retard", titre: "Excuses pour le retard", texte: "Toutes mes excuses pour l’attente 🙏 Votre commande est bien en route et j’arrive au plus vite. Merci de votre patience et de votre compréhension." },
+    { id: "m8", groupe: "Retard", titre: "Retard avec durée", minutes: true, texte: "Toutes mes excuses pour le retard 🙏 Je serai chez vous dans environ {minutes} minutes avec votre commande. Merci de votre patience." },
+    { id: "m9", groupe: "Client absent", titre: "Je repasse", texte: "Je n’ai pas pu vous remettre votre commande à la chambre {chambre}. Je repasse à la fin de ma tournée : merci de me confirmer que vous serez là." },
+    { id: "m10", groupe: "Après la livraison", titre: "Commande livrée", texte: "Votre commande est livrée 🥞 Bon appétit ! Dites-nous ce que vous en avez pensé : votre avis nous aide à progresser. Merci de votre confiance." }
+  ];
+  function premiereLigne() { return "Bonsoir, je suis " + (ui.livreur === "f" ? "la livreuse" : "le livreur") + " de l’Atelier des Crêpes."; }
+  function messagesPour(c) { return MESSAGES.filter(function (m) { return !m.site || m.site === c.site; }); }
+  function messageParId(id) { return MESSAGES.filter(function (m) { return m.id === id; })[0]; }
+  function texteDuMessage(m, c, minutes) {
+    var t = m.texte.split("{chambre}").join(c.chambre).split("{minutes}").join(String(minutes || "").replace(/\D/g, "") || "…");
+    return premiereLigne() + "\n" + t;
+  }
+
+  /* ---------- Panneau « Écrire au client » ---------- */
+  var panneau = { id: null, msg: "m1", minutes: "10", modifie: false };
+  function commandePanneau() { return panneau.id ? trouver(panneau.id) : null; }
+  function ouvrirEcrire(id) {
+    var c = trouver(id); if (!c) return;
+    panneau.id = id; panneau.modifie = false;
+    var dispo = messagesPour(c).map(function (m) { return m.id; }), voulu = c.livre ? "m10" : ui.dernierMsg;
+    panneau.msg = dispo.indexOf(voulu) >= 0 ? voulu : dispo[0];
+    $("telPanneau").value = c.tel ? joliTel(c.tel) : "";
+    $("voileEcrire").hidden = false; document.body.classList.add("feuille-ouverte");
+    construireChoix(); regenererTexte(); majLien();
+    if (!c.tel) $("telPanneau").focus();
+  }
+  function fermerEcrire() { $("voileEcrire").hidden = true; document.body.classList.remove("feuille-ouverte"); panneau.id = null; }
+  function construireChoix() {
+    var c = commandePanneau(); if (!c) return;
+    var zone = $("choixMessages"), groupe = null, rang = null; zone.replaceChildren();
+    messagesPour(c).forEach(function (m) {
+      if (m.groupe !== groupe) { groupe = m.groupe; zone.append(el("div", { class: "msg-groupe", text: groupe })); rang = el("div", { class: "chips" }); zone.append(rang); }
+      rang.append(el("button", { type: "button", "data-msg": m.id, "aria-pressed": String(m.id === panneau.msg), text: m.titre }));
+    });
+    document.querySelectorAll("[data-livreur]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.livreur === ui.livreur)); });
+    $("blocMinutes").hidden = !messageParId(panneau.msg).minutes;
+    $("minutesMsg").value = panneau.minutes;
+  }
+  function regenererTexte() {
+    var c = commandePanneau(); if (!c) return;
+    $("apercuMsg").value = texteDuMessage(messageParId(panneau.msg), c, panneau.minutes); panneau.modifie = false;
+  }
+  function enregistrerTel(c, tel) { c.tel = tel; c.maj = Date.now(); noterChangement(); rendre(); }   // noterChangement() sauvegarde
+  function majLien() {
+    var c = commandePanneau(); if (!c) { fermerEcrire(); return; }
+    $("resumeEcrire").textContent = lieu(c) + " — " + libelle(c.q) + (c.livre ? " (livrée)" : "");
+    var tn = normaliserTel($("telPanneau").value), m = messageParId(panneau.msg);
+    $("aideTelPanneau").textContent = tn.vide ? "Entre le numéro du client pour pouvoir ouvrir WhatsApp." : tn.erreur ? "⚠ " + tn.erreur : "✓ " + tn.joli + (tn.alerte ? " — " + tn.alerte : "");
+    $("aideTelPanneau").className = "aide" + (tn.erreur ? " attention" : "");
+    var b = $("btnEnregTel"), ancien = c.tel || "";
+    if (tn.tel && tn.tel !== ancien) { b.hidden = false; b.textContent = "Enregistrer ce numéro"; }
+    else if (tn.vide && ancien) { b.hidden = false; b.textContent = "Retirer le numéro de cette commande"; }
+    else b.hidden = true;
+    var minutesOk = !m.minutes || (/^\d{1,3}$/.test(panneau.minutes) && Number(panneau.minutes) > 0);
+    var texte = $("apercuMsg").value, pret = !!tn.tel && !!texte.trim() && minutesOk, a = $("lienWa");
+    if (pret) { a.href = "https://wa.me/" + tn.tel + "?text=" + encodeURIComponent(texte); a.removeAttribute("aria-disabled"); }
+    else { a.removeAttribute("href"); a.setAttribute("aria-disabled", "true"); }
+    $("raisonLien").textContent = pret ? "" : !tn.tel ? "Il manque : le numéro du client." : !minutesOk ? "Il manque : le nombre de minutes." : "Le message est vide.";
+    $("raisonLien").hidden = pret;
+  }
+  $("choixMessages").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-msg]"); if (!b) return;
+    panneau.msg = b.dataset.msg; ui.dernierMsg = panneau.msg; sauverUi();
+    construireChoix(); regenererTexte(); majLien();
+  });
+  document.querySelectorAll("[data-livreur]").forEach(function (b) {
+    b.addEventListener("click", function () { ui.livreur = b.dataset.livreur; sauverUi(); construireChoix(); regenererTexte(); majLien(); });
+  });
+  $("telPanneau").addEventListener("input", majLien);
+  $("minutesMsg").addEventListener("input", function () { this.value = this.value.replace(/\D/g, "").slice(0, 3); panneau.minutes = this.value; regenererTexte(); majLien(); });
+  $("apercuMsg").addEventListener("input", function () { panneau.modifie = true; majLien(); });
+  $("btnEnregTel").addEventListener("click", function () {
+    var c = commandePanneau(); if (!c) return;
+    var tn = normaliserTel($("telPanneau").value);
+    if (tn.erreur) { majLien(); return; }
+    enregistrerTel(c, tn.tel || ""); majLien();
+    toast(tn.tel ? "Numéro enregistré : " + tn.joli + "." : "Numéro retiré de cette commande.");
+  });
+  $("lienWa").addEventListener("click", function () {   // le lien s'ouvre normalement ; on garde le numéro saisi
+    if (this.getAttribute("aria-disabled") === "true") return;
+    var c = commandePanneau(), tn = normaliserTel($("telPanneau").value);
+    if (c && tn.tel && c.tel !== tn.tel) { enregistrerTel(c, tn.tel); majLien(); }
+    ui.dernierMsg = panneau.msg; sauverUi();
+    toast("WhatsApp s’ouvre sur la conversation : appuie sur « Envoyer ».");
+  });
+  $("btnCopierMsg").addEventListener("click", function () {
+    var t = $("apercuMsg").value; if (!t.trim()) return;
+    copier(t).then(function (ok) { toast(ok ? "Message copié." : "Copie automatique impossible : sélectionne le texte et copie-le à la main."); });
+  });
+  $("btnFermerEcrire").addEventListener("click", fermerEcrire);
+  $("voileEcrire").addEventListener("click", function (e) { if (e.target === this) fermerEcrire(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("voileEcrire").hidden) fermerEcrire(); });
+  $("avecNumeros").addEventListener("change", function () { ui.avecNumeros = this.checked; sauverUi(); });
+
+  /* ---------- Annulation (un seul niveau, depuis le bandeau de confirmation) ---------- */
+  var minuterie = null, retablir = null;
+  function toast(message, annuler) {
+    $("toastTexte").textContent = message; retablir = annuler || null;
+    $("toastAnnuler").hidden = !annuler; $("toast").hidden = false;
+    clearTimeout(minuterie); minuterie = setTimeout(function () { $("toast").hidden = true; retablir = null; }, 7000);
+  }
+  $("toastAnnuler").addEventListener("click", function () { if (retablir) retablir(); $("toast").hidden = true; retablir = null; });
+  function muter(message, action) {
+    var jour = etat.jourVu, avant = JSON.stringify(etat.commandes);
+    action(); sauver(); rendre();
+    toast(message, function () { etat.jourVu = jour; etat.commandes = JSON.parse(avant); sauver(); rendre(); });
+  }
+
+  /* ---------- Saisie ---------- */
+  var saisieQ = {}; PACKS.forEach(function (p) { saisieQ[p.id] = 0; });
+  var edition = null;       // id de la commande en cours de modification
+
+  function construireSite() {
+    document.querySelectorAll("[data-site]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (etat.saisie.site !== b.dataset.site) { etat.saisie.site = b.dataset.site; etat.saisie.res = ""; }
+        sauver(); majForm();
+      });
+    });
+  }
+  function vibrer(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }   // petit retour au toucher (Android)
+  function construirePacks() {
+    var zone = $("zonePacks"), unites = el("div", { class: "pas-unites" });
+    PACKS.forEach(function (p) {
+      var sortie = el("output", { id: "q_" + p.id, text: "0", "aria-live": "polite" });
+      var moins = el("button", { type: "button", "aria-label": "Retirer un " + p.nom, text: "−" });
+      var plus = el("button", { type: "button", "aria-label": "Ajouter un " + p.nom, text: "+" });
+      moins.addEventListener("click", function () { saisieQ[p.id] = Math.max(0, saisieQ[p.id] - 1); vibrer(8); majForm(); });
+      plus.addEventListener("click", function () { saisieQ[p.id] = Math.min(99, saisieQ[p.id] + 1); vibrer(8); majForm(); });
+      var ligne = el("div", { class: "pas" + (p.unite ? " v" : ""), id: "pas_" + p.id },
+        el("div", { class: "pas-nom" }, el("b", { text: p.nom }), el("span", { text: p.unite ? "à l’unité" : p.note })),
+        el("div", { class: "pas-ctrl" }, moins, sortie, plus));
+      (p.unite ? unites : zone).append(ligne);
+    });
+    zone.append(unites);
+  }
+  function majForm() {
+    var site = etat.saisie.site, res = etat.saisie.res;
+    document.querySelectorAll("[data-site]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.site === site)); });
+    var zone = $("zoneRes");
+    if (zone.dataset.site !== site) {   // les pastilles ne sont reconstruites que si le site change (saisie plus fluide)
+      zone.dataset.site = site; zone.replaceChildren();
+      if (!site) { zone.append(el("div", { class: "invite", text: "Choisis d’abord le site." })); }
+      else {
+        var grille = el("div", { class: "puces-res" });
+        SITES[site].residences.forEach(function (r) {
+          var b = el("button", { type: "button", "aria-label": "Résidence " + r, text: r });
+          b.addEventListener("click", function () { etat.saisie.res = r; sauver(); vibrer(8); majForm(); $("chambre").focus(); });
+          grille.append(b);
+        });
+        zone.append(grille);
+      }
+    }
+    zone.querySelectorAll(".puces-res button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.textContent === res)); });
+    PACKS.forEach(function (p) { $("q_" + p.id).textContent = String(saisieQ[p.id]); $("pas_" + p.id).classList.toggle("actif", saisieQ[p.id] > 0); });
+    var chambre = $("chambre").value.trim();
+    var n = compte(saisieQ);
+    $("recap").replaceChildren(n.total ? el("span", null, el("strong", { text: libelle(saisieQ) }), "  =  " + composition(n) + " (" + plur(n.total, "crêpe", "crêpes") + ")") : "Aucun pack choisi pour l’instant.");
+    var manque = [];
+    if (!site) manque.push("le site"); else if (!res) manque.push("la résidence");
+    if (!chambre) manque.push("la chambre");
+    if (!n.total) manque.push("le pack");
+    var tn = normaliserTel($("telClient").value);
+    if (tn.erreur) manque.push("un numéro valide (ou vide le champ)");
+    $("aideTel").textContent = tn.vide ? "Tu peux l’ajouter maintenant ou plus tard : touche « Écrire au client » sur la commande." : tn.erreur ? "⚠ " + tn.erreur : "✓ Numéro reconnu : " + tn.joli + (tn.alerte ? " — " + tn.alerte : "");
+    $("aideTel").className = "aide" + (tn.erreur ? " attention" : "");
+    $("manque").textContent = manque.length ? "Il manque : " + manque.join(", ") + "." : "";
+    $("manque").hidden = !manque.length; $("recap").hidden = !n.total;   // une seule ligne utile à la fois, pour garder la barre basse
+    $("btnEnregistrer").disabled = manque.length > 0;
+    var dup = (site && res && chambre) ? etat.commandes.filter(function (c) { return !c.livre && c.id !== edition && c.site === site && c.res === res && c.chambre === chambre.toUpperCase(); }).length : 0;
+    $("doublon").hidden = !dup;
+    if (dup) $("doublon").textContent = "⚠ Déjà " + plur(dup, "commande", "commandes") + " en attente pour cette chambre.";
+    $("bandeauEdition").hidden = !edition;
+    $("titreSaisieTexte").textContent = edition ? "Modifier la commande" : "Nouvelle commande";
+    $("btnEnregistrer").textContent = edition ? "Enregistrer la modification" : "Enregistrer la commande";
+    var passe = etat.jourVu !== soireeCourante();
+    $("jourSaisie").textContent = "Commande pour : " + nomJour(etat.jourVu) + (passe ? " (jour passé)" : " (aujourd’hui)");
+    $("avertJourPasse").hidden = !passe;
+    if (passe) $("texteJourPasse").textContent = "⚠ Vous êtes sur un jour passé : la commande sera ajoutée à CE jour.";
+    sauverBrouillon();
+  }
+  function viderSaisie() {
+    PACKS.forEach(function (p) { saisieQ[p.id] = 0; }); $("chambre").value = ""; $("telClient").value = ""; edition = null;
+  }
+  function enregistrer() {
+    if ($("btnEnregistrer").disabled) return;
+    var site = etat.saisie.site, res = etat.saisie.res, chambre = $("chambre").value.trim().toUpperCase();
+    var q = {}; PACKS.forEach(function (p) { q[p.id] = saisieQ[p.id]; });
+    var maintenant = Date.now(), tel = normaliserTel($("telClient").value).tel || "";
+    if (edition) {
+      var id = edition;
+      muter("Commande modifiée : " + SITES[site].nom + " · " + res + " · ch. " + chambre, function () {
+        var c = etat.commandes.find(function (x) { return x.id === id; });
+        if (c) { c.site = site; c.res = res; c.chambre = chambre; c.q = q; c.tel = tel; c.maj = maintenant; }
+      });
+    } else {
+      var nouvelle = { id: "c" + maintenant.toString(36) + Math.random().toString(36).slice(2, 6), site: site, res: res, chambre: chambre, q: q, tel: tel, t: maintenant, maj: maintenant, livre: false, tl: null };
+      muter("Ajouté : " + SITES[site].nom + " · " + res + " · ch. " + chambre + " — " + libelle(q), function () { etat.commandes.push(nouvelle); });
+    }
+    viderSaisie(); majForm(); vibrer(25);
+    noterChangement();
+    if (window.matchMedia("(pointer:fine)").matches) $("chambre").focus();   // ordinateur : on enchaîne au clavier
+    else $("chambre").scrollIntoView({ block: "center" });                   // téléphone : pas de clavier imposé
+  }
+
+  /* ---------- Liste ---------- */
+  function rendreListe() {
+    var tout = enAttente();
+    var comptes = { tous: tout.length, C: 0, S: 0 }; tout.forEach(function (c) { comptes[c.site]++; });
+    document.querySelectorAll("#filtres button").forEach(function (b) {
+      var f = b.dataset.f; b.setAttribute("aria-pressed", String(ui.filtre === f));
+      b.textContent = (f === "tous" ? "Tous" : SITES[f].nom) + " (" + comptes[f] + ")";
+    });
+    var visibles = tout.filter(function (c) { return ui.filtre === "tous" || c.site === ui.filtre; });
+    var s = somme(visibles);
+    $("totaux").replaceChildren(visibles.length
+      ? el("span", null, el("b", { text: plur(visibles.length, "commande", "commandes") }), " à livrer — à préparer : ", el("b", { text: s.nature + " Nature" }), " · ", el("b", { text: s.nutella + " Nutella" }), " (" + plur(s.total, "crêpe", "crêpes") + ")")
+      : "Rien à préparer pour l’instant.");
+    var zone = $("liste"); zone.replaceChildren();
+    if (!visibles.length) {
+      zone.append(el("div", { class: "vide" }, el("b", { text: "Aucune commande en attente" }), "Saisis la première dans l’onglet « Saisir »."));
+    }
+    var siteCourant = null, cleGroupe = null, carte = null;
+    visibles.forEach(function (c) {
+      if (c.site !== siteCourant) {
+        siteCourant = c.site; cleGroupe = null;
+        var n = visibles.filter(function (x) { return x.site === c.site; }).length;
+        zone.append(el("div", { class: "site-titre", text: SITES[c.site].nom + " · tournée " + SITES[c.site].heure + " · " + plur(n, "commande", "commandes") }));
+      }
+      var g = c.site + "|" + c.res;
+      if (g !== cleGroupe) {
+        cleGroupe = g;
+        var membres = visibles.filter(function (x) { return x.site === c.site && x.res === c.res; });
+        var sg = somme(membres);
+        var btnTout = el("button", { type: "button", "data-act": "groupe", "data-site": c.site, "data-res": c.res, text: "Tout livré ✓" });
+        zone.append(carte = el("div", { class: "groupe " + SITES[c.site].classe },
+          el("div", { class: "groupe-tete" },
+            el("div", null, el("b", { text: "Résidence " + c.res }), el("small", { text: plur(membres.length, "commande", "commandes") + " · " + sg.nature + " Nature + " + sg.nutella + " Nutella" })),
+            membres.length > 1 ? btnTout : null)));
+      }
+      var cc = compte(c.q), avecPack = (c.q.mini || c.q.maxi || c.q.mega) > 0;
+      carte.append(el("div", { class: "ligne" },
+        el("div", { class: "ch" }, el("small", { text: "Chambre" }), el("b", { text: c.chambre }), el("span", { class: "heure", text: heureDe(c.t) })),
+        el("div", null,
+          el("div", { class: "pack", text: libelle(c.q) }),
+          el("div", { class: "compo", text: (avecPack ? composition(cc) + " · " : "") + plur(cc.total, "crêpe", "crêpes") }),
+          c.tel ? el("div", { class: "compo", text: "📞 " + joliTel(c.tel) }) : null,
+          el("div", { class: "liens" },
+            el("button", { type: "button", class: "lien ecrire", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "💬 Écrire" }),
+            el("button", { type: "button", class: "lien", "data-act": "modifier", "data-id": c.id, text: "Modifier" }),
+            el("button", { type: "button", class: "lien", "data-act": "supprimer", "data-id": c.id, text: "Supprimer" }))),
+        el("button", { type: "button", class: "livre", "data-act": "livrer", "data-id": c.id, "aria-label": "Marquer livrée : " + lieu(c), text: "✓ Livré" })));
+    });
+    // Livrées (en bas)
+    var fait = livrees();
+    $("texteLivrees").textContent = "Livrées (" + fait.length + ")";
+    $("btnLivrees").setAttribute("aria-expanded", String(ui.livreesOuvert));
+    $("flecheLivrees").textContent = ui.livreesOuvert ? "▾" : "▸";
+    var zl = $("listeLivrees"); zl.replaceChildren();
+    zl.hidden = !ui.livreesOuvert || !fait.length;
+    $("btnLivrees").hidden = !fait.length;
+    fait.forEach(function (c) {
+      zl.append(el("div", { class: "ligne-livree" },
+        el("div", null, el("b", { text: "✓ " + SITES[c.site].nom + " · " + c.res + " · ch. " + c.chambre }), " — " + libelle(c.q), el("small", { text: "livrée à " + heureDe(c.tl || c.maj) })),
+        el("div", { class: "rang-livree" },
+          el("button", { type: "button", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "💬" }),
+          el("button", { type: "button", "data-act": "remettre", "data-id": c.id, "aria-label": "Remettre en attente : " + lieu(c), text: "↩ Remettre" }))));
+    });
+  }
+  function joursEnRetard() {   // jours passés qui ont encore des commandes non livrées
+    var auj = soireeCourante(), r = [];
+    Object.keys(etat.jours).sort().forEach(function (j) {
+      if (j >= auj) return;
+      var n = etat.jours[j].commandes.filter(function (c) { return !c.livre; }).length;
+      if (n) r.push({ jour: j, n: n });
+    });
+    return r;
+  }
+  function construireNavJour(zone) {
+    var auj = soireeCourante(), v = etat.jourVu;
+    var prec = el("button", { type: "button", "data-jour": "-1", "aria-label": "Jour précédent", text: "◀" });
+    var suiv = el("button", { type: "button", "data-jour": "1", "aria-label": "Jour suivant", text: "▶" }); suiv.disabled = v >= auj;
+    var morceaux = [prec, el("div", { class: "jour" }, nomJour(v), el("small", { text: v === auj ? "aujourd’hui" : frDate(v) + " · jour passé" })), suiv];
+    if (v !== auj) morceaux.push(el("button", { type: "button", class: "principal", "data-jour": "0", text: "Aujourd’hui" }));
+    zone.replaceChildren.apply(zone, morceaux);
+  }
+  function changerJour(iso) { etat.jourVu = iso; edition = null; viderSaisie(); rendre(); window.scrollTo({ top: 0 }); }
+  function surNavJour(e) {
+    var b = e.target.closest("button[data-jour]"); if (!b || b.disabled) return;
+    var d = b.dataset.jour;
+    changerJour(d === "0" ? soireeCourante() : addJours(etat.jourVu, parseInt(d, 10)));
+  }
+  $("navJourListe").addEventListener("click", surNavJour);
+  $("navJourBilan").addEventListener("click", surNavJour);
+  $("btnRetourAuj").addEventListener("click", function () { changerJour(soireeCourante()); });
+  function rendreEntete() {
+    var a = enAttente().length, l = livrees().length, auj = soireeCourante();
+    $("nbAttente").textContent = a; $("nbLivrees").textContent = l;
+    $("texteNavListe").textContent = "Liste (" + a + ")";
+    $("dateSoiree").textContent = nomJour(etat.jourVu) + (etat.jourVu === auj ? " · aujourd’hui" : " · jour passé");
+    var retard = joursEnRetard().filter(function (x) { return x.jour !== etat.jourVu; })[0];
+    $("alerteVeille").hidden = !retard;
+    if (retard) { $("texteVeille").textContent = "Il reste " + plur(retard.n, "commande non livrée", "commandes non livrées") + " du " + nomJour(retard.jour) + "."; $("btnVeille").dataset.jour = retard.jour; }
+    construireNavJour($("navJourListe"));
+  }
+  $("btnVeille").addEventListener("click", function () { var j = $("btnVeille").dataset.jour; if (j) changerJour(j); });
+
+  /* ---------- Bilan ---------- */
+  function chiffre(q) { var t = 0; PACKS.forEach(function (p) { t += (q[p.id] || 0) * PRIX[p.id]; }); return t; }
+  function bilanDe(liste) {
+    var q = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0 };
+    var b = { commandes: liste.length, livrees: 0, centre: 0, sud: 0, premiere: null, derniere: null, derniereLivraison: null, delaiMoyen: null, parRes: {} }, delais = [];
+    liste.forEach(function (c) {
+      PACKS.forEach(function (p) { q[p.id] += c.q[p.id] || 0; });
+      if (c.livre) {
+        b.livrees++;
+        if (c.tl && c.tl >= c.t) delais.push(c.tl - c.t);
+        if (c.tl && (!b.derniereLivraison || c.tl > b.derniereLivraison)) b.derniereLivraison = c.tl;
+      }
+      if (c.site === "C") b.centre++; else b.sud++;
+      if (!b.premiere || c.t < b.premiere) b.premiere = c.t;
+      if (!b.derniere || c.t > b.derniere) b.derniere = c.t;
+      var k = c.site + "|" + c.res; b.parRes[k] = (b.parRes[k] || 0) + 1;
+    });
+    var s = compte(q);
+    b.aLivrer = b.commandes - b.livrees;
+    b.packs = { mini: q.mini, maxi: q.maxi, mega: q.mega }; b.unites = { nature: q.nature, nutella: q.nutella };
+    b.nature = s.nature; b.nutella = s.nutella; b.crepes = s.total; b.caEstime = chiffre(q);
+    if (delais.length) b.delaiMoyen = Math.round(delais.reduce(function (a, x) { return a + x; }, 0) / delais.length / 60000);
+    return b;
+  }
+  function kpi(n, texte) { return el("div", { class: "kpi" }, el("b", { text: String(n) }), el("span", { text: texte })); }
+  function tr(tag, cellules) {
+    var r = el("tr");
+    cellules.forEach(function (c, i) { var td = el(tag, { class: i ? "n" : "" }); if (c && c.nodeType) td.append(c); else td.textContent = c == null ? "" : String(c); r.append(td); });
+    return r;
+  }
+  function tableau(entetes, lignes, pied) {
+    var t = el("table", { class: "bilan" }), tb = el("tbody");
+    if (entetes) { var th = el("thead"); th.append(tr("th", entetes)); t.append(th); }
+    lignes.forEach(function (l) { tb.append(tr("td", l)); }); t.append(tb);
+    if (pied) { var tf = el("tfoot"); tf.append(tr("td", pied)); t.append(tf); }
+    return t;
+  }
+  function rendreBilan() {
+    construireNavJour($("navJourBilan"));
+    var b = bilanDe(etat.commandes), zone = $("detailBilan");
+    $("kpis").replaceChildren(kpi(b.commandes, "commandes"), kpi(b.livrees, "livrées"), kpi(b.aLivrer, "à livrer"), kpi(b.crepes, "crêpes"));
+    zone.replaceChildren();
+    if (!b.commandes) zone.append(el("div", { class: "vide" }, el("b", { text: "Aucune commande ce jour-là" }), "Le bilan se remplit au fur et à mesure des commandes."));
+    else {
+      var res = Object.keys(b.parRes).map(function (k) { var a = k.split("|"); return { site: a[0], res: a[1], n: b.parRes[k] }; })
+        .sort(function (x, y) { return ORDRE_SITES.indexOf(x.site) - ORDRE_SITES.indexOf(y.site) || cleRes(x.site, x.res) - cleRes(y.site, y.res); });
+      zone.append(
+        el("h3", { class: "st", text: "Ce qui a été commandé" }),
+        tableau(["Produit", "Quantité"], [["MINI", b.packs.mini], ["MAXI", b.packs.maxi], ["MÉGA", b.packs.mega], ["Nature à l’unité", b.unites.nature], ["Nutella à l’unité", b.unites.nutella]],
+                ["Total des crêpes", b.crepes + " (" + b.nature + " Nature + " + b.nutella + " Nutella)"]),
+        el("h3", { class: "st", text: "Par site" }),
+        tableau(["Site", "Commandes"], [["Centre", b.centre], ["Sud", b.sud]]),
+        el("h3", { class: "st", text: "Par résidence" }),
+        tableau(["Résidence", "Commandes"], res.map(function (r) { return [SITES[r.site].nom + " · " + r.res, r.n]; })),
+        el("h3", { class: "st", text: "Ventes estimées" }),
+        el("p", { class: "gros-chiffre", text: fcfa(b.caEstime) }),
+        el("p", { class: "estim", text: "Estimation calculée avec les prix (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F). Sans les frais de livraison, sans la crêpe offerte du 10 octobre, et sans vérifier les paiements." }),
+        el("h3", { class: "st", text: "Horaires" }),
+        el("p", { class: "aide", text: "Première commande à " + heureDe(b.premiere) + " · dernière à " + heureDe(b.derniere) +
+          (b.derniereLivraison ? " · dernière livraison à " + heureDe(b.derniereLivraison) : "") +
+          (b.delaiMoyen != null ? " · délai moyen entre la commande et la livraison : " + b.delaiMoyen + " min" : "") + "." }));
+    }
+    var jours = Object.keys(etat.jours).filter(function (j) { return etat.jours[j].commandes.length; }).sort().reverse();
+    var zj = $("tousJours"); zj.replaceChildren();
+    if (!jours.length) zj.append(el("p", { class: "aide", text: "Aucun jour enregistré pour l’instant." }));
+    else {
+      var tot = { c: 0, l: 0, cr: 0, ca: 0 };
+      var lignes = jours.map(function (j) {
+        var x = bilanDe(etat.jours[j].commandes); tot.c += x.commandes; tot.l += x.livrees; tot.cr += x.crepes; tot.ca += x.caEstime;
+        var voir = el("button", { type: "button", "data-jour": j, text: j === etat.jourVu ? "affiché" : "Voir" }); voir.disabled = j === etat.jourVu;
+        return [nomJour(j), x.commandes, x.livrees, x.crepes, fcfa(x.caEstime), voir];
+      });
+      zj.append(el("div", { class: "defile" }, tableau(["Jour", "Commandes", "Livrées", "Crêpes", "Ventes estimées", ""], lignes,
+        ["Total (" + plur(jours.length, "jour", "jours") + ")", tot.c, tot.l, tot.cr, fcfa(tot.ca), ""])));
+    }
+    if (etat.histo.length) zj.append(el("p", { class: "aide", text: "Soirées de la version 1 (résumés sans détail) : " + etat.histo.map(function (h) { return frDate(h.date) + " : " + h.commandes + " commandes"; }).join(" · ") + "." }));
+  }
+  $("tousJours").addEventListener("click", function (e) { var b = e.target.closest("button[data-jour]"); if (b && !b.disabled) changerJour(b.dataset.jour); });
+  function texteBilan() {   // mis en forme pour WhatsApp : *gras*
+    var b = bilanDe(etat.commandes), l = [];
+    l.push("🥞 *ATELIER DES CREPES* — bilan du *" + nomJour(etat.jourVu) + "*");
+    l.push("*" + plur(b.commandes, "commande", "commandes") + "* (" + plur(b.livrees, "livrée", "livrées") + ", " + b.aLivrer + " à livrer)");
+    l.push("🥞 *Crêpes : " + b.crepes + "* (" + b.nature + " Nature + " + b.nutella + " Nutella)");
+    l.push("• MINI : " + b.packs.mini + " · MAXI : " + b.packs.maxi + " · MÉGA : " + b.packs.mega);
+    l.push("• Nature à l’unité : " + b.unites.nature + " · Nutella à l’unité : " + b.unites.nutella);
+    l.push("📍 Centre : " + plur(b.centre, "commande", "commandes") + " · Sud : " + plur(b.sud, "commande", "commandes"));
+    l.push("💰 *Ventes estimées : " + fcfa(b.caEstime) + "* (sans la livraison)");
+    if (b.premiere) l.push("⏱ Première commande à " + heureDe(b.premiere) + " · dernière à " + heureDe(b.derniere) + (b.delaiMoyen != null ? " · livraison en moyenne " + b.delaiMoyen + " min" : ""));
+    return l.join("\n");
+  }
+  function rendre() { rendreEntete(); rendreListe(); rendreBilan(); majForm(); majZoneRestaure(); }
+
+  /* ---------- Actions sur la liste ---------- */
+  $("liste").addEventListener("click", actionListe);
+  $("listeLivrees").addEventListener("click", actionListe);
+  function trouver(id) { return etat.commandes.find(function (c) { return c.id === id; }); }
+  function actionListe(e) {
+    var b = e.target.closest("button[data-act]"); if (!b) return;
+    var act = b.dataset.act, id = b.dataset.id, c = id ? trouver(id) : null, maintenant = Date.now();
+    if (act === "livrer" || act === "groupe") vibrer(30);
+    if (act === "livrer" && c) muter("Livrée : " + lieu(c), function () { c.livre = true; c.tl = maintenant; c.maj = maintenant; });
+    else if (act === "remettre" && c) muter("Remise en attente : " + lieu(c), function () { c.livre = false; c.tl = null; c.maj = maintenant; });
+    else if (act === "supprimer" && c) muter("Supprimée : " + lieu(c), function () { etat.commandes = etat.commandes.filter(function (x) { return x.id !== id; }); });
+    else if (act === "groupe") {
+      var membres = etat.commandes.filter(function (x) { return !x.livre && x.site === b.dataset.site && x.res === b.dataset.res; });
+      muter("Résidence " + b.dataset.res + " : " + plur(membres.length, "commande livrée", "commandes livrées"), function () { membres.forEach(function (x) { x.livre = true; x.tl = maintenant; x.maj = maintenant; }); });
+    }
+    else if (act === "ecrire" && c) { ouvrirEcrire(c.id); }
+    else if (act === "modifier" && c) {
+      edition = c.id; etat.saisie.site = c.site; etat.saisie.res = c.res; $("chambre").value = c.chambre; $("telClient").value = c.tel ? joliTel(c.tel) : "";
+      PACKS.forEach(function (p) { saisieQ[p.id] = c.q[p.id] || 0; });
+      choisirVue("saisir"); majForm(); window.scrollTo({ top: 0 }); $("chambre").focus();
+    }
+    if (act === "livrer" || act === "groupe") noterChangement();
+  }
+  $("btnAnnulerEdition").addEventListener("click", function () { viderSaisie(); majForm(); });
+  $("filtres").addEventListener("click", function (e) { var b = e.target.closest("button[data-f]"); if (!b) return; ui.filtre = b.dataset.f; sauverUi(); rendreListe(); });
+  $("btnLivrees").addEventListener("click", function () { ui.livreesOuvert = !ui.livreesOuvert; sauverUi(); rendreListe(); });
+
+  /* ---------- Vues (téléphone) ---------- */
+  function choisirVue(v) {
+    ui.vue = v; document.body.dataset.vue = v; sauverUi();
+    document.querySelectorAll(".navbas button").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.vue === v)); });
+    window.scrollTo({ top: 0 });
+  }
+  document.querySelectorAll(".navbas button").forEach(function (b) { b.addEventListener("click", function () { choisirVue(b.dataset.vue); }); });
+
+  /* ---------- Saisie : événements ---------- */
+  $("chambre").addEventListener("input", function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-\/ ]/g, ""); majForm(); });
+  $("chambre").addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (!$("btnEnregistrer").disabled) { enregistrer(); return; }
+    this.blur();   // touche « OK » du clavier : on le ferme et on montre les packs
+    setTimeout(function () { $("zonePacks").scrollIntoView({ block: "center" }); }, 150);
+  });
+  ["chambre", "telClient", "telPanneau", "minutesMsg", "apercuMsg", "numPartenaire", "zoneCode"].forEach(function (id) {   // clavier ouvert : la barre du bas se range
+    $(id).addEventListener("focus", function () { document.body.classList.add("clavier"); });
+    $(id).addEventListener("blur", function () { document.body.classList.remove("clavier"); });
+  });
+  $("btnEnregistrer").addEventListener("click", enregistrer);
+  $("telClient").addEventListener("input", majForm);
+
+  /* ---------- Outils : texte, partage, code, clôture ---------- */
+  function texteListe() {   // mis en forme pour WhatsApp : *gras*
+    var att = enAttente(), s = somme(att), lignes = [];
+    lignes.push("🥞 *ATELIER DES CREPES* — commandes du " + frDate(etat.soiree));
+    lignes.push("*" + plur(att.length, "commande à livrer", "commandes à livrer") + "* · à préparer : *" + s.nature + " Nature + " + s.nutella + " Nutella*");
+    ORDRE_SITES.forEach(function (site) {
+      var duSite = att.filter(function (c) { return c.site === site; }); if (!duSite.length) return;
+      lignes.push("", "*" + SITES[site].nom.toUpperCase() + " — dès " + SITES[site].heure + "* (" + plur(duSite.length, "commande", "commandes") + ")");
+      var resActuelle = null;
+      duSite.forEach(function (c) {
+        if (c.res !== resActuelle) { resActuelle = c.res; lignes.push("", "📍 *Résidence " + c.res + "*"); }
+        lignes.push("   • ch. *" + c.chambre + "* : " + libelle(c.q) + (ui.avecNumeros && c.tel ? " · 📞 " + joliTel(c.tel) : ""));
+      });
+    });
+    return lignes.join("\n");
+  }
+  function numeroWa(brut) {   // 10 chiffres (07…) ou 225 + 10 chiffres
+    var n = String(brut || "").replace(/\D/g, "");
+    if (n.length === 13 && n.indexOf("225") === 0) return n;
+    return n.length === 10 ? "225" + n : "";
+  }
+  function retourListe(message, type) { var r = $("retourListe"); r.textContent = message; r.className = "retour " + (type || ""); }
+  $("btnEnvoyerWa").addEventListener("click", function () {
+    if (!enAttente().length) { retourListe("Rien à envoyer : aucune commande en attente.", "erreur"); return; }
+    var brut = $("numPartenaire").value.trim(), n = "";
+    if (brut) { n = numeroWa(brut); if (!n) { retourListe("Numéro invalide : il faut 10 chiffres, par exemple 07 12 34 56 78.", "erreur"); return; } }
+    ui.partenaire = brut; sauverUi();
+    window.open("https://wa.me/" + n + "?text=" + encodeURIComponent(texteListe()), "_blank", "noopener");
+    retourListe(n ? "WhatsApp s’ouvre sur la discussion avec ce numéro : touche Envoyer." : "WhatsApp s’ouvre : choisis la personne, puis touche Envoyer.", "ok");
+  });
+  function copier(texte) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(texte).then(function () { return true; }, function () { return copierSecours(texte); });
+    }
+    return Promise.resolve(copierSecours(texte));
+  }
+  function copierSecours(texte) {
+    try { var t = el("textarea", { style: "position:fixed;top:0;opacity:0" }); t.value = texte; document.body.append(t); t.select(); var ok = document.execCommand("copy"); t.remove(); return ok; }
+    catch (e) { return false; }
+  }
+  $("btnCopierListe").addEventListener("click", function () {
+    if (!enAttente().length) { toast("Rien à copier : aucune commande en attente."); return; }
+    var t = texteListe();
+    copier(t).then(function (ok) { if (ok) toast("Liste copiée. Colle-la dans WhatsApp."); else { $("zoneCode").value = t; $("zoneCode").select(); toast("Copie automatique impossible : le texte est dans la zone ci-dessous, copie-le à la main."); } });
+  });
+  if (navigator.share) {
+    $("btnPartager").hidden = false;
+    $("btnPartager").addEventListener("click", function () {
+      if (!enAttente().length) { toast("Rien à partager : aucune commande en attente."); return; }
+      navigator.share({ text: texteListe() }).catch(function () {});
+    });
+  }
+  function validerCommande(c) {
+    if (!c || typeof c !== "object" || typeof c.id !== "string" || !c.id) return null;
+    if (!SITES[c.site] || SITES[c.site].residences.indexOf(String(c.res)) < 0) return null;
+    var ch = String(c.chambre || "").toUpperCase().replace(/[^A-Z0-9\-\/ ]/g, "").trim().slice(0, 8); if (!ch) return null;
+    var q = {}, total = 0; PACKS.forEach(function (p) { var n = Math.max(0, Math.min(99, parseInt(c.q && c.q[p.id], 10) || 0)); q[p.id] = n; total += n; });
+    if (!total) return null;
+    var t = Number(c.t) || Date.now();
+    return { id: c.id, site: c.site, res: String(c.res), chambre: ch, q: q, tel: normaliserTel(c.tel).tel || "", t: t, maj: Number(c.maj) || t, livre: !!c.livre, tl: c.livre ? (Number(c.tl) || Number(c.maj) || t) : null };
+  }
+  function retourCode(message, type) { var r = $("retourCode"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function retourFichier(message, type) { var r = $("retourFichier"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function retourSauve(message, type) { var r = $("retourSauve"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function retourBilan(message, type) { var r = $("retourBilan"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function ouvrirWa(texte, retour) {
+    var brut = $("numPartenaire").value.trim(), n = "";
+    if (brut) { n = numeroWa(brut); if (!n) { retour("Numéro invalide : il faut 10 chiffres, par exemple 07 12 34 56 78.", "erreur"); return; } }
+    ui.partenaire = brut; sauverUi();
+    window.open("https://wa.me/" + n + "?text=" + encodeURIComponent(texte), "_blank", "noopener");
+    retour(n ? "WhatsApp s’ouvre sur la discussion avec ce numéro : touche Envoyer." : "WhatsApp s’ouvre : choisis la personne, puis touche Envoyer.", "ok");
+  }
+  $("btnBilanWa").addEventListener("click", function () {
+    if (!etat.commandes.length) { retourBilan("Rien à envoyer : aucune commande ce jour-là.", "erreur"); return; }
+    sauvegarderJourSiBesoin(null);   // fin de soirée : le fichier du jour est créé en même temps (s'il y a du nouveau)
+    ouvrirWa(texteBilan(), retourBilan);
+  });
+  $("btnBilanCopier").addEventListener("click", function () {
+    if (!etat.commandes.length) { retourBilan("Rien à copier : aucune commande ce jour-là.", "erreur"); return; }
+    sauvegarderJourSiBesoin(null);
+    copier(texteBilan()).then(function (ok) { retourBilan(ok ? "Bilan copié. Colle-le dans WhatsApp." : "Copie automatique impossible : utilise « Envoyer le bilan sur WhatsApp ».", ok ? "ok" : "erreur"); });
+  });
+
+  /* ---------- Fichier du jour : UN SEUL fichier JSON par jour ---------- */
+  function suiviLire(j) { var s = etat.sauvegarde.jours && etat.sauvegarde.jours[j]; return s || { dernier: 0, depuis: 0 }; }
+  function suiviEcrire(j, v) { if (!etat.sauvegarde.jours) etat.sauvegarde.jours = {}; etat.sauvegarde.jours[j] = v; }
+  function noterChangement() { var s = suiviLire(etat.jourVu); suiviEcrire(etat.jourVu, { dernier: s.dernier, depuis: s.depuis + 1 }); sauver(); }
+  function instantane(tout) {
+    var o = { application: "ATELIER-COMMANDES", version: 3, exporteLe: new Date().toISOString(), jour: etat.jourVu, commandes: etat.commandes.slice(), bilan: bilanDe(etat.commandes) };
+    var avecTel = (tout ? Object.keys(etat.jours).reduce(function (a, j) { return a.concat(etat.jours[j].commandes); }, []) : etat.commandes).filter(function (c) { return c.tel; }).length;
+    if (avecTel) { o.confidentiel = true; o.avertissement = "Ce fichier contient des numéros de clients : ne pas le partager."; }
+    if (tout) { o.jours = etat.jours; o.corbeille = etat.corbeille; o.histo = etat.histo; }
+    return JSON.stringify(o, null, 1);
+  }
+  function telecharger(nom, texte) {
+    try {
+      var a = el("a", { href: URL.createObjectURL(new Blob([texte], { type: "application/json" })), download: nom });
+      document.body.append(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+      return true;
+    } catch (e) { return false; }
+  }
+  function sauvegarderFichier(tout, suffixe) {   // renvoie le nom du fichier créé, ou null
+    var nom = "atelier-commandes_" + (tout ? "TOUS-LES-JOURS_" + ymd(new Date()) : etat.jourVu) + (suffixe ? "_" + suffixe : "") + ".json";
+    var ok = telecharger(nom, instantane(tout));
+    if (ok) { var maintenant = Date.now(); (tout ? Object.keys(etat.jours) : [etat.jourVu]).forEach(function (j) { suiviEcrire(j, { dernier: maintenant, depuis: 0 }); }); }
+    sauver();
+    return ok ? nom : null;
+  }
+  function sauvegarderJourSiBesoin(retour) {   // un seul fichier par jour : rien de nouveau = pas de nouveau fichier
+    var s = suiviLire(etat.jourVu);
+    if (!etat.commandes.length) { if (retour) retour("Aucune commande ce jour-là : rien à sauvegarder.", "erreur"); return false; }
+    if (s.dernier && !s.depuis) { if (retour) retour("Le fichier de ce jour est déjà à jour (créé à " + heureDe(s.dernier) + ").", "ok"); return false; }
+    var n = sauvegarderFichier(false);
+    if (retour) retour(n ? "Fichier du jour créé : " + n + " (dossier Téléchargements)." + (s.dernier ? " Chrome ajoute (1), (2)… au nom : le dernier est le plus complet." : "") : "Le téléchargement a échoué : copie le code des commandes (Outils).", n ? "ok" : "erreur");
+    return !!n;
+  }
+  function majEtatSauve() {
+    var s = suiviLire(etat.jourVu), n = etat.commandes.length;
+    var t = !stockageOK ? "⚠ Sauvegarde du navigateur impossible" : "✓ Enregistré " + heureDe(etat.maj || Date.now());
+    if (s.dernier) t += " · 💾 fichier du jour " + heureDe(s.dernier) + (s.depuis ? " (" + plur(s.depuis, "modification depuis", "modifications depuis") + ")" : " à jour");
+    else if (n) t += " · 💾 fichier du jour pas encore créé";
+    if (n && !enAttente().length && (!s.dernier || s.depuis)) t += " · ⚠ soirée finie ? pensez au fichier du jour (onglet Bilan)";
+    $("etatSauve").textContent = t;
+    $("infoSauve").textContent = s.dernier ? "Fichier de ce jour : créé à " + heureDe(s.dernier) + ". " + (s.depuis ? plur(s.depuis, "modification depuis.", "modifications depuis.") : "Rien de nouveau depuis.") : (n ? "Pas encore de fichier pour ce jour." : "Aucune commande ce jour-là.");
+    var libelle = s.dernier && s.depuis ? "💾 Mettre à jour le fichier du jour" : "💾 Sauvegarder le fichier du jour";
+    $("btnSauveJour").textContent = libelle; $("btnSauveBilan").textContent = libelle;
+  }
+  $("btnSauveJour").addEventListener("click", function () { sauvegarderJourSiBesoin(retourSauve); });
+  $("btnSauveBilan").addEventListener("click", function () { sauvegarderJourSiBesoin(retourBilan); });
+  $("btnSauveTout").addEventListener("click", function () {
+    var n = sauvegarderFichier(true);
+    retourSauve(n ? "Fichier créé : " + n + " (tous les jours, dossier Téléchargements)." : "Le téléchargement a échoué : copie le code des commandes (plus bas).", n ? "ok" : "erreur");
+  });
+
+  /* ---------- Restaurer / transférer : on ajoute et on met à jour, on n'efface jamais ---------- */
+  function fusionner(jour, liste) {
+    var cible = (etat.jours[jour] = etat.jours[jour] || { commandes: [] }).commandes, aj = 0, mj = 0, ig = 0;
+    liste.forEach(function (brut) {
+      var c = validerCommande(brut); if (!c) { ig++; return; }
+      var ex = cible.find(function (x) { return x.id === c.id; });
+      if (!ex) { cible.push(c); aj++; } else if (c.maj > ex.maj) { Object.assign(ex, c); mj++; }
+    });
+    return { ajoutees: aj, majs: mj, ignorees: ig };
+  }
+  function importerTexte(txt, retour) {
+    var d = txt.indexOf("{"), f = txt.lastIndexOf("}");
+    if (d < 0 || f < d) { retour("Aucune sauvegarde reconnue.", "erreur"); return; }
+    var o; try { o = JSON.parse(txt.slice(d, f + 1)); } catch (e) { retour("Contenu illisible : il a peut-être été coupé. Recommence avec le fichier ou le code en entier.", "erreur"); return; }
+    var lots = [], estJour = function (j) { return /^\d{4}-\d{2}-\d{2}$/.test(j || ""); };
+    if (o && o.jours && typeof o.jours === "object") Object.keys(o.jours).forEach(function (j) { if (estJour(j) && o.jours[j] && Array.isArray(o.jours[j].commandes)) lots.push([j, o.jours[j].commandes]); });
+    else if (o && Array.isArray(o.commandes)) lots.push([estJour(o.jour) ? o.jour : estJour(o.soiree) ? o.soiree : etat.jourVu, o.commandes]);
+    if (!lots.length) { retour("Ce contenu ne contient pas de commandes.", "erreur"); return; }
+    var t = { ajoutees: 0, majs: 0, ignorees: 0 };
+    lots.forEach(function (l) { var r = fusionner(l[0], l[1]); t.ajoutees += r.ajoutees; t.majs += r.majs; t.ignorees += r.ignorees; });
+    if (lots.length === 1) etat.jourVu = lots[0][0];
+    edition = null; sauver(); rendre();
+    retour(plur(t.ajoutees, "commande ajoutée", "commandes ajoutées") + ", " + plur(t.majs, "mise à jour", "mises à jour") + (t.ignorees ? ", " + plur(t.ignorees, "ignorée (incomplète)", "ignorées (incomplètes)") : "") + ".", t.ignorees ? "erreur" : "ok");
+  }
+  $("btnFichier").addEventListener("click", function () { $("fichierRestaure").click(); });
+  $("fichierRestaure").addEventListener("change", function (ev) {
+    var f = ev.target.files && ev.target.files[0]; if (!f) return;
+    var lecteur = new FileReader();
+    lecteur.onload = function () { importerTexte(String(lecteur.result), retourFichier); };
+    lecteur.onerror = function () { retourFichier("Ce fichier n’a pas pu être lu.", "erreur"); };
+    lecteur.readAsText(f); ev.target.value = "";
+  });
+  $("btnCopierCode").addEventListener("click", function () {
+    var code = "ATELIER-COMMANDES " + JSON.stringify({ v: 2, jour: etat.jourVu, commandes: etat.commandes });
+    $("zoneCode").value = code;
+    copier(code).then(function (ok) { retourCode(ok ? "Code copié (" + plur(etat.commandes.length, "commande", "commandes") + "). Colle-le dans WhatsApp, puis sur l’autre appareil." : "Copie automatique impossible : sélectionne le code ci-dessus et copie-le à la main.", ok ? "ok" : "erreur"); if (!ok) $("zoneCode").select(); });
+  });
+  $("btnImporter").addEventListener("click", function () { importerTexte($("zoneCode").value, retourCode); });
+
+  /* ---------- UN SEUL bouton de remise à zéro : effacer les commandes du jour affiché ---------- */
+  function majZoneRestaure() {
+    var c = etat.corbeille[0];
+    $("blocRestaure").hidden = !c;
+    if (c) $("texteRestaure").textContent = plur(c.commandes.length, "commande", "commandes") + " du " + nomJour(c.jour) + ", effacées le " + frDate(ymd(new Date(c.efface))) + " à " + heureDe(c.efface) +
+      (etat.corbeille.length > 1 ? " (+ " + plur(etat.corbeille.length - 1, "autre suppression gardée", "autres suppressions gardées") + ")" : "") + ". Récupérables pendant 30 jours.";
+  }
+  function restaurerDerniere() {
+    var c = etat.corbeille.shift(); if (!c) return;
+    var r = fusionner(c.jour, c.commandes); etat.jourVu = c.jour; edition = null;
+    sauver(); rendre();
+    toast(plur(r.ajoutees + r.majs, "commande restaurée", "commandes restaurées") + " (" + nomJour(c.jour) + ").");
+  }
+  function fermerZero() { $("confirmeZero").hidden = true; $("btnZero").hidden = false; }
+  $("btnZero").addEventListener("click", function () {
+    var n = etat.commandes.length;
+    if (!n) { toast("Il n’y a aucune commande à effacer pour ce jour."); return; }
+    $("resumeZero").textContent = "Vous allez effacer " + plur(n, "commande", "commandes") + " du " + nomJour(etat.jourVu) + " (" + plur(livrees().length, "livrée", "livrées") + ", " + enAttente().length + " à livrer). Un fichier de sauvegarde est d’abord enregistré, et ces commandes restent récupérables pendant 30 jours.";
+    $("confirmeZero").hidden = false; $("btnZero").hidden = true;
+  });
+  $("btnZeroNon").addEventListener("click", fermerZero);
+  $("btnZeroOui").addEventListener("click", function () {
+    var jour = etat.jourVu, liste = etat.commandes.slice();
+    if (!liste.length) { fermerZero(); return; }
+    var fichier = sauvegarderFichier(false, "avant-effacement");
+    etat.corbeille.unshift({ jour: jour, commandes: liste, efface: Date.now() });
+    etat.commandes = []; edition = null; viderSaisie();
+    sauver(); rendre(); fermerZero();
+    toast(plur(liste.length, "commande effacée", "commandes effacées") + (fichier ? ". Fichier de sauvegarde créé." : ". Fichier non créé : elles restent récupérables 30 jours."), function () { restaurerDerniere(); });
+  });
+  $("btnRestaurer").addEventListener("click", restaurerDerniere);
+
+  /* ---------- Autres onglets, fermeture de la page, passage à minuit ---------- */
+  window.addEventListener("storage", function (e) {
+    if (e.key !== CLE) return;
+    var n = lireEtat(e.newValue || ""); if (!n) return;
+    n.jourVu = etat.jourVu; etat = n; rendre();
+  });
+  window.addEventListener("pagehide", function () { sauver(); });
+  var jourMemoire = soireeCourante();
+  function verifierJour() {
+    var j = soireeCourante(); if (j === jourMemoire) return;
+    var surAujourdhui = etat.jourVu === jourMemoire;
+    jourMemoire = j;
+    if (surAujourdhui) { etat.jourVu = j; edition = null; viderSaisie(); toast("Nouvelle soirée : " + nomJour(j) + ". Les commandes d’hier restent dans le Bilan."); }
+    rendre();
+  }
+  setInterval(verifierJour, 30000);
+  document.addEventListener("visibilitychange", function () { if (document.hidden) sauver(); else verifierJour(); });
+
+  /* ---------- Application installable (PWA) ---------- */
+  var invitation = null;
+  var enAppli = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  var enFichier = location.protocol === "file:" || location.protocol === "content:";
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+  }
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); invitation = e; majAppli(); });
+  window.addEventListener("appinstalled", function () { invitation = null; enAppli = true; majAppli(); toast("Application installée : ouvre-la depuis l’icône 🥞 de l’écran d’accueil."); });
+  $("btnInstaller").addEventListener("click", function () {
+    if (!invitation) return;
+    invitation.prompt();
+    invitation.userChoice.then(function () { invitation = null; majAppli(); });
+  });
+  function majAppli() {
+    $("alerteFichier").hidden = !enFichier;
+    var t;
+    if (enAppli) t = "✓ Tu utilises l’application installée : les commandes restent dans le téléphone, même quand l’application est fermée.";
+    else if (enFichier) t = "ℹ Cette page est ouverte comme un simple fichier : elle garde les commandes, mais moins bien protégées qu’une application installée. Le « fichier du jour » en fin de soirée reste ta sauvegarde.";
+    else if (invitation) t = "Touche le bouton ci-dessous pour installer l’application sur l’écran d’accueil.";
+    else t = "Pour l’installer : menu ⋮ de Chrome, puis « Installer l’application » (ou « Ajouter à l’écran d’accueil »).";
+    $("etatAppli").textContent = t;
+    $("btnInstaller").hidden = !invitation;
+    try {
+      if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(function (p) {
+        $("etatStockage").textContent = p ? "🔒 Stockage protégé : le téléphone ne supprimera pas les commandes pour libérer de la place."
+          : "Stockage non protégé : si le téléphone manque de place, il pourrait supprimer des données. L’application installée est protégée automatiquement.";
+      });
+    } catch (e) {}
+  }
+
+  /* ---------- Démarrage ---------- */
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}   // demande au navigateur de ne jamais effacer ces données
+  $("numPartenaire").value = ui.partenaire || "";
+  $("avecNumeros").checked = !!ui.avecNumeros;
+  construireSite(); construirePacks();
+  restaurerBrouillon();
+  document.body.dataset.vue = ["saisir", "liste", "bilan"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
+  document.querySelectorAll(".navbas button").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.vue === document.body.dataset.vue)); });
+  sauver(); rendre(); majAppli();
+  avertissements.forEach(function (m) { toast(m); });
+  secoursIdb();
+})();
+</script>
+</body>
+</html>
