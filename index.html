@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6 · 2026-10-11 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.1 · 2026-10-11 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -29,6 +29,9 @@
   V6 : ÉCRAN CUISINE (D-082) : les commandes du jour sont envoyées, SANS numéro de client ni paiement, au dépôt GitHub privé « atelier-cuisine »
   (relais-github.js, écriture vérifiée par l'empreinte du fichier) ; l'écran cuisine (cuisine/index.html) les affiche et renvoie « Prête », montré sur la carte.
   Clé d'accès saisie dans Outils, gardée sur le téléphone (localStorage « atelier_cuisine_v1 »), jamais écrite dans le code.
+  V6.1 : onglet WAVE : un toucher copie le message de paiement Wave (texte de Wave + lien marchand ?amount=), montant = (packs + livraison) × 1,01
+  arrondi au franc supérieur ; combinaisons de 1 à 3 packs par site + « autre quantité » ; pas les crêpes à l'unité (demande de l'équipe, D-084).
+  QR Wave marchand en plein écran (wave/carte-wave.png, carte officielle de l'équipe, gardée dans le téléphone : s'affiche sans internet).
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -209,7 +212,29 @@
   @media (prefers-reduced-motion: reduce) { * { transition:none !important; } button:active { transform:none; } }
 
   /* ===== V2 : jours, bilan, sauvegardes, zone dangereuse ===== */
-  .navbas { grid-template-columns:1fr 1fr 1fr; }
+  .navbas { grid-template-columns:1fr 1fr 1fr 1fr; }
+  @media (max-width:899px) {
+    body:not([data-vue="wave"]) #vueWave { display:none; }
+    body[data-vue="wave"] #vueSaisir, body[data-vue="wave"] #vueListe, body[data-vue="wave"] #vueBilan { display:none; }
+  }
+  @media (min-width:900px) { #vueWave { grid-column:2; } }
+  .wave-groupe { margin:18px 0 8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--doux); }
+  .wave-grille { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:8px; }
+  button.wave-btn { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; min-height:64px; padding:10px 14px; border-radius:14px;
+                    background:var(--carte2); border:1.5px solid var(--bord); text-align:left; }
+  .wave-btn .w-lib { display:block; font-size:17px; font-weight:800; color:var(--encre); }
+  .wave-btn .w-det { display:block; font-size:12px; font-weight:600; color:var(--doux); margin-top:2px; }
+  .wave-btn .w-mt { flex:none; text-align:right; font-size:20px; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .wave-btn .w-mt small { display:block; font-size:11px; font-weight:700; color:var(--doux); text-transform:uppercase; letter-spacing:.06em; }
+  button.wave-btn.copie { border-color:var(--ok); background:var(--carte); }
+  button.wave-btn.copie .w-mt small { color:var(--ok); }
+  #autreWave .pas { margin-top:8px; }
+  .qr-plein { position:fixed; inset:0; z-index:100; background:#FFFFFF; color:#1C120C; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+              padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); }
+  .qr-plein[hidden] { display:none; }
+  .qr-plein img { display:block; width:auto; height:auto; max-width:min(100%, 560px); max-height:calc(100dvh - 130px); object-fit:contain; }
+  .qr-plein p { margin:0; font-size:15px; font-weight:700; text-align:center; color:#3A2B20; }
+  .qr-plein button { min-height:52px; min-width:200px; background:#1C120C; color:#FFFFFF; font-size:17px; }
   @media (max-width:899px) {
     body[data-vue="saisir"] #vueBilan, body[data-vue="liste"] #vueBilan { display:none; }
     body[data-vue="bilan"] #vueSaisir, body[data-vue="bilan"] #vueListe { display:none; }
@@ -453,12 +478,34 @@
     <h3 class="st">Tous les jours</h3>
     <div id="tousJours"></div>
   </section>
+
+  <!-- ===================== PAIEMENT WAVE ===================== -->
+  <section class="bloc" id="vueWave" aria-labelledby="titreWave">
+    <h2 id="titreWave">Paiement Wave</h2>
+    <button type="button" class="principal gros" id="btnQrWave">Montrer mon QR Wave au client</button>
+    <p class="aide" style="margin:6px 0 16px">Plein écran, même sans internet : le client scanne avec son application Wave et saisit le montant. Tu n’as pas besoin d’ouvrir Wave.</p>
+    <p class="aide" style="margin:0 0 12px">Touche la commande du client : le message de paiement Wave est <b>copié</b>, montant compris (packs + livraison + 1 % Wave). Colle-le ensuite dans sa conversation WhatsApp.</p>
+    <div class="segmente" role="group" aria-label="Site du client" id="siteWave">
+      <button type="button" data-wsite="C" aria-pressed="true">Centre</button>
+      <button type="button" data-wsite="S" aria-pressed="false">Sud</button>
+    </div>
+    <p class="aide" id="regleWave"></p>
+    <div class="retour" id="retourWave" role="status"></div>
+    <div id="grilleWave"></div>
+    <details class="outils" id="autreWave">
+      <summary>Autre quantité (4 packs ou plus)</summary>
+      <div id="pasWave"></div>
+      <div class="rang"><button type="button" class="principal gros" id="btnAutreWave" disabled>Choisis les packs</button></div>
+    </details>
+    <p class="aide">Pour une commande avec des crêpes à l’unité, crée le lien dans l’application Wave.</p>
+  </section>
 </main>
 
 <nav class="navbas" aria-label="Navigation">
   <button type="button" data-vue="saisir" aria-current="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Saisir</button>
   <button type="button" data-vue="liste" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span id="texteNavListe">Liste</span></button>
   <button type="button" data-vue="bilan" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Bilan</button>
+  <button type="button" data-vue="wave" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v11H3zM3 10.5h18M7 14.5h4"/></svg>Wave</button>
 </nav>
 
 <div class="voile" id="voileEcrire" hidden>
@@ -495,6 +542,12 @@
       <a class="btn" id="lienWa" target="_blank" rel="noopener noreferrer" aria-disabled="true">Ouvrir dans WhatsApp</a>
     </div>
   </div>
+</div>
+
+<div class="qr-plein" id="qrWave" role="dialog" aria-modal="true" aria-label="QR Wave de L’Atelier des Crêpes" hidden>
+  <img src="wave/carte-wave.png" width="900" height="1268" alt="QR code Wave marchand de L’Atelier des Crêpes">
+  <p>Scannez avec Wave · L’Atelier des Crêpes</p>
+  <button type="button" id="btnFermerQr">Fermer</button>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastTexte"></span><button type="button" id="toastAnnuler">Annuler</button></div>
@@ -603,7 +656,7 @@
     return e || migrerV1() || vide();
   }
   var etat = charger();
-  var ui = { filtre: "tous", vue: "saisir", livreesOuvert: true, partenaire: "", livreur: "m", dernierMsg: "m1", avecNumeros: false };
+  var ui = { filtre: "tous", vue: "saisir", livreesOuvert: true, partenaire: "", livreur: "m", dernierMsg: "m1", avecNumeros: false, waveSite: "C" };
   try { var u = JSON.parse(lire(CLE_UI) || "{}"); for (var cle in u) if (cle in ui) ui[cle] = u[cle]; } catch (e) {}
   function sauverUi() { ecrire(CLE_UI, JSON.stringify(ui)); }
 
@@ -1614,15 +1667,117 @@
     window.addEventListener("online", function () { if (cuisineBranchee()) cuisineProgrammer(0); });
   }
 
+  /* ---------- Paiement Wave (V6.1, D-084) ----------
+     Lien marchand de l'Atelier + montant. Montant = (prix des packs + livraison) × 1,01 (frais Wave), arrondi au franc supérieur.
+     Livraison : Centre 100 F, offerte dès qu'il y a un MAXI ou un MÉGA ; Sud 200 F, offerte avec un MÉGA (D-021, règles des affiches).
+     Une seule livraison par chambre, quel que soit le nombre de commandes : le bouton correspond à TOUT ce que la chambre paie.
+     Contrôles : MINI Centre 606 F, MAXI Centre 808 F, MÉGA Centre ou Sud 1 515 F (exemples de l'équipe). */
+  var WAVE_LIEN = "https://pay.wave.com/m/M_ci_TgNW4yinaHdk/c/ci/?amount=";
+  var WAVE_FRAIS_POUR_CENT = 1;
+  var LIVRAISON = { C: { frais: 100, offerteAvec: ["maxi", "mega"], texte: "Centre : livraison 100 F, offerte dès qu’il y a un MAXI ou un MÉGA." },
+                    S: { frais: 200, offerteAvec: ["mega"], texte: "Sud : livraison 200 F, offerte avec un MÉGA." } };
+  var PACKS_WAVE = ["mini", "maxi", "mega"];
+  var waveSite = ui.waveSite === "S" ? "S" : "C", waveAutre = { mini: 0, maxi: 0, mega: 0 };
+  function montantWave(q, site) {
+    var base = 0; PACKS_WAVE.forEach(function (p) { base += (q[p] || 0) * PRIX[p]; });
+    var regle = LIVRAISON[site], offerte = regle.offerteAvec.some(function (p) { return (q[p] || 0) > 0; });
+    var livraison = base && !offerte ? regle.frais : 0, total = base + livraison;
+    return { base: base, livraison: livraison, total: total, wave: Math.ceil(total * (100 + WAVE_FRAIS_POUR_CENT) / 100) };
+  }
+  function texteWave(montant) {
+    var affiche = String(montant).replace(/\B(?=(\d{3})+(?!\d))/g, ".");   // 1515 -> 1.515, comme le message de Wave
+    return "Veuillez Payer Atelier Des Crêpes " + affiche + "F avec Wave en cliquant sur ce lien " + WAVE_LIEN + montant + ". Ajoutez cet expéditeur à vos contacts pour rendre le lien cliquable.";
+  }
+  function libelleWave(q) {
+    return PACKS_WAVE.filter(function (p) { return q[p]; }).map(function (p) { var nom = PACKS.find(function (x) { return x.id === p; }).nom; return q[p] > 1 ? q[p] + " " + nom : nom; }).join(" + ");
+  }
+  function combinaisonsWave(n) {   // toutes les combinaisons de n packs, de la moins chère à la plus chère
+    var r = [];
+    for (var a = n; a >= 0; a--) for (var b = n - a; b >= 0; b--) r.push({ mini: a, maxi: b, mega: n - a - b });
+    return r.sort(function (x, y) { return montantWave(x, "C").base - montantWave(y, "C").base; });
+  }
+  function boutonWave(q) {
+    var m = montantWave(q, waveSite), lib = libelleWave(q);
+    var det = fcfa(m.base) + (m.livraison ? " + " + fcfa(m.livraison) + " livraison" : " · livraison offerte") + " + 1 % Wave";
+    var b = el("button", { type: "button", class: "wave-btn", "aria-label": "Copier le lien Wave : " + lib + ", " + SITES[waveSite].nom + ", " + fcfa(m.wave) },
+      el("span", null, el("span", { class: "w-lib", text: lib }), el("span", { class: "w-det", text: det })),
+      el("span", { class: "w-mt" }, fcfa(m.wave), el("small", { text: "Copier" })));
+    b.addEventListener("click", function () { copierWave(q, b); });
+    return b;
+  }
+  function copierWave(q, bouton) {
+    var m = montantWave(q, waveSite), lib = libelleWave(q) + " · " + SITES[waveSite].nom + " · " + fcfa(m.wave);
+    copier(texteWave(m.wave)).then(function (ok) {
+      document.querySelectorAll(".wave-btn.copie").forEach(function (x) { x.classList.remove("copie"); var s = x.querySelector(".w-mt small"); if (s) s.textContent = "Copier"; });
+      if (ok) {
+        if (bouton) { bouton.classList.add("copie"); var s = bouton.querySelector(".w-mt small"); if (s) s.textContent = "Copié"; }
+        var r = $("retourWave"); r.textContent = "Copié : " + lib + ". Colle-le dans la conversation du client."; r.className = "retour ok";
+        toast("Lien Wave copié : " + lib); vibrer(25);
+      } else {
+        var r2 = $("retourWave"); r2.textContent = "Copie impossible sur ce téléphone. Lien : " + WAVE_LIEN + m.wave; r2.className = "retour erreur";
+      }
+    });
+  }
+  function rendreWave() {
+    document.querySelectorAll("#siteWave button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.wsite === waveSite)); });
+    $("regleWave").textContent = LIVRAISON[waveSite].texte + " Montants avec 1 % de frais Wave.";
+    var zone = $("grilleWave"); zone.replaceChildren();
+    [1, 2, 3].forEach(function (n) {
+      zone.append(el("div", { class: "wave-groupe", text: n === 1 ? "1 pack" : n + " packs dans la chambre" }));
+      var g = el("div", { class: "wave-grille" });
+      combinaisonsWave(n).forEach(function (q) { g.append(boutonWave(q)); });
+      zone.append(g);
+    });
+    var n = waveAutre.mini + waveAutre.maxi + waveAutre.mega, b = $("btnAutreWave");
+    b.disabled = !n;
+    b.textContent = n ? "Copier : " + libelleWave(waveAutre) + " · " + fcfa(montantWave(waveAutre, waveSite).wave) : "Choisis les packs";
+    PACKS_WAVE.forEach(function (p) { $("qw_" + p).textContent = String(waveAutre[p]); });
+  }
+  /* QR Wave en plein écran : écran gardé allumé ; le bouton « retour » d'Android ferme le QR au lieu de quitter l'application */
+  var verrouQr = null;
+  function ouvrirQr() {
+    $("qrWave").hidden = false;
+    try { history.pushState({ qrWave: true }, ""); } catch (e) {}
+    try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (v) { verrouQr = v; }).catch(function () {}); } catch (e) {}
+    $("btnFermerQr").focus();
+  }
+  function fermerQr(depuisRetour) {
+    if ($("qrWave").hidden) return;
+    $("qrWave").hidden = true;
+    try { if (verrouQr) verrouQr.release(); } catch (e) {} verrouQr = null;
+    if (!depuisRetour && history.state && history.state.qrWave) history.back();
+  }
+  $("btnQrWave").addEventListener("click", ouvrirQr);
+  $("btnFermerQr").addEventListener("click", function () { fermerQr(false); });
+  window.addEventListener("popstate", function () { fermerQr(true); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") fermerQr(false); });
+  (function construireWave() {
+    var zone = $("pasWave");
+    PACKS_WAVE.forEach(function (p) {
+      var pk = PACKS.find(function (x) { return x.id === p; });
+      var moins = el("button", { type: "button", "aria-label": "Retirer un " + pk.nom, text: "−" });
+      var plus = el("button", { type: "button", "aria-label": "Ajouter un " + pk.nom, text: "+" });
+      moins.addEventListener("click", function () { waveAutre[p] = Math.max(0, waveAutre[p] - 1); rendreWave(); });
+      plus.addEventListener("click", function () { waveAutre[p] = Math.min(20, waveAutre[p] + 1); rendreWave(); });
+      zone.append(el("div", { class: "pas" }, el("div", { class: "pas-nom" }, el("b", { text: pk.nom }), el("span", { text: fcfa(PRIX[p]) })),
+        el("div", { class: "pas-ctrl" }, moins, el("output", { id: "qw_" + p, text: "0" }), plus)));
+    });
+    $("btnAutreWave").addEventListener("click", function () { if (waveAutre.mini + waveAutre.maxi + waveAutre.mega) copierWave(waveAutre, null); });
+    $("siteWave").addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-wsite]"); if (!b) return;
+      waveSite = b.dataset.wsite; ui.waveSite = waveSite; sauverUi(); $("retourWave").textContent = ""; rendreWave();
+    });
+  })();
+
   /* ---------- Démarrage ---------- */
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}   // demande au navigateur de ne jamais effacer ces données
   $("numPartenaire").value = ui.partenaire || "";
   $("avecNumeros").checked = !!ui.avecNumeros;
   construireSite(); construirePacks();
   restaurerBrouillon();
-  document.body.dataset.vue = ["saisir", "liste", "bilan"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
+  document.body.dataset.vue = ["saisir", "liste", "bilan", "wave"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
   document.querySelectorAll(".navbas button").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.vue === document.body.dataset.vue)); });
-  sauver(); rendre(); majAppli(); cuisineDemarrer();
+  sauver(); rendre(); majAppli(); cuisineDemarrer(); rendreWave();
   avertissements.forEach(function (m) { toast(m); });
   secoursIdb();
 })();
