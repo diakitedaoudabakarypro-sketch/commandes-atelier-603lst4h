@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.2 · 2026-10-11 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.3 · 2026-10-11 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -33,6 +33,8 @@
   arrondi au franc supérieur ; combinaisons de 1 à 3 packs par site + « autre quantité » ; pas les crêpes à l'unité (demande de l'équipe, D-084).
   QR Wave marchand en plein écran (wave/carte-wave.png, carte officielle de l'équipe, gardée dans le téléphone : s'affiche sans internet).
   V6.2 : interface épurée (demande de l'équipe) : plus d'encadrés d'explication ; un lien « En savoir plus » ouvre une fenêtre (modèles <template id="info-…">) ;
+  V6.3 (D-087) : envoi à la cuisine immédiat (et forcé quand l'application passe en arrière-plan) ; case « Emballée » ; cartes : résidence et chambre en grand ;
+  SAUVEGARDE GITHUB de la soirée (dépôt privé atelier-donnees, clé « données ») ; onglet ENVOIS (messages, carnet de contacts, « Clients d'hier »).
   libellés raccourcis ; CALENDRIER : toucher la date (Liste, Bilan) ouvre un mois, jours avec commandes marqués, jours futurs fermés.
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
@@ -214,12 +216,54 @@
   @media (prefers-reduced-motion: reduce) { * { transition:none !important; } button:active { transform:none; } }
 
   /* ===== V2 : jours, bilan, sauvegardes, zone dangereuse ===== */
-  .navbas { grid-template-columns:1fr 1fr 1fr 1fr; }
+  .navbas { grid-template-columns:repeat(5, 1fr); gap:4px; }
+  .navbas button { font-size:12px; padding:0 4px; }
   @media (max-width:899px) {
     body:not([data-vue="wave"]) #vueWave { display:none; }
     body[data-vue="wave"] #vueSaisir, body[data-vue="wave"] #vueListe, body[data-vue="wave"] #vueBilan { display:none; }
+    body:not([data-vue="envois"]) #vueEnvois { display:none; }
+    body[data-vue="envois"] #vueSaisir, body[data-vue="envois"] #vueListe, body[data-vue="envois"] #vueBilan, body[data-vue="envois"] #vueWave { display:none; }
   }
-  @media (min-width:900px) { #vueWave { grid-column:2; } }
+  @media (min-width:900px) { #vueWave, #vueEnvois { grid-column:2; } }
+  /* cartes V6.3 : résidence et chambre d'abord */
+  .ligne.v3 { display:block; padding:12px; }
+  .ligne.v3 .l-tete { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .ligne.v3 .l-lieu { font-size:23px; font-weight:800; line-height:1.15; letter-spacing:-.2px; }
+  .ligne.v3 .l-lieu .l-sep { color:var(--doux); font-weight:600; margin:0 6px; }
+  .ligne.v3 .heure { font-size:13px; color:var(--doux); font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .ligne.v3 .l-compo { font-size:14px; color:var(--doux); margin-top:3px; }
+  .ligne.v3 .l-compo b { color:var(--encre); font-weight:800; }
+  .ligne.v3 .l-tel { font-size:13px; color:var(--doux); margin-top:2px; }
+  .ligne.v3 .prete-badge { margin-top:6px; }
+  .ligne.v3 .l-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .ligne.v3 .l-actions button { min-height:52px; width:100%; }
+  button.emb { background:transparent; border:2px solid var(--accent); color:var(--accent); font-size:16px; }
+  button.emb[aria-pressed="true"] { background:var(--accent); color:var(--carte); }
+  .ligne.v3.emballee { background:color-mix(in srgb, var(--ok) 9%, transparent); }
+  .ligne.v3 .liens { margin-top:8px; }
+  .fin-soiree { margin:4px 0 14px; }
+  .fin-soiree .principal { width:100%; }
+  .etat-gh { font-size:13px; font-weight:700; color:var(--doux); margin:8px 0 0; }
+  .etat-gh.ok { color:var(--ok); } .etat-gh.attention { color:var(--alerte); }
+  .etat-gh a { color:inherit; }
+  select#choixMsg { width:100%; min-height:50px; font:inherit; font-size:16px; color:var(--encre); background:var(--carte2); border:1.5px solid var(--bord); border-radius:12px; padding:0 12px; }
+  .apercu { white-space:pre-wrap; font-size:14px; line-height:1.45; background:var(--carte2); border:1px solid var(--bord); border-radius:12px; padding:12px; margin-top:12px; max-height:9.5em; overflow:hidden; position:relative; }
+  .apercu.tout { max-height:none; }
+  .puces-listes { display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 10px; }
+  .puces-listes button { min-height:40px; font-size:14px; padding:0 14px; background:var(--carte2); border:1.5px solid var(--bord); }
+  .puces-listes button[aria-pressed="true"] { background:var(--encre); color:var(--fond); border-color:var(--encre); }
+  .progres { display:flex; align-items:center; gap:10px; margin:4px 0 10px; font-size:13px; font-weight:700; color:var(--doux); }
+  .progres-barre { flex:1; height:8px; border-radius:99px; background:var(--gris); overflow:hidden; }
+  .progres-barre i { display:block; height:100%; width:0; background:var(--ok); transition:width .2s; }
+  .suivant { font-size:13px; color:var(--doux); margin:6px 0 12px; min-height:18px; }
+  input[type=search] { width:100%; font-size:16px; color:var(--encre); background:var(--carte2); border:1.5px solid var(--bord); border-radius:12px; padding:11px 12px; min-height:48px; }
+  .contact { display:flex; align-items:center; gap:8px; padding:9px 2px; border-bottom:1px solid var(--bord); }
+  .contact .c-nom { flex:1; min-width:0; }
+  .contact .c-nom b { display:block; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .contact .c-nom small { font-size:12px; color:var(--doux); }
+  .contact > button { min-height:40px; font-size:14px; padding:0 12px; flex:none; }
+  .contact.fait .c-nom b { color:var(--ok); }
+  #listeContacts { margin-top:8px; max-height:60vh; overflow-y:auto; }
   .wave-groupe { margin:18px 0 8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--doux); }
   .wave-grille { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:8px; }
   button.wave-btn { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; min-height:64px; padding:10px 14px; border-radius:14px;
@@ -449,6 +493,19 @@
       </div>
       <div class="retour" id="retourCuisine" role="status"></div>
 
+      <span class="etiquette avec-info">Sauvegarde GitHub<button type="button" class="savoir" data-info="donnees">En savoir plus</button></span>
+      <p class="aide" id="infoDonnees"></p>
+      <label class="aide" for="cleDonnees" style="display:block;margin:0 0 6px">Clé d’accès « données »</label>
+      <input type="password" id="cleDonnees" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="github_pat_…">
+      <div class="rang"><button type="button" class="principal" id="btnCleDonnees">Enregistrer et tester</button></div>
+      <div class="retour" id="retourDonnees" role="status"></div>
+
+      <span class="etiquette">Envois : ouvrir avec</span>
+      <div class="segmente" role="group" aria-label="Application WhatsApp pour les envois" id="waApp">
+        <button type="button" data-wa="business" aria-pressed="true">WhatsApp Business</button>
+        <button type="button" data-wa="standard" aria-pressed="false">WhatsApp</button>
+      </div>
+
       <span class="etiquette avec-info">Fichier du jour<button type="button" class="savoir" data-info="fichier">En savoir plus</button></span>
       <div class="rang">
         <button type="button" class="principal" id="btnSauveJour">Sauvegarder le fichier du jour</button>
@@ -489,6 +546,11 @@
     <h2 id="titreBilan">Bilan</h2>
     <div class="nav-jour" id="navJourBilan"></div>
     <div class="kpis" id="kpis" aria-live="polite"></div>
+    <div class="fin-soiree">
+      <button type="button" class="principal gros" id="btnFinSoiree">La vente est finie : sauvegarder sur GitHub</button>
+      <div class="etat-gh" id="etatGh" aria-live="polite"></div>
+      <div class="retour" id="retourGh" role="status"></div>
+    </div>
     <div id="detailBilan"></div>
     <div class="rang">
       <button type="button" class="principal" id="btnBilanWa">Envoyer le bilan sur WhatsApp</button>
@@ -498,6 +560,39 @@
     <div class="retour" id="retourBilan" role="status"></div>
     <h3 class="st">Tous les jours</h3>
     <div id="tousJours"></div>
+  </section>
+
+  <!-- ===================== ENVOIS ===================== -->
+  <section class="bloc" id="vueEnvois" aria-labelledby="titreEnvois">
+    <h2 id="titreEnvois">Envois<button type="button" class="savoir" data-info="envois">En savoir plus</button></h2>
+    <label class="etiquette" for="choixMsg" style="margin-top:0">Message</label>
+    <select id="choixMsg"></select>
+    <div class="segmente" role="group" aria-label="Destinataires" id="cibleEnvoi" style="margin-top:10px">
+      <button type="button" data-cible="contacts" aria-pressed="true">Contacts</button>
+      <button type="button" data-cible="groupe" aria-pressed="false">Groupe</button>
+    </div>
+    <div class="apercu" id="apercuEnvoi"></div>
+    <button type="button" class="lien" id="btnApercuTout">Voir tout le message</button>
+    <div id="zoneGroupe" hidden>
+      <button type="button" class="principal gros" id="btnGroupe">Copier et ouvrir le groupe</button>
+      <p class="suivant" id="infoGroupe"></p>
+    </div>
+    <div id="zoneContacts">
+      <div class="puces-listes" id="listesEnvoi" role="group" aria-label="Liste"></div>
+      <div class="progres"><div class="progres-barre"><i id="barreEnvoi"></i></div><span id="texteProgres"></span></div>
+      <button type="button" class="principal gros" id="btnSuivant">Envoyer au suivant</button>
+      <p class="suivant" id="infoSuivant"></p>
+      <input type="search" id="chercheContact" placeholder="Rechercher un contact" autocomplete="off">
+      <div id="listeContacts"></div>
+      <details class="outils" id="ajoutContactBloc">
+        <summary>Ajouter un contact</summary>
+        <label class="etiquette" for="ajoutNom">Nom</label><input type="text" id="ajoutNom" autocomplete="off" placeholder="facultatif">
+        <label class="etiquette" for="ajoutTel">Numéro WhatsApp</label><input type="text" id="ajoutTel" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
+        <div class="rang"><button type="button" class="principal" id="btnAjoutContact">Ajouter au carnet</button></div>
+        <div class="retour" id="retourAjout" role="status"></div>
+      </details>
+    </div>
+    <p class="aide" id="etatContacts"></p>
   </section>
 
   <!-- ===================== PAIEMENT WAVE ===================== -->
@@ -524,6 +619,7 @@
   <button type="button" data-vue="liste" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span id="texteNavListe">Liste</span></button>
   <button type="button" data-vue="bilan" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Bilan</button>
   <button type="button" data-vue="wave" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v11H3zM3 10.5h18M7 14.5h4"/></svg>Wave</button>
+  <button type="button" data-vue="envois" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7 2.5 2.5 7L21 3zM10 13l5-5"/></svg>Envois</button>
 </nav>
 
 <div class="voile" id="voileEcrire" hidden>
@@ -590,12 +686,16 @@
 <template id="info-restaurer" data-titre="Restaurer depuis un fichier"><p>Les commandes du fichier sont <b>ajoutées ou mises à jour</b>, jamais effacées : tu peux restaurer sans risque.</p></template>
 <template id="info-transfert" data-titre="Transférer vers un autre appareil"><p>Sur l’autre appareil, colle le code et touche « Importer » : les commandes sont <b>ajoutées ou mises à jour</b>, sans rien effacer.</p><p><b>Confidentiel</b> : le code contient les numéros des clients. Ne le partage qu’avec ta partenaire.</p></template>
 <template id="info-zero" data-titre="Remise à zéro"><ul><li>Il n’y a pas de « clôture » : chaque soirée a son propre enregistrement et le jour suivant démarre tout seul.</li><li>Ce bouton efface seulement les commandes du jour affiché, après avoir créé un fichier de sauvegarde.</li><li>Les commandes effacées restent <b>récupérables pendant 30 jours</b>.</li></ul></template>
+<template id="info-donnees" data-titre="Sauvegarde GitHub"><ul><li>En fin de soirée, le bouton <b>« La vente est finie »</b> (onglet Bilan) enregistre toutes les commandes du jour, numéros et paiements compris, avec le bilan, dans ton dépôt privé <b>atelier-donnees</b>.</li><li>« Sur GitHub » ne s’affiche qu’après vérification : GitHub renvoie l’empreinte du fichier, l’application la compare.</li><li>Sans réseau, l’envoi reste en attente et repart tout seul.</li><li>Les contacts de l’onglet Envois et l’historique des envois sont aussi gardés dans ce dépôt.</li><li>Cette clé ne va <b>que sur ton téléphone</b>, jamais sur celui de la cuisine.</li></ul></template>
+<template id="info-envois" data-titre="Envois"><ul><li>Le message du jour est choisi tout seul ; tu peux en prendre un autre dans la liste.</li><li><b>Contacts</b> : « Envoyer au suivant » ouvre WhatsApp sur le prochain contact, message déjà écrit, et le coche.</li><li><b>Clients d’hier</b> : les clients de la veille qui ont laissé leur numéro, pour la relance (merci et avis).</li><li><b>Groupe</b> : le message est copié et le groupe s’ouvre ; colle-le.</li><li>Les envois du jour sont gardés dans le téléphone et dans le dépôt privé (historique).</li></ul></template>
+<template id="info-bilan" data-titre="Bilan"><ul><li>Montants estimés avec les prix des packs (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F), <b>sans les frais de livraison</b>.</li><li>Les paiements sont ceux que tu as marqués « Payé ».</li></ul></template>
 <template id="info-wave" data-titre="Paiement Wave"><ul><li><b>QR Wave</b> : plein écran, même sans internet. Le client scanne avec son application Wave et saisit le montant.</li><li><b>Liens</b> : choisis le site, puis touche ce que la chambre a commandé. Le message de paiement est copié, montant compris : packs + livraison + 1 % Wave.</li><li>Une seule livraison par chambre. <b>Centre</b> : 100 F, offerte dès qu’il y a un MAXI ou un MÉGA. <b>Sud</b> : 200 F, offerte avec un MÉGA.</li><li>Crêpes à l’unité : crée le lien dans l’application Wave.</li></ul></template>
 <template id="info-ecrire" data-titre="Écrire au client"><p>WhatsApp s’ouvre sur la conversation du client, message déjà écrit : il reste à appuyer sur « Envoyer ». Le contact n’est pas enregistré dans ton téléphone.</p><p>Si WhatsApp et WhatsApp Business sont installés, Android peut demander lequel ouvrir.</p></template>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastTexte"></span><button type="button" id="toastAnnuler">Annuler</button></div>
 
 <script src="relais-github.js"></script>
+<script src="messages-envois.js"></script>
 <script>
 (function () {
   "use strict";
@@ -699,7 +799,7 @@
     return e || migrerV1() || vide();
   }
   var etat = charger();
-  var ui = { filtre: "tous", vue: "saisir", livreesOuvert: true, partenaire: "", livreur: "m", dernierMsg: "m1", avecNumeros: false, waveSite: "C" };
+  var ui = { filtre: "tous", vue: "saisir", livreesOuvert: true, partenaire: "", livreur: "m", dernierMsg: "m1", avecNumeros: false, waveSite: "C", waApp: "business" };
   try { var u = JSON.parse(lire(CLE_UI) || "{}"); for (var cle in u) if (cle in ui) ui[cle] = u[cle]; } catch (e) {}
   function sauverUi() { ecrire(CLE_UI, JSON.stringify(ui)); }
 
@@ -1057,7 +1157,8 @@
     var visibles = tout.filter(function (c) { return ui.filtre === "tous" || c.site === ui.filtre; });
     var s = somme(visibles);
     $("totaux").replaceChildren(visibles.length
-      ? el("span", null, el("b", { text: plur(visibles.length, "commande", "commandes") }), " à livrer — à préparer : ", el("b", { text: s.nature + " Nature" }), " · ", el("b", { text: s.nutella + " Nutella" }), " (" + plur(s.total, "crêpe", "crêpes") + ")")
+      ? el("span", null, el("b", { text: plur(visibles.length, "commande", "commandes") }), " à livrer — à préparer : ", el("b", { text: s.nature + " Nature" }), " · ", el("b", { text: s.nutella + " Nutella" }), " (" + plur(s.total, "crêpe", "crêpes") + ")",
+          visibles.some(function (c) { return !c.emb; }) ? el("span", { class: "reste-emb" }, " · reste à emballer : ", el("b", { text: String(visibles.filter(function (c) { return !c.emb; }).length) })) : " · tout est emballé")
       : "Rien à préparer pour l’instant.");
     var zone = $("liste"); zone.replaceChildren();
     if (!visibles.length) {
@@ -1082,14 +1183,16 @@
             membres.length > 1 ? btnTout : null)));
       }
       var cc = compte(c.q), avecPack = (c.q.mini || c.q.maxi || c.q.mega) > 0;
-      carte.append(el("div", { class: "ligne" },
-        el("div", { class: "ch" }, el("small", { text: "Chambre" }), el("b", { text: c.chambre }), el("span", { class: "heure", text: heureDe(c.t) }), cuisinePrete(c.id) ? el("span", { class: "prete-badge", text: "Prête" }) : null),
-        el("div", null,
-          el("div", { class: "pack", text: libelle(c.q) }),
-          el("div", { class: "compo", text: (avecPack ? composition(cc) + " · " : "") + plur(cc.total, "crêpe", "crêpes") }),
-          c.tel ? el("div", { class: "compo", text: "Tél. " + joliTel(c.tel) }) : null,
-          null),
-        el("button", { type: "button", class: "livre", "data-act": "livrer", "data-id": c.id, "aria-label": "Marquer livrée : " + lieu(c), text: "Livré" }),
+      carte.append(el("div", { class: "ligne v3" + (c.emb ? " emballee" : "") },
+        el("div", { class: "l-tete" },
+          el("div", { class: "l-lieu" }, "Rés. " + c.res, el("span", { class: "l-sep", text: "·" }), "Ch. " + c.chambre),
+          el("span", { class: "heure", text: heureDe(c.t) })),
+        el("div", { class: "l-compo" }, el("b", { text: libelle(c.q) }), " · " + (avecPack ? composition(cc) + " · " : "") + plur(cc.total, "crêpe", "crêpes")),
+        c.tel ? el("div", { class: "l-tel", text: "Tél. " + joliTel(c.tel) }) : null,
+        cuisinePrete(c.id) ? el("span", { class: "prete-badge", text: "Prête en cuisine" }) : null,
+        el("div", { class: "l-actions" },
+          el("button", { type: "button", class: "emb", "data-act": "emballer", "data-id": c.id, "aria-pressed": String(!!c.emb), "aria-label": (c.emb ? "Emballée : " : "Marquer emballée : ") + lieu(c), text: c.emb ? "Emballée" : "Emballer" }),
+          el("button", { type: "button", class: "livre", "data-act": "livrer", "data-id": c.id, "aria-label": "Marquer livrée : " + lieu(c), text: "Livré" })),
         el("div", { class: "liens" },
           el("button", { type: "button", class: "pay", "data-act": "payer", "data-id": c.id, "aria-pressed": String(!!c.paye), "aria-label": "Paiement : " + lieu(c), text: c.paye ? "Payé" : "Non payé" }),
           el("button", { type: "button", class: "lien ecrire", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "Message" }),
@@ -1198,6 +1301,7 @@
   }
   function rendreBilan() {
     construireNavJour($("navJourBilan"));
+    if (typeof depotDonnees !== "undefined") majEtatGh();
     var b = bilanDe(etat.commandes), zone = $("detailBilan");
     $("kpis").replaceChildren(kpi(b.commandes, "commandes"), kpi(b.livrees, "livrées"), kpi(b.aLivrer, "à livrer"), kpi(b.crepes, "crêpes"));
     zone.replaceChildren();
@@ -1206,10 +1310,9 @@
       var res = Object.keys(b.parRes).map(function (k) { var a = k.split("|"); return { site: a[0], res: a[1], n: b.parRes[k] }; })
         .sort(function (x, y) { return ORDRE_SITES.indexOf(x.site) - ORDRE_SITES.indexOf(y.site) || cleRes(x.site, x.res) - cleRes(y.site, y.res); });
       zone.append(
-        el("h3", { class: "st", text: "Paiements" }),
+        el("h3", { class: "st avec-info" }, "Paiements", el("button", { type: "button", class: "savoir", "data-info": "bilan", text: "En savoir plus" })),
         tableau(["Situation", "Commandes", "Montant estimé"], [["Payées", b.payees, fcfa(b.caPaye)], ["Livrées, non payées (à encaisser)", b.dues, fcfa(b.caDu)], ["Pas encore livrées, non payées", b.nonLivreesNonPayees, fcfa(b.caAttente)]],
                 ["Total", b.commandes, fcfa(b.caEstime)]),
-        el("p", { class: "estim", text: "Montants calculés avec les prix des packs, sans les frais de livraison : ce sont des estimations. Les paiements sont ceux que tu as marqués « Payé »." }),
         el("h3", { class: "st", text: "Ce qui a été commandé" }),
         tableau(["Produit", "Quantité"], [["MINI", b.packs.mini], ["MAXI", b.packs.maxi], ["MÉGA", b.packs.mega], ["Nature à l’unité", b.unites.nature], ["Nutella à l’unité", b.unites.nutella]],
                 ["Total des crêpes", b.crepes + " (" + b.nature + " Nature + " + b.nutella + " Nutella)"]),
@@ -1219,7 +1322,6 @@
         tableau(["Résidence", "Commandes"], res.map(function (r) { return [SITES[r.site].nom + " · " + r.res, r.n]; })),
         el("h3", { class: "st", text: "Ventes estimées" }),
         el("p", { class: "gros-chiffre", text: fcfa(b.caEstime) }),
-        el("p", { class: "estim", text: "Estimation calculée avec les prix (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F). Sans les frais de livraison et sans la crêpe offerte du 10 octobre ; les paiements sont suivis dans la section « Paiements »." }),
         el("h3", { class: "st", text: "Horaires" }),
         el("p", { class: "aide", text: "Première commande à " + heureDe(b.premiere) + " · dernière à " + heureDe(b.derniere) +
           (b.derniereLivraison ? " · dernière livraison à " + heureDe(b.derniereLivraison) : "") +
@@ -1233,10 +1335,11 @@
       var lignes = jours.map(function (j) {
         var x = bilanDe(etat.jours[j].commandes); tot.c += x.commandes; tot.l += x.livrees; tot.d += x.dues; tot.cr += x.crepes; tot.ca += x.caEstime;
         var voir = el("button", { type: "button", "data-jour": j, text: j === etat.jourVu ? "affiché" : "Voir" }); voir.disabled = j === etat.jourVu;
-        return [nomJour(j), x.commandes, x.livrees, x.dues, x.crepes, fcfa(x.caEstime), voir];
+        var eg = etatGhJour(j);
+        return [nomJour(j), x.commandes, x.livrees, x.dues, x.crepes, fcfa(x.caEstime), eg === "ok" ? "oui" : eg === "modifie" ? "à refaire" : eg === "attente" ? "en attente" : "non", voir];
       });
-      zj.append(el("div", { class: "defile" }, tableau(["Jour", "Commandes", "Livrées", "À encaisser", "Crêpes", "Ventes estimées", ""], lignes,
-        ["Total (" + plur(jours.length, "jour", "jours") + ")", tot.c, tot.l, tot.d, tot.cr, fcfa(tot.ca), ""])));
+      zj.append(el("div", { class: "defile" }, tableau(["Jour", "Commandes", "Livrées", "À encaisser", "Crêpes", "Ventes estimées", "Sur GitHub", ""], lignes,
+        ["Total (" + plur(jours.length, "jour", "jours") + ")", tot.c, tot.l, tot.d, tot.cr, fcfa(tot.ca), "", ""])));
     }
     if (etat.histo.length) zj.append(el("p", { class: "aide", text: "Soirées de la version 1 (résumés sans détail) : " + etat.histo.map(function (h) { return frDate(h.date) + " : " + h.commandes + " commandes"; }).join(" · ") + "." }));
   }
@@ -1273,6 +1376,7 @@
       muter("Résidence " + b.dataset.res + " : " + plur(membres.length, "commande livrée", "commandes livrées"), function () { membres.forEach(function (x) { x.livre = true; x.tl = maintenant; x.maj = maintenant; }); });
     }
     else if (act === "payer" && c) muter(c.paye ? "Marquée non payée : " + lieu(c) : "Payée : " + lieu(c), function () { c.paye = !c.paye; c.tp = c.paye ? maintenant : null; c.maj = maintenant; });
+    else if (act === "emballer" && c) { c.emb = !c.emb; c.te = c.emb ? maintenant : null; c.maj = maintenant; vibrer(c.emb ? 25 : 10); sauver(); rendre(); noterChangement(); }
     else if (act === "ecrire" && c) { ouvrirEcrire(c.id); }
     else if (act === "modifier" && c) {
       edition = c.id; etat.saisie.site = c.site; etat.saisie.res = c.res; $("chambre").value = c.chambre; $("telClient").value = c.tel ? joliTel(c.tel) : ""; $("dejaPaye").checked = !!c.paye;
@@ -1369,7 +1473,7 @@
     var q = {}, total = 0; PACKS.forEach(function (p) { var n = Math.max(0, Math.min(99, parseInt(c.q && c.q[p.id], 10) || 0)); q[p.id] = n; total += n; });
     if (!total) return null;
     var t = Number(c.t) || Date.now();
-    return { id: c.id, site: c.site, res: String(c.res), chambre: ch, q: q, tel: normaliserTel(c.tel).tel || "", paye: !!c.paye, tp: c.paye ? (Number(c.tp) || Number(c.maj) || t) : null, t: t, maj: Number(c.maj) || t, livre: !!c.livre, tl: c.livre ? (Number(c.tl) || Number(c.maj) || t) : null };
+    return { id: c.id, site: c.site, res: String(c.res), chambre: ch, q: q, tel: normaliserTel(c.tel).tel || "", paye: !!c.paye, tp: c.paye ? (Number(c.tp) || Number(c.maj) || t) : null, t: t, maj: Number(c.maj) || t, livre: !!c.livre, tl: c.livre ? (Number(c.tl) || Number(c.maj) || t) : null, emb: !!c.emb, te: c.emb ? (Number(c.te) || Number(c.maj) || t) : null };
   }
   function retourCode(message, type) { var r = $("retourCode"); r.textContent = message; r.className = "retour " + (type || ""); }
   function retourFichier(message, type) { var r = $("retourFichier"); r.textContent = message; r.className = "retour " + (type || ""); }
@@ -1590,7 +1694,7 @@
     var j = etat.jours[jour], liste = j ? j.commandes.slice().sort(function (a, b) { return a.t - b.t; }) : [];
     return liste.map(function (c) {
       var n = compte(c.q);
-      return { id: c.id, site: c.site, res: c.res, chambre: c.chambre, pack: libelle(c.q), nature: n.nature, nutella: n.nutella, t: c.t, maj: c.maj, livre: !!c.livre };
+      return { id: c.id, site: c.site, res: c.res, chambre: c.chambre, pack: libelle(c.q), nature: n.nature, nutella: n.nutella, t: c.t, maj: c.maj, livre: !!c.livre, emb: !!c.emb };
     });
   }
   function cuisineProgrammer(delai) {
@@ -1598,9 +1702,9 @@
     majEtatCuisine();
     if (!cuisineBranchee()) return;
     clearTimeout(cuisineEtat.minuterie);
-    cuisineEtat.minuterie = setTimeout(cuisineEnvoyer, delai == null ? 1500 : delai);
+    cuisineEtat.minuterie = setTimeout(cuisineEnvoyer, delai == null ? 300 : delai);   // V6.3 : 300 ms (1,5 s laissait le temps de passer sur WhatsApp)
   }
-  function cuisineEnvoyer(forcer) {   // -> promesse ; ne fait rien si la soirée n'a pas changé depuis le dernier envoi réussi
+  function cuisineEnvoyer(forcer, garder) {   // -> promesse ; ne fait rien si la soirée n'a pas changé depuis le dernier envoi réussi
     if (!cuisineBranchee()) return Promise.resolve();
     if (cuisineEtat.enCours) { cuisineEtat.encore = true; return Promise.resolve(); }
     var jour = soireeCourante(), liste = cuisineInstantane(jour), empreinte = JSON.stringify(liste);
@@ -1612,7 +1716,7 @@
     cuisineEtat.enCours = true; cuisineEtat.encore = false; majEtatCuisine();
     var shaConnu = cuisineEtat.sha === undefined ? gh.lire(chemin).then(function (r) { return r.sha; }) : Promise.resolve(cuisineEtat.sha);
     return shaConnu.then(function (sha) {
-      return gh.ecrire(chemin, texte, sha, "Commandes du " + jour + " : " + aFaire + " à préparer, " + liste.length + " en tout");
+      return gh.ecrire(chemin, texte, sha, "Commandes du " + jour + " : " + aFaire + " à préparer, " + liste.length + " en tout", !!garder);
     }).then(function (r) {
       if (!r.verifie) throw { code: "autre", message: "GitHub n’a pas confirmé l’enregistrement." };
       cuisineEtat.sha = r.sha; cuisineEtat.envoye = empreinte; cuisineEtat.ok = Date.now(); cuisineEtat.erreur = null;
@@ -1709,7 +1813,12 @@
     majEtatCuisine();
     if (cuisineBranchee()) { cuisineProgrammer(0); cuisineLirePretes(); }
     setInterval(function () { cuisineLirePretes(); majEtatCuisine(); }, 15000);
-    document.addEventListener("visibilitychange", function () { if (!document.hidden && cuisineBranchee()) { cuisineProgrammer(0); cuisineLirePretes(); } });
+    document.addEventListener("visibilitychange", function () {
+      if (!cuisineBranchee()) return;
+      if (document.hidden) { clearTimeout(cuisineEtat.minuterie); cuisineEnvoyer(false, true); }   // départ vers WhatsApp : l'envoi part tout de suite et se termine en arrière-plan
+      else { cuisineProgrammer(0); cuisineLirePretes(); }
+    });
+    window.addEventListener("pagehide", function () { if (cuisineBranchee()) cuisineEnvoyer(false, true); });
     window.addEventListener("online", function () { if (cuisineBranchee()) cuisineProgrammer(0); });
   }
 
@@ -1814,6 +1923,318 @@
     });
   })();
 
+  /* ---------- Sauvegarde GitHub des soirées (V6.3, D-087) ----------
+     Dépôt PRIVÉ « atelier-donnees », clé « données » gardée sur CE téléphone seulement (jamais sur celui de la cuisine).
+     Fichier : commandes/AAAA/AAAA-MM-JJ.json = toutes les commandes du jour (numéros et paiements compris) + le bilan.
+     « Sur GitHub » n'est affiché qu'après vérification de l'empreinte renvoyée par GitHub (RelaisGitHub.ecrire → verifie). */
+  var DONNEES_PROPRIETAIRE = "diakitedaoudabakarypro-sketch", DONNEES_DEPOT = "atelier-donnees", CLE_DONNEES = "atelier_donnees_v1";
+  var depotDonnees = { cle: "" };
+  try { var dn = JSON.parse(lire(CLE_DONNEES) || "{}"); if (dn && typeof dn.cle === "string") depotDonnees.cle = dn.cle; } catch (e) {}
+  function donneesClient() { return RelaisGitHub.client({ proprietaire: DONNEES_PROPRIETAIRE, depot: DONNEES_DEPOT, cle: depotDonnees.cle }); }
+  function donneesBranchees() { return !!(depotDonnees.cle && window.RelaisGitHub && window.crypto && crypto.subtle && !enFichierCuisine); }
+  function empreinte(texte) { var h = 5381; for (var i = 0; i < texte.length; i++) h = ((h << 5) + h + texte.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+  function commandesDu(j) { return (etat.jours[j] ? etat.jours[j].commandes : []).slice().sort(function (a, b) { return a.t - b.t; }); }
+  function cheminSoiree(j) { return "commandes/" + j.slice(0, 4) + "/" + j + ".json"; }
+  function suiviGh(j) { var s = suiviLire(j); return s.gh || null; }
+  function ecrireSuiviGh(j, gh) { var s = suiviLire(j); s.gh = gh; suiviEcrire(j, s); }
+  var ghEnCours = {};
+  function sauverSoireeGitHub(j, silencieux) {   // -> promesse
+    if (!donneesBranchees()) { if (!silencieux) retourGh("Branche d’abord la sauvegarde GitHub (Outils, « Sauvegarde GitHub »).", "erreur"); return Promise.resolve(false); }
+    if (ghEnCours[j]) return Promise.resolve(false);
+    var cmds = commandesDu(j);
+    if (!cmds.length) { if (!silencieux) retourGh("Aucune commande ce jour-là : rien à sauvegarder.", "erreur"); return Promise.resolve(false); }
+    var h = empreinte(JSON.stringify(cmds)), b = bilanDe(cmds);
+    var texte = JSON.stringify({ application: "ATELIER-COMMANDES", type: "soiree", version: 3, jour: j, enregistreLe: new Date().toISOString(), source: "application",
+      confidentiel: cmds.some(function (c) { return c.tel; }), commandes: cmds, bilan: b }, null, 1);
+    var avant = suiviGh(j) || {}; ghEnCours[j] = true;
+    ecrireSuiviGh(j, { t: avant.t || 0, sha: avant.sha || null, commit: avant.commit || null, h: avant.h || null, attente: true }); sauver(); majEtatGh();
+    var gh = donneesClient(), chemin = cheminSoiree(j);
+    var message = "Soirée du " + j + " : " + plur(b.commandes, "commande", "commandes") + ", " + b.crepes + " crêpes, " + fcfa(b.caEstime) + " estimés";
+    function essai(sha, deuxieme) {
+      return gh.ecrire(chemin, texte, sha, message, true).catch(function (e) {
+        if (e && e.code === "conflit" && !deuxieme) return gh.lire(chemin).then(function (r) { return essai(r.sha, true); });
+        throw e;
+      });
+    }
+    var shaConnu = avant.sha ? Promise.resolve(avant.sha) : gh.lire(chemin).then(function (r) { return r.sha; });
+    return shaConnu.then(function (sha) { return essai(sha, false); }).then(function (r) {
+      if (!r.verifie) throw { code: "autre", message: "GitHub n’a pas confirmé l’enregistrement." };
+      ecrireSuiviGh(j, { t: Date.now(), sha: r.sha, commit: r.commit, h: h, attente: false });
+      delete ghEnCours[j]; sauver(); majEtatGh(); rendreBilan();
+      if (!silencieux) { retourGh("Sauvegardé sur GitHub et vérifié à " + heureDe(Date.now()) + ".", "ok"); vibrer(30); }
+      return true;
+    }).catch(function (e) {
+      delete ghEnCours[j]; majEtatGh();
+      if (!silencieux) retourGh("Pas encore sur GitHub : " + ((e && e.message) || "erreur") + (e && e.code === "reseau" ? " Nouvel essai automatique au retour du réseau." : ""), "erreur");
+      return false;
+    });
+  }
+  function retourGh(message, type) { var r = $("retourGh"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function etatGhJour(j) {   // "ok" | "modifie" | "attente" | "aucun"
+    var g = suiviGh(j); if (!g) return "aucun";
+    if (g.attente) return "attente";
+    return g.h === empreinte(JSON.stringify(commandesDu(j))) ? "ok" : "modifie";
+  }
+  function majEtatGh() {
+    var j = etat.jourVu, g = suiviGh(j), e = etatGhJour(j), z = $("etatGh");
+    var auj = j === soireeCourante();
+    $("btnFinSoiree").textContent = e === "ok" ? "Sauvegarder à nouveau sur GitHub" : auj ? "La vente est finie : sauvegarder sur GitHub" : "Sauvegarder ce jour sur GitHub";
+    $("btnFinSoiree").disabled = !commandesDu(j).length;
+    z.replaceChildren();
+    if (!depotDonnees.cle) { z.textContent = "Sauvegarde GitHub non branchée (Outils)."; z.className = "etat-gh"; return; }
+    if (e === "ok") {
+      z.className = "etat-gh ok";
+      z.append("Sur GitHub depuis " + heureDe(g.t) + " (" + frDate(ymd(new Date(g.t))) + ")");
+      if (g.commit) z.append(" · ", el("a", { href: "https://github.com/" + DONNEES_PROPRIETAIRE + "/" + DONNEES_DEPOT + "/commit/" + g.commit, target: "_blank", rel: "noopener", text: "version " + g.commit.slice(0, 7) }));
+    }
+    else if (e === "modifie") { z.className = "etat-gh attention"; z.textContent = "Modifié depuis la sauvegarde de " + heureDe(g.t) + " : appuie à nouveau."; }
+    else if (e === "attente") { z.className = "etat-gh attention"; z.textContent = ghEnCours[j] ? "Envoi vers GitHub…" : "En attente d’envoi vers GitHub (nouvel essai au retour du réseau)."; }
+    else { z.className = "etat-gh"; z.textContent = commandesDu(j).length ? "Pas encore sur GitHub." : ""; }
+  }
+  function reessayerGh() {
+    if (!donneesBranchees()) return;
+    Object.keys(etat.sauvegarde.jours || {}).forEach(function (j) { var g = suiviGh(j); if (g && g.attente && !ghEnCours[j]) sauverSoireeGitHub(j, true); });
+  }
+  $("btnFinSoiree").addEventListener("click", function () { sauverSoireeGitHub(etat.jourVu, false); });
+  function retourDonnees(message, type) { var r = $("retourDonnees"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function majInfoDonnees() { $("infoDonnees").textContent = depotDonnees.cle ? "Branchée : dépôt privé « " + DONNEES_DEPOT + " »." : "Non branchée."; }
+  $("btnCleDonnees").addEventListener("click", function () {
+    var c = $("cleDonnees").value.trim();
+    if (!c) { depotDonnees.cle = ""; ecrire(CLE_DONNEES, JSON.stringify(depotDonnees)); majInfoDonnees(); majEtatGh(); rendreEnvois(); retourDonnees("Clé effacée de ce téléphone.", "ok"); return; }
+    if (/\s/.test(c)) { retourDonnees("La clé ne doit pas contenir d’espace : recopie-la en entier.", "erreur"); return; }
+    retourDonnees("Test de la clé…", "");
+    var gh = RelaisGitHub.client({ proprietaire: DONNEES_PROPRIETAIRE, depot: DONNEES_DEPOT, cle: c }), chemin = "verifications/derniere-verification.json";
+    gh.tester().then(function () { return gh.lire(chemin); }).then(function (r) {
+      return gh.ecrire(chemin, JSON.stringify({ application: "ATELIER-COMMANDES", verifieLe: new Date().toISOString() }, null, 1) + "\n", r.sha, "Vérification de la clé « données »");
+    }).then(function (r) {
+      if (!r.verifie) throw { message: "GitHub n’a pas confirmé l’écriture." };
+      depotDonnees.cle = c; ecrire(CLE_DONNEES, JSON.stringify(depotDonnees)); majInfoDonnees(); majEtatGh();
+      retourDonnees("Clé acceptée : écriture vérifiée sur GitHub à " + heureDe(Date.now()) + ".", "ok");
+      chargerContactsGitHub(); reessayerGh();
+    }).catch(function (e) { retourDonnees((e && e.message) || "Test impossible.", "erreur"); });
+  });
+
+  /* ---------- Envois (V6.3, D-087) : message du jour, carnet de contacts, « Clients d'hier », progression un par un ----------
+     Messages : messages-envois.js (écrit par generer_messages_semaine.py). Contacts : contacts.json du dépôt privé (copie dans le téléphone).
+     Envois du jour : envois/AAAA-MM-JJ.json du dépôt privé (historique des messages envoyés). */
+  var MSGS = (window.MESSAGES_ENVOIS || []).slice(), GROUPES = (window.GROUPES_ENVOIS || []).slice();
+  var REF_LUNDI = "2026-10-12", CLE_CONTACTS = "atelier_contacts_v1", CLE_ENVOIS = "atelier_envois_v1";
+  var carnet = { contacts: [], sha: null, sale: false, chargeLe: 0, ok: 0, erreur: null };
+  try { var cn = JSON.parse(lire(CLE_CONTACTS) || "{}"); if (cn && Array.isArray(cn.contacts)) carnet = Object.assign(carnet, cn, { erreur: null }); } catch (e) {}
+  var envois = { jours: {} }; try { var ev = JSON.parse(lire(CLE_ENVOIS) || "{}"); if (ev && ev.jours) envois = ev; } catch (e) {}
+  var sel = { base: null, cible: "contacts", liste: "tous", recherche: "", apercuTout: false };
+  function sauverCarnet() { ecrire(CLE_CONTACTS, JSON.stringify({ contacts: carnet.contacts, sha: carnet.sha, sale: carnet.sale, chargeLe: carnet.chargeLe, ok: carnet.ok })); }
+  function sauverEnvois() {
+    var garde = Object.keys(envois.jours).sort().slice(-14), n = {}; garde.forEach(function (j) { n[j] = envois.jours[j]; }); envois.jours = n;
+    ecrire(CLE_ENVOIS, JSON.stringify(envois));
+  }
+  function baseDe(id) { return id.replace(/[pg]$/, ""); }
+  function bases() { var vu = {}, r = []; MSGS.forEach(function (m) { var b = baseDe(m.id); if (!vu[b]) { vu[b] = 1; r.push(b); } }); return r; }
+  function variante(b, cible) {
+    var p = MSGS.find(function (m) { return m.id === b + "p"; }), g = MSGS.find(function (m) { return m.id === b + "g"; });
+    return cible === "groupe" ? (g || p) : (p || g);
+  }
+  function numeroSemaine(iso) { return Math.floor(Math.round((dateDe(iso) - dateDe(REF_LUNDI)) / 86400000) / 7); }
+  function varianteDuJour(semaine, iso) {
+    var vs = []; MSGS.forEach(function (m) { if (m.semaine === semaine && vs.indexOf(m.variante || 1) < 0) vs.push(m.variante || 1); }); vs.sort();
+    return vs.length ? vs[((numeroSemaine(iso) % vs.length) + vs.length) % vs.length] : 1;
+  }
+  function baseDuJour() {
+    var j = soireeCourante(), s = dateDe(j).getDay(), v = varianteDuJour(s, j);
+    var m = MSGS.find(function (x) { return x.semaine === s && (x.variante || 1) === v; });
+    return m ? baseDe(m.id) : (MSGS[0] ? baseDe(MSGS[0].id) : null);
+  }
+  function construireChoixMsg() {
+    var s = $("choixMsg"); s.replaceChildren();
+    var j = soireeCourante(), auj = dateDe(j).getDay(), duJour = baseDuJour();
+    var groupes = [["Aujourd’hui", []], ["Pendant la soirée", []], ["Après la soirée", []], ["Autres jours", []]];
+    bases().forEach(function (b) {
+      var m = variante(b, "contacts"), lib = m.titre;
+      if (b === duJour) groupes[0][1].push([b, lib]);
+      else if (m.rubrique === "soiree") groupes[1][1].push([b, lib]);
+      else if (m.rubrique === "apres") groupes[2][1].push([b, lib]);
+      else groupes[3][1].push([b, JOURS_FR[m.semaine].replace(/^./, function (c) { return c.toUpperCase(); }) + " · " + lib, ((m.semaine - auj + 7) % 7) || 7]);
+    });
+    groupes[3][1].sort(function (a, b) { return a[2] - b[2]; });
+    groupes.forEach(function (g) {
+      if (!g[1].length) return;
+      var og = el("optgroup", { label: g[0] });
+      g[1].forEach(function (o) { og.append(el("option", { value: o[0], text: o[1] })); });
+      s.append(og);
+    });
+    if (!sel.base || !bases().some(function (b) { return b === sel.base; })) sel.base = duJour;
+    s.value = sel.base;
+  }
+  function envoisDuJour() { var j = soireeCourante(); return envois.jours[j] || (envois.jours[j] = {}); }
+  function cleEnvoi() { var m = variante(sel.base, sel.cible); return m ? m.id : ""; }
+  function clientsHier() {
+    var hier = addJours(soireeCourante(), -1), vus = {}, r = [];
+    (etat.jours[hier] ? etat.jours[hier].commandes : []).forEach(function (c) {
+      if (!c.tel || vus[c.tel]) return; vus[c.tel] = 1;
+      var k = carnet.contacts.find(function (x) { return x.tel === c.tel; });
+      r.push({ id: "cmd:" + c.id, nom: (k && k.nom ? k.nom + " · " : "") + "Rés. " + c.res + " · ch. " + c.chambre, tel: c.tel, listes: [] });
+    });
+    return r;
+  }
+  var NOMS_LISTES = { groupe: "Groupe", anciens: "Anciens clients" };
+  function listeCourante() {
+    if (sel.liste === "hier") return clientsHier();
+    if (sel.liste === "tous") return carnet.contacts;
+    return carnet.contacts.filter(function (c) { return (c.listes || []).indexOf(sel.liste) >= 0; });
+  }
+  function rendreEnvois() {
+    if (!$("vueEnvois")) return;
+    construireChoixMsg();
+    document.querySelectorAll("#cibleEnvoi button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.cible === sel.cible)); });
+    var m = variante(sel.base, sel.cible);
+    $("apercuEnvoi").textContent = m ? m.texte : "Aucun message.";
+    $("apercuEnvoi").classList.toggle("tout", sel.apercuTout);
+    $("btnApercuTout").textContent = sel.apercuTout ? "Réduire" : "Voir tout le message";
+    $("zoneGroupe").hidden = sel.cible !== "groupe"; $("zoneContacts").hidden = sel.cible === "groupe";
+    var faits = envoisDuJour()[cleEnvoi()] || {};
+    if (sel.cible === "groupe") {
+      var g = GROUPES[0], t = g && faits["groupe:" + g.nom];
+      $("infoGroupe").textContent = t ? "Publié dans « " + g.nom + " » à " + heureDe(t) + "." : "";
+    }
+    // listes
+    var zl = $("listesEnvoi"); zl.replaceChildren();
+    var puces = [["tous", "Tous", carnet.contacts.length], ["hier", "Clients d’hier", clientsHier().length]];
+    Object.keys(NOMS_LISTES).forEach(function (k) { var n = carnet.contacts.filter(function (c) { return (c.listes || []).indexOf(k) >= 0; }).length; if (n) puces.push([k, NOMS_LISTES[k], n]); });
+    puces.forEach(function (p) { zl.append(el("button", { type: "button", "data-liste": p[0], "aria-pressed": String(sel.liste === p[0]), text: p[1] + " (" + p[2] + ")" })); });
+    var liste = listeCourante(), nbFaits = liste.filter(function (c) { return faits[c.tel]; }).length;
+    $("barreEnvoi").style.width = (liste.length ? Math.round(100 * nbFaits / liste.length) : 0) + "%";
+    $("texteProgres").textContent = liste.length ? nbFaits + " / " + liste.length + " envoyés aujourd’hui" : "";
+    var suivant = liste.find(function (c) { return !faits[c.tel]; });
+    $("btnSuivant").disabled = !suivant;
+    $("btnSuivant").textContent = !liste.length ? (sel.liste === "hier" ? "Aucun client hier avec un numéro" : depotDonnees.cle ? "Aucun contact" : "Branche la sauvegarde GitHub pour charger les contacts") : suivant ? "Envoyer au suivant" : "Tous les envois sont faits";
+    $("infoSuivant").textContent = suivant ? "Suivant : " + (suivant.nom ? suivant.nom + " · " : "") + joliTel(suivant.tel) : "";
+    // contacts
+    var q = sel.recherche.trim().toLowerCase(), zc = $("listeContacts"); zc.replaceChildren();
+    var visibles = liste.filter(function (c) { return !q || (c.nom || "").toLowerCase().indexOf(q) >= 0 || c.tel.indexOf(q.replace(/\D/g, "") || "§") >= 0; });
+    visibles.slice(0, 300).forEach(function (c) {
+      var t = faits[c.tel];
+      zc.append(el("div", { class: "contact" + (t ? " fait" : "") },
+        el("div", { class: "c-nom" }, el("b", { text: c.nom || joliTel(c.tel) }), el("small", { text: [c.nom ? joliTel(c.tel) : "", t ? "envoyé à " + heureDe(t) : ""].filter(Boolean).join(" · ") })),
+        t ? el("button", { type: "button", class: "lien", "data-annuler-envoi": c.tel, text: "Annuler" }) : el("button", { type: "button", "data-envoyer": c.tel, text: "Envoyer" }),
+        sel.liste !== "hier" ? el("button", { type: "button", class: "lien", "data-supprimer-contact": c.id, "aria-label": "Supprimer " + (c.nom || c.tel), text: "Supprimer" }) : null));
+    });
+    var e = carnet.erreur;
+    $("etatContacts").textContent = !depotDonnees.cle ? "Contacts : sauvegarde GitHub non branchée." :
+      e ? "Contacts : " + e.message : carnet.sale ? "Contacts : modification en attente d’envoi vers GitHub." : carnet.ok ? "Contacts : " + carnet.contacts.length + " · sur GitHub (" + heureDe(carnet.ok) + ")." : "Contacts : chargement…";
+  }
+  function lienWhatsApp(tel, texte) {
+    var t = encodeURIComponent(texte), standard = "https://wa.me/" + tel + "?text=" + t;
+    if (ui.waApp !== "standard" && /Android/i.test(navigator.userAgent))
+      return "intent://send?phone=" + tel + "&text=" + t + "#Intent;scheme=whatsapp;package=com.whatsapp.w4b;S.browser_fallback_url=" + encodeURIComponent(standard) + ";end";
+    return standard;
+  }
+  function ouvrirLien(url) { if (/^intent:/.test(url)) location.href = url; else window.open(url, "_blank", "noopener"); }
+  function noterEnvoi(cle, cible) { var d = envoisDuJour(); (d[cle] = d[cle] || {})[cible] = Date.now(); envoisSale = true; sauverEnvois(); programmerEnvoisGh(); }
+  function annulerEnvoi(cle, cible) { var d = envoisDuJour(); if (d[cle]) delete d[cle][cible]; envoisSale = true; sauverEnvois(); programmerEnvoisGh(); }
+  function envoyerA(c) {
+    var m = variante(sel.base, "contacts"); if (!m) return;
+    ouvrirLien(lienWhatsApp(c.tel, m.texte));
+    var cle = m.id; noterEnvoi(cle, c.tel); rendreEnvois(); vibrer(20);
+    toast("Envoyé : " + (c.nom || joliTel(c.tel)), function () { annulerEnvoi(cle, c.tel); rendreEnvois(); });
+  }
+  $("choixMsg").addEventListener("change", function () { sel.base = this.value; sel.apercuTout = false; rendreEnvois(); });
+  $("cibleEnvoi").addEventListener("click", function (e) { var b = e.target.closest("button[data-cible]"); if (b) { sel.cible = b.dataset.cible; rendreEnvois(); } });
+  $("btnApercuTout").addEventListener("click", function () { sel.apercuTout = !sel.apercuTout; rendreEnvois(); });
+  $("listesEnvoi").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-liste]"); if (!b) return;
+    sel.liste = b.dataset.liste;
+    if (sel.liste === "hier" && MSGS.some(function (m) { return m.id === "ap1p"; })) sel.base = "ap1";   // relance des clients de la veille : merci + avis
+    rendreEnvois();
+  });
+  $("btnSuivant").addEventListener("click", function () {
+    var faits = envoisDuJour()[cleEnvoi()] || {}, c = listeCourante().find(function (x) { return !faits[x.tel]; });
+    if (c) envoyerA(c);
+  });
+  $("chercheContact").addEventListener("input", function () { sel.recherche = this.value; rendreEnvois(); });
+  $("listeContacts").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.envoyer) { var c = listeCourante().find(function (x) { return x.tel === b.dataset.envoyer; }); if (c) envoyerA(c); }
+    else if (b.dataset.annulerEnvoi) { annulerEnvoi(cleEnvoi(), b.dataset.annulerEnvoi); rendreEnvois(); }
+    else if (b.dataset.supprimerContact) {
+      var i = carnet.contacts.findIndex(function (x) { return x.id === b.dataset.supprimerContact; }); if (i < 0) return;
+      var retire = carnet.contacts.splice(i, 1)[0]; modifierCarnet();
+      toast("Supprimé du carnet : " + (retire.nom || joliTel(retire.tel)), function () { carnet.contacts.splice(i, 0, retire); modifierCarnet(); });
+    }
+  });
+  $("btnGroupe").addEventListener("click", function () {
+    var m = variante(sel.base, "groupe"), g = GROUPES[0]; if (!m || !g) return;
+    copier(m.texte).then(function (ok) {
+      noterEnvoi(m.id, "groupe:" + g.nom); rendreEnvois();
+      toast(ok ? "Message copié : colle-le dans le groupe." : "Copie impossible : copie le texte à la main.");
+      window.open(g.lien, "_blank", "noopener");
+    });
+  });
+  $("btnAjoutContact").addEventListener("click", function () {
+    var nom = $("ajoutNom").value.trim(), n = normaliserTel($("ajoutTel").value), r = $("retourAjout");
+    if (n.vide || n.erreur) { r.textContent = n.erreur || "Entre le numéro."; r.className = "retour erreur"; return; }
+    if (carnet.contacts.some(function (c) { return c.tel === n.tel; })) { r.textContent = "Ce numéro est déjà dans le carnet."; r.className = "retour erreur"; return; }
+    carnet.contacts.unshift({ id: "k" + Date.now().toString(36), nom: nom, tel: n.tel, listes: [], ajouteLe: new Date().toISOString() });
+    $("ajoutNom").value = ""; $("ajoutTel").value = ""; r.textContent = "Ajouté : " + (nom || n.joli) + "."; r.className = "retour ok";
+    modifierCarnet();
+  });
+  function modifierCarnet() { carnet.sale = true; sauverCarnet(); rendreEnvois(); programmerCarnetGh(); }
+  var minuterieCarnet = null, minuterieEnvois = null;
+  function programmerCarnetGh() { clearTimeout(minuterieCarnet); minuterieCarnet = setTimeout(function () { envoyerCarnetGh(false); }, 1500); }
+  function envoyerCarnetGh(garder) {
+    if (!donneesBranchees() || !carnet.sale) return Promise.resolve();
+    var gh = donneesClient(), texte = JSON.stringify({ application: "ATELIER-CONTACTS", version: 1, majLe: new Date().toISOString(), contacts: carnet.contacts }, null, 1);
+    var essai = function (sha, deuxieme) {
+      return gh.ecrire("contacts.json", texte, sha, "Carnet : " + carnet.contacts.length + " contacts", garder).catch(function (e) {
+        if (e && e.code === "conflit" && !deuxieme) return gh.lire("contacts.json").then(function (r) { return essai(r.sha, true); });
+        throw e;
+      });
+    };
+    return essai(carnet.sha, false).then(function (r) {
+      if (!r.verifie) throw { message: "GitHub n’a pas confirmé l’enregistrement." };
+      carnet.sha = r.sha; carnet.sale = false; carnet.ok = Date.now(); carnet.erreur = null; sauverCarnet(); rendreEnvois();
+    }).catch(function (e) { carnet.erreur = { message: ((e && e.message) || "erreur") + " (nouvel essai automatique)" }; rendreEnvois(); });
+  }
+  function chargerContactsGitHub() {
+    if (!donneesBranchees()) { rendreEnvois(); return; }
+    if (carnet.sale) { envoyerCarnetGh(false); return; }   // modification locale pas encore envoyée : elle passe d'abord
+    donneesClient().lire("contacts.json").then(function (r) {
+      if (r.statut === 200) { var o = JSON.parse(r.texte); carnet.contacts = Array.isArray(o.contacts) ? o.contacts : []; carnet.sha = r.sha; }
+      carnet.chargeLe = carnet.ok = Date.now(); carnet.erreur = null; sauverCarnet(); rendreEnvois();
+    }).catch(function (e) { carnet.erreur = { message: ((e && e.message) || "erreur") + " (copie du téléphone utilisée)" }; rendreEnvois(); });
+  }
+  var shaEnvois = {}, envoisSale = false;
+  function programmerEnvoisGh() { clearTimeout(minuterieEnvois); minuterieEnvois = setTimeout(function () { envoyerEnvoisGh(false); }, 3000); }
+  function envoyerEnvoisGh(garder) {
+    if (!donneesBranchees() || !envoisSale) return Promise.resolve();
+    envoisSale = false;
+    var j = soireeCourante(), chemin = "envois/" + j.slice(0, 4) + "/" + j + ".json", gh = donneesClient();
+    var d = envoisDuJour(), compte = 0; Object.keys(d).forEach(function (k) { compte += Object.keys(d[k]).length; });
+    var texte = JSON.stringify({ application: "ATELIER-ENVOIS", version: 1, jour: j, majLe: new Date().toISOString(), envois: d }, null, 1);
+    var essai = function (sha, deuxieme) {
+      return gh.ecrire(chemin, texte, sha, "Envois du " + j + " : " + compte, garder).catch(function (e) {
+        if (e && e.code === "conflit" && !deuxieme) return gh.lire(chemin).then(function (r) { return essai(r.sha, true); });
+        throw e;
+      });
+    };
+    var shaConnu = shaEnvois[j] !== undefined ? Promise.resolve(shaEnvois[j]) : gh.lire(chemin).then(function (r) { return r.sha; });
+    return shaConnu.then(function (sha) { return essai(sha, false); }).then(function (r) { if (!r.verifie) throw {}; shaEnvois[j] = r.sha; }).catch(function () { shaEnvois[j] = undefined; envoisSale = true; });
+  }
+  function envoisDemarrer() {
+    $("cleDonnees").value = depotDonnees.cle; majInfoDonnees(); majEtatGh();
+    document.querySelectorAll("#waApp button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.wa === (ui.waApp === "standard" ? "standard" : "business"))); });
+    rendreEnvois(); chargerContactsGitHub(); reessayerGh();
+    window.addEventListener("online", function () { reessayerGh(); envoyerCarnetGh(false); });
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) { if (carnet.sale) envoyerCarnetGh(true); clearTimeout(minuterieEnvois); envoyerEnvoisGh(true); }
+      else { reessayerGh(); rendreEnvois(); }
+    });
+  }
+  $("waApp").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-wa]"); if (!b) return;
+    ui.waApp = b.dataset.wa; sauverUi();
+    document.querySelectorAll("#waApp button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+  });
+
   /* ---------- Calendrier (V6.2) : choisir une soirée ; les jours avec des commandes portent leur nombre ---------- */
   var calMois = null;   // premier jour du mois affiché (AAAA-MM-01)
   function ouvrirCalendrier() {
@@ -1883,9 +2304,9 @@
   $("avecNumeros").checked = !!ui.avecNumeros;
   construireSite(); construirePacks();
   restaurerBrouillon();
-  document.body.dataset.vue = ["saisir", "liste", "bilan", "wave"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
+  document.body.dataset.vue = ["saisir", "liste", "bilan", "wave", "envois"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
   document.querySelectorAll(".navbas button").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.vue === document.body.dataset.vue)); });
-  sauver(); rendre(); majAppli(); cuisineDemarrer(); rendreWave();
+  sauver(); rendre(); majAppli(); cuisineDemarrer(); rendreWave(); envoisDemarrer();
   avertissements.forEach(function (m) { toast(m); });
   secoursIdb();
 })();

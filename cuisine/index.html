@@ -15,7 +15,7 @@
 <link rel="icon" type="image/png" href="../icons/icon-192.png">
 <title>Cuisine</title>
 <!--
-  AUT-11 V1.1 · Écran cuisine de L'Atelier des Crêpes (D-082)
+  AUT-11 V1.2 · Écran cuisine de L'Atelier des Crêpes (D-082)
   Rôle : sur le téléphone de la personne qui prépare, afficher en grand les commandes acceptées dans l'application
   « Commandes du soir », et lui permettre de toucher « Prête ». Android et iPhone (navigateur ou écran d'accueil).
   Données : dépôt GitHub privé « atelier-cuisine » ; lit soirees/AAAA-MM-JJ.json (écrit par l'application, sans numéro de
@@ -68,10 +68,10 @@
   .c-tete .site { color:var(--centre); text-transform:uppercase; letter-spacing:.6px; }
   .carte.sud .c-tete .site { color:var(--sud); }
   .c-heure { font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
-  .c-ch { font-size:42px; font-weight:800; line-height:1.05; margin:4px 0 2px; letter-spacing:-.5px; }
-  .c-ch small { font-size:18px; font-weight:700; color:var(--doux); margin-right:6px; letter-spacing:0; }
+  .c-ch { font-size:34px; font-weight:800; line-height:1.1; margin:4px 0 2px; letter-spacing:-.3px; }
+  .c-ch .sep { color:var(--doux); font-weight:600; margin:0 8px; }
   .c-crepes { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
-  .c-crepes span { font-size:22px; font-weight:800; padding:6px 12px; border-radius:12px; background:var(--carte2); border:1px solid var(--bord); }
+  .c-crepes span { font-size:18px; font-weight:800; padding:5px 11px; border-radius:12px; background:var(--carte2); border:1px solid var(--bord); }
   .c-pack { font-size:14px; color:var(--doux); font-weight:600; }
   .badge { display:inline-block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; padding:3px 8px; border-radius:999px; background:var(--nouveau); color:#1C120C; margin-left:6px; vertical-align:middle; }
   .prete { width:100%; margin-top:12px; min-height:58px; border-radius:14px; border:none; background:var(--ok); color:var(--fond); font-size:19px; font-weight:800; }
@@ -300,6 +300,7 @@
       shaPretes = r.sha; pretes = fusion; etags.p = null;
       ids.forEach(function (id) { if (enAttente[id] && fusion[id] === enAttente[id]) delete enAttente[id]; });
       ecrire(CLE_ATTENTE, JSON.stringify(enAttente)); derniereErreur = null; derniereReussite = Date.now(); rendre();
+      if (Object.keys(enAttente).length) return envoyerAttente();   // V1.2 : les « Prête » touchées pendant l'envoi partent tout de suite
     }, function (e) {
       envoiEnCours = false;
       if (e.code === "conflit" && !essai) {   // le fichier a changé (autre écran) : on relit, on fusionne, on réessaie une fois
@@ -334,9 +335,9 @@
       if (c.nutella) crepes.append(el("span", { text: c.nutella + " Nutella" }));
       var min = Math.max(0, Math.round((Date.now() - c.t) / 60000));
       zone.append(el("article", { class: "carte" + (c.site === "S" ? " sud" : "") + (neuves[c.id] ? " neuve" : "") },
-        el("div", { class: "c-tete" }, el("span", null, el("span", { class: "site", text: SITES[c.site] || c.site }), " · Résidence " + c.res, neuves[c.id] ? el("span", { class: "badge", text: neuves[c.id] }) : null),
+        el("div", { class: "c-tete" }, el("span", null, el("span", { class: "site", text: SITES[c.site] || c.site }), neuves[c.id] ? el("span", { class: "badge", text: neuves[c.id] }) : null),
           el("span", { class: "c-heure", text: heure(c.t) + " · " + (min < 1 ? "à l’instant" : "il y a " + min + " min") })),
-        el("div", { class: "c-ch" }, el("small", { text: "Ch." }), c.chambre),
+        el("div", { class: "c-ch" }, "Rés. " + c.res, el("span", { class: "sep", text: "·" }), "Ch. " + c.chambre),
         crepes,
         el("div", { class: "c-pack", text: c.pack || "" }),
         el("button", { type: "button", class: "prete", "data-id": c.id, "aria-label": "Prête : " + (SITES[c.site] || "") + " résidence " + c.res + " chambre " + c.chambre, text: "Prête" })));
@@ -347,7 +348,7 @@
     faites.slice().reverse().forEach(function (c) {
       var p = enAttente[c.id] || pretes[c.id] || {};
       zp.append(el("div", { class: "ligne-prete" },
-        el("div", null, el("b", { text: (SITES[c.site] || c.site) + " · " + c.res + " · ch. " + c.chambre }), el("small", { text: [c.nature ? c.nature + " Nature" : "", c.nutella ? c.nutella + " Nutella" : ""].filter(Boolean).join(" · ") + (p.t ? " · prête à " + heure(p.t) : "") + (enAttente[c.id] ? " · envoi en attente" : "") })),
+        el("div", null, el("b", { text: (SITES[c.site] || c.site) + " · " + c.res + " · ch. " + c.chambre }), el("small", { text: [c.nature ? c.nature + " Nature" : "", c.nutella ? c.nutella + " Nutella" : ""].filter(Boolean).join(" · ") + (p.t ? " · prête à " + heure(p.t) : "") + (enAttente[c.id] ? " · envoi en attente" : "") + (c.emb ? " · emballée" : "") })),
         el("button", { type: "button", "data-annuler": c.id, text: "Annuler" })));
     });
     $("date").textContent = nomJour(jour);

@@ -1,10 +1,11 @@
-/* AUT-10 V1 · relais-github.js — lecture et écriture d'un fichier JSON dans un dépôt GitHub PRIVÉ (D-082)
+/* AUT-10 V1.1 · relais-github.js — lecture et écriture d'un fichier JSON dans un dépôt GitHub PRIVÉ (D-082)
    Utilisé par l'application « Commandes du soir » (index.html) et par l'écran cuisine (cuisine/index.html).
    - La clé d'accès n'est JAMAIS écrite dans ce fichier : elle est saisie sur le téléphone et passée à client().
    - Écriture vérifiée : GitHub renvoie l'empreinte (sha) du fichier enregistré ; on la recalcule ici à partir du texte
      envoyé. Les deux doivent être identiques pour que l'écriture soit déclarée réussie (verifie: true).
    - Lecture sans cache du navigateur (GitHub demande 60 s de cache) ; « If-None-Match » permet une vérification gratuite
      (réponse 304, non décomptée de la limite de 5 000 requêtes par heure).
+   V1.1 : option « keepalive » : l'envoi se termine même si l'application passe en arrière-plan (WhatsApp ouvert juste après).
    Erreurs : objet { code, statut, message } avec code = reseau | cle | depot | conflit | limite | autre. */
 var RelaisGitHub = (function () {
   "use strict";
@@ -43,13 +44,13 @@ var RelaisGitHub = (function () {
 
   function client(o) {   // o = { proprietaire, depot, cle }
     var base = API + "/repos/" + encodeURIComponent(o.proprietaire) + "/" + encodeURIComponent(o.depot);
-    function appel(methode, chemin, corps, entetes) {
+    function appel(methode, chemin, corps, entetes, garder) {
       var h = { "Authorization": "Bearer " + o.cle, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
       if (corps) h["Content-Type"] = "application/json";
       for (var k in (entetes || {})) h[k] = entetes[k];
       // délai maximal : sur un réseau mobile instable, une demande peut rester bloquée sans jamais répondre
       var arret = window.AbortController ? new AbortController() : null, minuterie = arret ? setTimeout(function () { arret.abort(); }, DELAI_MAX) : null;
-      return fetch(base + chemin, { method: methode, headers: h, body: corps ? JSON.stringify(corps) : undefined, cache: "no-store", signal: arret ? arret.signal : undefined })
+      return fetch(base + chemin, { method: methode, headers: h, body: corps ? JSON.stringify(corps) : undefined, cache: "no-store", keepalive: !!garder, signal: arret ? arret.signal : undefined })
         .then(function (rep) { clearTimeout(minuterie); return rep; },
               function () { clearTimeout(minuterie); throw erreur("reseau", 0, "Pas de connexion internet (ou réseau trop lent)."); });
     }
@@ -67,10 +68,10 @@ var RelaisGitHub = (function () {
           return rep.json().then(function (j) { return { statut: 200, texte: depuisBase64(j.content), sha: j.sha, etag: rep.headers.get("etag") }; });
         });
       },
-      ecrire: function (chemin, texte, sha, message) {   // -> { sha, verifie, commit } ; sha = null pour créer le fichier
+      ecrire: function (chemin, texte, sha, message, garder) {   // -> { sha, verifie, commit } ; sha = null pour créer le fichier ; garder = keepalive
         var corps = { message: message, content: versBase64(texte) };
         if (sha) corps.sha = sha;
-        return appel("PUT", cheminFichier(chemin), corps).then(function (rep) {
+        return appel("PUT", cheminFichier(chemin), corps, null, garder).then(function (rep) {
           if (!rep.ok) throw erreurHttp(rep);
           return Promise.all([rep.json(), shaBlob(texte)]).then(function (r) {
             var distant = r[0] && r[0].content && r[0].content.sha;
