@@ -15,7 +15,7 @@
 <link rel="icon" type="image/png" href="../icons/icon-192.png">
 <title>Cuisine</title>
 <!--
-  AUT-11 V1 · Écran cuisine de L'Atelier des Crêpes (D-082)
+  AUT-11 V1.1 · Écran cuisine de L'Atelier des Crêpes (D-082)
   Rôle : sur le téléphone de la personne qui prépare, afficher en grand les commandes acceptées dans l'application
   « Commandes du soir », et lui permettre de toucher « Prête ». Android et iPhone (navigateur ou écran d'accueil).
   Données : dépôt GitHub privé « atelier-cuisine » ; lit soirees/AAAA-MM-JJ.json (écrit par l'application, sans numéro de
@@ -107,17 +107,16 @@
 <main>
   <section id="ecranConnexion" class="connexion" hidden>
     <h2>Brancher l’écran cuisine</h2>
-    <p class="aide">Ouvrez le lien envoyé par l’équipe sur WhatsApp : l’écran se branche tout seul. Vous pouvez aussi coller ici la clé d’accès.</p>
+    <p class="aide">Ouvrez le lien reçu sur WhatsApp, ou collez la clé.</p>
     <label class="aide" for="cle">Clé d’accès</label>
     <input type="password" id="cle" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="github_pat_…">
     <button type="button" class="principal" id="btnBrancher">Brancher</button>
     <button type="button" class="principal" id="btnColler" style="background:var(--carte2);color:var(--encre);border:1px solid var(--bord)">Coller la clé copiée</button>
     <p class="message ko" id="erreurConnexion" hidden></p>
-    <p class="aide">La clé reste sur ce téléphone. Elle ne donne accès qu’aux commandes du soir, sans aucun numéro de client.</p>
   </section>
 
   <section id="ecranService" hidden>
-    <button type="button" class="activer" id="btnActiver">Activer le son et garder l’écran allumé<small>À toucher une fois au début du service : un signal retentit à chaque nouvelle commande.</small></button>
+    <button type="button" class="activer" id="btnActiver">Activer le son et garder l’écran allumé</button>
     <p class="message ko" id="alerte" hidden></p>
     <div class="totaux" aria-live="polite">
       <div class="total"><b id="tCommandes">0</b><span>commandes</span></div>
@@ -132,7 +131,7 @@
     <div id="aFaire"></div>
     <h2 id="titrePretes" hidden>Prêtes, en attente du livreur</h2>
     <div id="pretes"></div>
-    <div class="pied"><span id="infoPied"></span><br><button type="button" id="btnCopierCle">Copier la clé (pour une icône sur l’écran d’accueil)</button><button type="button" id="btnDebrancher">Débrancher cet écran</button></div>
+    <div class="pied"><span id="infoPied"></span><br><button type="button" id="btnCopierCle">Copier la clé</button><button type="button" id="btnDebrancher">Débrancher cet écran</button></div>
   </section>
 </main>
 
@@ -226,7 +225,7 @@
       etat(age === null ? "" : "ok", age === null ? "Connexion…" : attente ? "Envoi en attente…" : "À jour");
       $("alerte").hidden = true;
     }
-    $("infoPied").textContent = derniereReussite ? "Dernière vérification à " + heure(derniereReussite) + " · actualisation toutes les 10 secondes" : "";
+    $("infoPied").textContent = derniereReussite ? "Vérifié à " + heure(derniereReussite) : "";
   }
   setInterval(majEtat, 5000);
 
@@ -380,7 +379,7 @@
     try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); bip(880, 0, 0.15); } catch (e) {}
     actif = true; garderEcran();
     $("btnActiver").hidden = true;
-    toast("wakeLock" in navigator ? "Son activé. L’écran restera allumé pendant le service." : "Son activé. Pensez à empêcher la mise en veille de l’écran dans les réglages du téléphone.");
+    toast("wakeLock" in navigator ? "Son activé, écran gardé allumé." : "Son activé. Empêchez la mise en veille dans les réglages du téléphone.");
   });
 
   /* ---------- Boucle d'actualisation ---------- */

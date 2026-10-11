@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.1 · 2026-10-11 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.2 · 2026-10-11 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -32,6 +32,8 @@
   V6.1 : onglet WAVE : un toucher copie le message de paiement Wave (texte de Wave + lien marchand ?amount=), montant = (packs + livraison) × 1,01
   arrondi au franc supérieur ; combinaisons de 1 à 3 packs par site + « autre quantité » ; pas les crêpes à l'unité (demande de l'équipe, D-084).
   QR Wave marchand en plein écran (wave/carte-wave.png, carte officielle de l'équipe, gardée dans le téléphone : s'affiche sans internet).
+  V6.2 : interface épurée (demande de l'équipe) : plus d'encadrés d'explication ; un lien « En savoir plus » ouvre une fenêtre (modèles <template id="info-…">) ;
+  libellés raccourcis ; CALENDRIER : toucher la date (Liste, Bilan) ouvre un mois, jours avec commandes marqués, jours futurs fermés.
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -229,6 +231,17 @@
   button.wave-btn.copie { border-color:var(--ok); background:var(--carte); }
   button.wave-btn.copie .w-mt small { color:var(--ok); }
   #autreWave .pas { margin-top:8px; }
+  button.savoir { background:none; border:0; box-shadow:none; padding:0 4px; min-height:36px; margin-left:auto; font-size:13px; font-weight:600; color:var(--doux);
+                  text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; border-radius:8px; white-space:nowrap; }
+  .avec-info { display:flex; align-items:center; gap:10px; }
+  .voile.info { z-index:95; }
+  .feuille.info { padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
+  .feuille.info .corps { font-size:15px; line-height:1.55; color:var(--encre); }
+  .feuille.info .corps p { margin:12px 0 0; }
+  .feuille.info .corps ul { margin:12px 0 0; padding-left:20px; }
+  .feuille.info .corps li { margin:6px 0; }
+  .feuille.info .corps b { font-weight:800; }
+  .feuille.info .principal { width:100%; margin-top:18px; min-height:50px; }
   .qr-plein { position:fixed; inset:0; z-index:100; background:#FFFFFF; color:#1C120C; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
               padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); }
   .qr-plein[hidden] { display:none; }
@@ -249,6 +262,21 @@
   .nav-jour .jour { font-weight:800; text-align:center; flex:1; font-size:15px; line-height:1.2; }
   .nav-jour .jour::first-letter { text-transform:uppercase; }
   .nav-jour .jour small { display:block; font-weight:600; color:var(--doux); font-size:12px; text-transform:none; }
+  .nav-jour button.jour { background:transparent; box-shadow:none; flex:1; flex-direction:column; gap:0; min-height:46px; padding:2px 8px; border-radius:16px; color:var(--encre); }
+  .nav-jour button.jour .cal-ic { display:inline-flex; align-items:center; gap:6px; }
+  .nav-jour button.jour svg { width:16px; height:16px; fill:none; stroke:var(--accent); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  .cal-mois { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:14px 0 10px; }
+  .cal-mois b { font-size:17px; text-transform:capitalize; }
+  .cal-mois button { min-height:44px; min-width:44px; padding:0; font-size:22px; }
+  .cal-grille { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
+  .cal-sem { text-align:center; font-size:12px; font-weight:800; color:var(--doux); padding:4px 0; }
+  .cal-grille button { flex-direction:column; gap:1px; min-height:48px; padding:4px 0; border-radius:12px; background:var(--carte2); border:1.5px solid transparent; font-size:16px; font-weight:800; }
+  .cal-grille button small { font-size:10px; font-weight:800; color:var(--accent); line-height:1; min-height:10px; }
+  .cal-grille button.auj { border-color:var(--or); }
+  .cal-grille button.vu { background:linear-gradient(180deg,#E3B964,#D4A24C); color:#1C120C; }
+  .cal-grille button.vu small { color:#1C120C; }
+  .cal-grille button:disabled { opacity:.3; }
+  .cal-vide { visibility:hidden; }
   .passe { margin:0 0 12px; padding:8px 12px; border-radius:12px; background:rgba(154,52,18,.12); border:1px solid var(--alerte); color:var(--alerte); font-weight:700; font-size:14px; }
   .jour-saisie { font-size:13px; font-weight:700; color:var(--accent); margin:0 0 10px; }
   .kpis { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; margin-bottom:12px; }
@@ -338,7 +366,7 @@
 
   <!-- ===================== SAISIE ===================== -->
   <section class="bloc" id="vueSaisir" aria-labelledby="titreSaisie">
-    <h2 id="titreSaisie"><span id="titreSaisieTexte">Nouvelle commande</span></h2>
+    <h2 id="titreSaisie"><span id="titreSaisieTexte">Nouvelle commande</span><button type="button" class="savoir" data-info="saisie">En savoir plus</button></h2>
     <div class="bandeau-edition" id="bandeauEdition" hidden><span>Modification d’une commande</span><button type="button" class="lien" id="btnAnnulerEdition">Annuler</button></div>
 
     <p class="jour-saisie" id="jourSaisie"></p>
@@ -358,13 +386,12 @@
 
     <span class="etiquette">Pack</span>
     <div id="zonePacks"></div>
-    <p class="aide">Après l’enregistrement, le site et la résidence restent choisis : tu n’as plus qu’à taper la chambre suivante.</p>
 
     <label class="etiquette" for="telClient">Numéro du client <small style="font-weight:600;color:var(--doux)">(facultatif)</small></label>
     <input type="text" id="telClient" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
     <p class="aide" id="aideTel"></p>
 
-    <label class="case" style="margin-top:12px"><input type="checkbox" id="dejaPaye"> <span>Déjà payé <small style="color:var(--doux);font-weight:600">(paiement reçu avant la livraison)</small></span></label>
+    <label class="case" style="margin-top:12px"><input type="checkbox" id="dejaPaye"> <span>Déjà payé</span></label>
 
     <div class="barre-saisie">
       <p class="attention" id="doublon" hidden></p>
@@ -392,16 +419,16 @@
     <div class="liste-livrees" id="listeLivrees"></div>
 
     <details class="outils" id="outils">
-      <summary>Outils : envoyer, sauvegarder, restaurer</summary>
+      <summary>Outils</summary>
 
-      <span class="etiquette" style="margin-top:6px">Application sur le téléphone</span>
+      <span class="etiquette avec-info" style="margin-top:6px">Application sur le téléphone<button type="button" class="savoir" data-info="appli">En savoir plus</button></span>
       <p class="aide" id="etatAppli"></p>
       <div class="rang"><button type="button" class="principal" id="btnInstaller" hidden>Installer l’application</button></div>
       <p class="aide" id="etatStockage"></p>
 
 
-      <span class="etiquette">Envoyer la liste à ta partenaire</span>
-      <label class="aide" for="numPartenaire" style="display:block;margin:0 0 6px">Son numéro WhatsApp (gardé sur cet appareil ; facultatif)</label>
+      <span class="etiquette avec-info">Envoyer la liste à ta partenaire<button type="button" class="savoir" data-info="liste">En savoir plus</button></span>
+      <label class="aide" for="numPartenaire" style="display:block;margin:0 0 6px">Son numéro WhatsApp</label>
       <input type="text" id="numPartenaire" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
       <div class="rang">
         <button type="button" class="principal" id="btnEnvoyerWa">Envoyer sur WhatsApp</button>
@@ -409,12 +436,11 @@
         <button type="button" id="btnPartager" hidden>Partager…</button>
       </div>
       <div class="retour" id="retourListe" role="status"></div>
-      <p class="aide">Seules les commandes <b>à livrer</b> du jour affiché sont envoyées, mises en forme pour WhatsApp. Sans numéro enregistré, WhatsApp te laisse choisir la personne.</p>
-      <label class="case"><input type="checkbox" id="avecNumeros"> <span>Ajouter le numéro des clients dans la liste (décoché par défaut : les numéros sont confidentiels)</span></label>
+      <label class="case"><input type="checkbox" id="avecNumeros"> <span>Inclure les numéros des clients</span></label>
 
-      <span class="etiquette">Écran cuisine (téléphone de ta partenaire)</span>
+      <span class="etiquette avec-info">Écran cuisine<button type="button" class="savoir" data-info="cuisine">En savoir plus</button></span>
       <p class="aide" id="infoCuisine"></p>
-      <label class="aide" for="cleCuisine" style="display:block;margin:0 0 6px">Clé d’accès GitHub (gardée sur ce téléphone uniquement)</label>
+      <label class="aide" for="cleCuisine" style="display:block;margin:0 0 6px">Clé d’accès GitHub</label>
       <input type="password" id="cleCuisine" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="github_pat_…">
       <div class="rang">
         <button type="button" class="principal" id="btnCleCuisine">Enregistrer et tester</button>
@@ -422,33 +448,28 @@
         <button type="button" id="btnPauseCuisine">Arrêter l’envoi</button>
       </div>
       <div class="retour" id="retourCuisine" role="status"></div>
-      <p class="aide">Chaque commande du jour part vers l’écran cuisine en quelques secondes, <b>sans le numéro du client ni le paiement</b>. Quand ta partenaire touche « Prête », la carte l’indique ici. Le lien part vers le numéro de ta partenaire (plus haut) et <b>contient la clé</b> : ne l’envoie qu’à elle.</p>
 
-      <span class="etiquette">Fichier du jour sur le téléphone (un seul par jour)</span>
+      <span class="etiquette avec-info">Fichier du jour<button type="button" class="savoir" data-info="fichier">En savoir plus</button></span>
       <div class="rang">
         <button type="button" class="principal" id="btnSauveJour">Sauvegarder le fichier du jour</button>
         <button type="button" id="btnSauveTout">Tout sauvegarder (tous les jours)</button>
       </div>
       <div class="retour" id="retourSauve" role="status"></div>
       <p class="aide" id="infoSauve"></p>
-      <p class="aide">Les commandes sont <b>enregistrées en continu</b> dans le téléphone, à 3 endroits, à chaque action. Le fichier du jour (<b>atelier-commandes_AAAA-MM-JJ.json</b>, dossier <b>Téléchargements</b>) est une sauvegarde supplémentaire : touche le bouton <b>une fois en fin de soirée</b>, ou envoie le bilan (le fichier est créé en même temps). Un téléphone ne permet pas de réécrire un fichier existant : en le refaisant, Chrome ajoute (1) au nom ; le plus récent est le plus complet.</p>
-      <p class="aide"><b>Confidentiel :</b> si tu enregistres des numéros de clients, le fichier du jour les contient ; ne le partage pas. Les numéros ne sont jamais dans le texte du bilan.</p>
 
-      <span class="etiquette">Restaurer depuis un fichier</span>
+      <span class="etiquette avec-info">Restaurer depuis un fichier<button type="button" class="savoir" data-info="restaurer">En savoir plus</button></span>
       <div class="rang"><button type="button" id="btnFichier">Choisir un fichier de sauvegarde</button></div>
       <input type="file" id="fichierRestaure" accept=".json,application/json" hidden>
       <div class="retour" id="retourFichier" role="status"></div>
-      <p class="aide">Les commandes du fichier sont <b>ajoutées ou mises à jour</b>, jamais effacées : tu peux restaurer sans risque.</p>
 
-      <span class="etiquette">Transférer vers un autre appareil</span>
+      <span class="etiquette avec-info">Transférer vers un autre appareil<button type="button" class="savoir" data-info="transfert">En savoir plus</button></span>
       <div class="rang"><button type="button" id="btnCopierCode">Copier le code des commandes</button><button type="button" id="btnImporter">Importer le code collé</button></div>
       <textarea id="zoneCode" spellcheck="false" aria-label="Code des commandes" placeholder="Pour importer : colle ici le code reçu, puis touche « Importer »."></textarea>
       <div class="retour" id="retourCode" role="status"></div>
-      <p class="aide">Sur l’autre appareil, colle le code ici et touche « Importer » : les commandes sont <b>ajoutées ou mises à jour</b>, sans rien effacer. <b>Confidentiel :</b> le code contient les numéros de clients ; ne le partage qu’avec ta partenaire.</p>
 
       <div class="zone-danger">
-        <h3>Zone sensible : remise à zéro</h3>
-        <p class="aide" id="texteZero">Il n’y a pas de « clôture » : chaque soirée a son propre enregistrement et le jour suivant démarre tout seul. Ce bouton efface seulement les commandes du jour affiché.</p>
+        <h3 class="avec-info">Zone sensible : remise à zéro<button type="button" class="savoir" data-info="zero">En savoir plus</button></h3>
+        <p class="aide" id="texteZero">Efface seulement les commandes du jour affiché.</p>
         <div class="rang"><button type="button" class="danger" id="btnZero">Effacer les commandes de ce jour…</button></div>
         <div id="confirmeZero" hidden>
           <p id="resumeZero"></p>
@@ -481,23 +502,20 @@
 
   <!-- ===================== PAIEMENT WAVE ===================== -->
   <section class="bloc" id="vueWave" aria-labelledby="titreWave">
-    <h2 id="titreWave">Paiement Wave</h2>
+    <h2 id="titreWave">Paiement Wave<button type="button" class="savoir" data-info="wave">En savoir plus</button></h2>
     <button type="button" class="principal gros" id="btnQrWave">Montrer mon QR Wave au client</button>
-    <p class="aide" style="margin:6px 0 16px">Plein écran, même sans internet : le client scanne avec son application Wave et saisit le montant. Tu n’as pas besoin d’ouvrir Wave.</p>
-    <p class="aide" style="margin:0 0 12px">Touche la commande du client : le message de paiement Wave est <b>copié</b>, montant compris (packs + livraison + 1 % Wave). Colle-le ensuite dans sa conversation WhatsApp.</p>
+    <div style="height:14px"></div>
     <div class="segmente" role="group" aria-label="Site du client" id="siteWave">
       <button type="button" data-wsite="C" aria-pressed="true">Centre</button>
       <button type="button" data-wsite="S" aria-pressed="false">Sud</button>
     </div>
-    <p class="aide" id="regleWave"></p>
     <div class="retour" id="retourWave" role="status"></div>
     <div id="grilleWave"></div>
     <details class="outils" id="autreWave">
-      <summary>Autre quantité (4 packs ou plus)</summary>
+      <summary>Autre quantité</summary>
       <div id="pasWave"></div>
       <div class="rang"><button type="button" class="principal gros" id="btnAutreWave" disabled>Choisis les packs</button></div>
     </details>
-    <p class="aide">Pour une commande avec des crêpes à l’unité, crée le lien dans l’application Wave.</p>
   </section>
 </main>
 
@@ -518,7 +536,7 @@
     <p class="aide" id="aideTelPanneau"></p>
     <div class="rang"><button type="button" id="btnEnregTel" hidden></button></div>
 
-    <span class="etiquette">Message</span>
+    <span class="etiquette avec-info">Message<button type="button" class="savoir" data-info="ecrire">En savoir plus</button></span>
     <div id="choixMessages"></div>
     <div id="blocMinutes" hidden>
       <label class="etiquette" for="minutesMsg">Dans combien de minutes ?</label>
@@ -535,7 +553,6 @@
     </div>
 
     <div class="rang"><button type="button" id="btnCopierMsg">Copier le message</button></div>
-    <p class="aide">WhatsApp s’ouvre sur la conversation du client, message déjà écrit : il reste à appuyer sur « Envoyer ». Son contact n’est pas enregistré dans ton téléphone. Si WhatsApp et WhatsApp Business sont installés, Android peut te demander lequel ouvrir.</p>
 
     <div class="feuille-pied">
       <p class="manque" id="raisonLien" aria-live="polite"></p>
@@ -549,6 +566,32 @@
   <p>Scannez avec Wave · L’Atelier des Crêpes</p>
   <button type="button" id="btnFermerQr">Fermer</button>
 </div>
+
+<div class="voile info" id="voileCal" hidden>
+  <div class="feuille info" role="dialog" aria-modal="true" aria-labelledby="titreCal">
+    <div class="feuille-tete"><h2 id="titreCal">Calendrier</h2><button type="button" class="lien" id="btnFermerCal">Fermer</button></div>
+    <div class="cal-mois"><button type="button" id="calPrec" aria-label="Mois précédent">‹</button><b id="calTitre"></b><button type="button" id="calSuiv" aria-label="Mois suivant">›</button></div>
+    <div class="cal-grille" id="calGrille"></div>
+    <button type="button" class="principal" id="btnCalAuj">Aujourd’hui</button>
+  </div>
+</div>
+<div class="voile info" id="voileInfo" hidden>
+  <div class="feuille info" role="dialog" aria-modal="true" aria-labelledby="titreInfo">
+    <div class="feuille-tete"><h2 id="titreInfo"></h2><button type="button" class="lien" id="btnFermerInfo">Fermer</button></div>
+    <div class="corps" id="corpsInfo"></div>
+    <button type="button" class="principal" id="btnComprisInfo">Compris</button>
+  </div>
+</div>
+<template id="info-saisie" data-titre="Nouvelle commande"><ul><li>Après l’enregistrement, le <b>site et la résidence restent choisis</b> : il suffit de taper la chambre suivante.</li><li>Le <b>numéro du client</b> est facultatif. Tu peux l’ajouter plus tard avec « Message » sur la commande. Il reste dans le téléphone et n’apparaît jamais dans le bilan.</li><li><b>Déjà payé</b> : le client a payé avant la livraison.</li></ul></template>
+<template id="info-appli" data-titre="Application sur le téléphone"><p>Installée, l’application garde les commandes dans le téléphone, même fermée, et s’ouvre sans internet.</p><p>Pour l’installer : menu <b>⋮</b> de Chrome, puis <b>Installer l’application</b>.</p><p>« Stockage protégé » : le téléphone ne supprimera pas les commandes pour libérer de la place.</p></template>
+<template id="info-liste" data-titre="Envoyer la liste"><ul><li>Seules les commandes <b>à livrer</b> du jour affiché sont envoyées, mises en forme pour WhatsApp.</li><li>Sans numéro enregistré, WhatsApp te laisse choisir la personne.</li><li>Les numéros des clients sont confidentiels : ils ne sont ajoutés que si la case est cochée.</li></ul></template>
+<template id="info-cuisine" data-titre="Écran cuisine"><ul><li>Chaque commande du jour part vers l’écran cuisine en quelques secondes, <b>sans le numéro du client ni le paiement</b>.</li><li>Quand ta partenaire touche « Prête », la carte affiche <b>Prête</b>.</li><li>L’état de l’envoi est écrit en haut de l’écran : « Cuisine : à jour ».</li><li>Le lien part vers le numéro de ta partenaire et <b>contient la clé</b> : ne l’envoie qu’à elle.</li></ul></template>
+<template id="info-fichier" data-titre="Fichier du jour"><ul><li>Les commandes sont <b>enregistrées en continu</b> dans le téléphone, à trois endroits.</li><li>Le fichier du jour (<b>atelier-commandes_AAAA-MM-JJ.json</b>, dossier Téléchargements) est une sauvegarde de plus : une fois en fin de soirée, ou en envoyant le bilan.</li><li>En le refaisant, Chrome ajoute (1) au nom : le plus récent est le plus complet.</li><li><b>Confidentiel</b> : il contient les numéros des clients. Ne le partage pas.</li></ul></template>
+<template id="info-restaurer" data-titre="Restaurer depuis un fichier"><p>Les commandes du fichier sont <b>ajoutées ou mises à jour</b>, jamais effacées : tu peux restaurer sans risque.</p></template>
+<template id="info-transfert" data-titre="Transférer vers un autre appareil"><p>Sur l’autre appareil, colle le code et touche « Importer » : les commandes sont <b>ajoutées ou mises à jour</b>, sans rien effacer.</p><p><b>Confidentiel</b> : le code contient les numéros des clients. Ne le partage qu’avec ta partenaire.</p></template>
+<template id="info-zero" data-titre="Remise à zéro"><ul><li>Il n’y a pas de « clôture » : chaque soirée a son propre enregistrement et le jour suivant démarre tout seul.</li><li>Ce bouton efface seulement les commandes du jour affiché, après avoir créé un fichier de sauvegarde.</li><li>Les commandes effacées restent <b>récupérables pendant 30 jours</b>.</li></ul></template>
+<template id="info-wave" data-titre="Paiement Wave"><ul><li><b>QR Wave</b> : plein écran, même sans internet. Le client scanne avec son application Wave et saisit le montant.</li><li><b>Liens</b> : choisis le site, puis touche ce que la chambre a commandé. Le message de paiement est copié, montant compris : packs + livraison + 1 % Wave.</li><li>Une seule livraison par chambre. <b>Centre</b> : 100 F, offerte dès qu’il y a un MAXI ou un MÉGA. <b>Sud</b> : 200 F, offerte avec un MÉGA.</li><li>Crêpes à l’unité : crée le lien dans l’application Wave.</li></ul></template>
+<template id="info-ecrire" data-titre="Écrire au client"><p>WhatsApp s’ouvre sur la conversation du client, message déjà écrit : il reste à appuyer sur « Envoyer ». Le contact n’est pas enregistré dans ton téléphone.</p><p>Si WhatsApp et WhatsApp Business sont installés, Android peut demander lequel ouvrir.</p></template>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastTexte"></span><button type="button" id="toastAnnuler">Annuler</button></div>
 
@@ -962,7 +1005,7 @@
     if (!n.total) manque.push("le pack");
     var tn = normaliserTel($("telClient").value);
     if (tn.erreur) manque.push("un numéro valide (ou vide le champ)");
-    $("aideTel").textContent = tn.vide ? "Tu peux aussi l’ajouter plus tard, avec « Message » sur la commande." : tn.erreur ? tn.erreur : "Numéro reconnu : " + tn.joli + (tn.alerte ? " — " + tn.alerte : "");
+    $("aideTel").textContent = tn.vide ? "" : tn.erreur ? tn.erreur : "Numéro reconnu : " + tn.joli + (tn.alerte ? " — " + tn.alerte : "");
     $("aideTel").className = "aide" + (tn.erreur ? " attention" : tn.vide ? "" : " ok");
     $("manque").textContent = manque.length ? "Il manque : " + manque.join(", ") + "." : "";
     $("manque").hidden = !manque.length; $("recap").hidden = !n.total;   // une seule ligne utile à la fois, pour garder la barre basse
@@ -1085,12 +1128,16 @@
     var auj = soireeCourante(), v = etat.jourVu;
     var prec = el("button", { type: "button", "data-jour": "-1", "aria-label": "Jour précédent", text: "‹" });
     var suiv = el("button", { type: "button", "data-jour": "1", "aria-label": "Jour suivant", text: "›" }); suiv.disabled = v >= auj;
-    var morceaux = [prec, el("div", { class: "jour" }, nomJour(v), el("small", { text: v === auj ? "aujourd’hui" : frDate(v) + " · jour passé" })), suiv];
+    var ic = document.createElementNS("http://www.w3.org/2000/svg", "svg"); ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("aria-hidden", "true");
+    ic.innerHTML = '<path d="M4 6.5h16v13H4zM4 10.5h16M8.5 4v4M15.5 4v4"/>';
+    var morceaux = [prec, el("button", { type: "button", class: "jour", "data-cal": "1", "aria-label": "Calendrier : " + nomJour(v) },
+      el("span", { class: "cal-ic" }, ic, nomJour(v).charAt(0).toUpperCase() + nomJour(v).slice(1)), el("small", { text: v === auj ? "aujourd’hui" : frDate(v) + " · jour passé" })), suiv];
     if (v !== auj) morceaux.push(el("button", { type: "button", class: "principal", "data-jour": "0", text: "Aujourd’hui" }));
     zone.replaceChildren.apply(zone, morceaux);
   }
   function changerJour(iso) { etat.jourVu = iso; edition = null; viderSaisie(); rendre(); window.scrollTo({ top: 0 }); }
   function surNavJour(e) {
+    if (e.target.closest("button[data-cal]")) { ouvrirCalendrier(); return; }
     var b = e.target.closest("button[data-jour]"); if (!b || b.disabled) return;
     var d = b.dataset.jour;
     changerJour(d === "0" ? soireeCourante() : addJours(etat.jourVu, parseInt(d, 10)));
@@ -1514,16 +1561,15 @@
   function majAppli() {
     $("alerteFichier").hidden = !enFichier;
     var t;
-    if (enAppli) t = "Tu utilises l’application installée : les commandes restent dans le téléphone, même quand l’application est fermée.";
-    else if (enFichier) t = "Cette page est ouverte comme un simple fichier : elle garde les commandes, mais moins bien protégées qu’une application installée. Le « fichier du jour » en fin de soirée reste ta sauvegarde.";
-    else if (invitation) t = "Touche le bouton ci-dessous pour installer l’application sur l’écran d’accueil.";
-    else t = "Pour l’installer : menu ⋮ de Chrome, puis « Installer l’application » (ou « Ajouter à l’écran d’accueil »).";
+    if (enAppli) t = "Application installée.";
+    else if (enFichier) t = "Page ouverte comme fichier : pense au fichier du jour.";
+    else if (invitation) t = "";
+    else t = "Non installée : menu ⋮ de Chrome, puis « Installer l’application ».";
     $("etatAppli").textContent = t;
     $("btnInstaller").hidden = !invitation;
     try {
       if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(function (p) {
-        $("etatStockage").textContent = p ? "Stockage protégé : le téléphone ne supprimera pas les commandes pour libérer de la place."
-          : "Stockage non protégé : si le téléphone manque de place, il pourrait supprimer des données. L’application installée est protégée automatiquement.";
+        $("etatStockage").textContent = p ? "Stockage protégé." : "Stockage non protégé (l’application installée l’est automatiquement).";
       });
     } catch (e) {}
   }
@@ -1605,7 +1651,7 @@
     var z = $("etatCuisine"), info = $("infoCuisine");
     if (!cuisine.cle) {
       z.hidden = true; $("btnPauseCuisine").hidden = true; $("btnLienCuisine").disabled = true;
-      info.textContent = "Non branché. Colle ci-dessous la clé d’accès créée sur GitHub (marche à suivre : README de l’application).";
+      info.textContent = "Non branché.";
       return;
     }
     $("btnPauseCuisine").hidden = false; $("btnLienCuisine").disabled = false;
@@ -1720,7 +1766,6 @@
   }
   function rendreWave() {
     document.querySelectorAll("#siteWave button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.wsite === waveSite)); });
-    $("regleWave").textContent = LIVRAISON[waveSite].texte + " Montants avec 1 % de frais Wave.";
     var zone = $("grilleWave"); zone.replaceChildren();
     [1, 2, 3].forEach(function (n) {
       zone.append(el("div", { class: "wave-groupe", text: n === 1 ? "1 pack" : n + " packs dans la chambre" }));
@@ -1768,6 +1813,69 @@
       waveSite = b.dataset.wsite; ui.waveSite = waveSite; sauverUi(); $("retourWave").textContent = ""; rendreWave();
     });
   })();
+
+  /* ---------- Calendrier (V6.2) : choisir une soirée ; les jours avec des commandes portent leur nombre ---------- */
+  var calMois = null;   // premier jour du mois affiché (AAAA-MM-01)
+  function ouvrirCalendrier() {
+    calMois = etat.jourVu.slice(0, 8) + "01";
+    rendreCalendrier();
+    $("voileCal").hidden = false; document.body.classList.add("feuille-ouverte");
+    var vu = $("calGrille").querySelector("button.vu"); (vu || $("btnCalAuj")).focus();
+  }
+  function fermerCalendrier() { $("voileCal").hidden = true; document.body.classList.remove("feuille-ouverte"); }
+  function rendreCalendrier() {
+    var d = dateDe(calMois), auj = soireeCourante();
+    $("calTitre").textContent = MOIS_FR[d.getMonth()] + " " + d.getFullYear();
+    $("calSuiv").disabled = addMoisCal(calMois, 1) > auj;
+    var g = $("calGrille"); g.replaceChildren();
+    ["L", "M", "M", "J", "V", "S", "D"].forEach(function (x) { g.append(el("div", { class: "cal-sem", text: x })); });
+    var decalage = (d.getDay() + 6) % 7;   // lundi en premier
+    for (var i = 0; i < decalage; i++) g.append(el("div", { class: "cal-vide" }));
+    var nbJours = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    for (var j = 1; j <= nbJours; j++) {
+      var iso = calMois.slice(0, 8) + p2(j), n = etat.jours[iso] ? etat.jours[iso].commandes.length : 0;
+      var b = el("button", { type: "button", "data-iso": iso, class: (iso === auj ? "auj " : "") + (iso === etat.jourVu ? "vu" : ""),
+        "aria-label": nomJour(iso) + (n ? ", " + plur(n, "commande", "commandes") : "") }, String(j), el("small", { text: n ? String(n) : "" }));
+      if (iso > auj) b.disabled = true;
+      g.append(b);
+    }
+  }
+  function addMoisCal(iso, n) { var d = dateDe(iso); d.setDate(1); d.setMonth(d.getMonth() + n); return ymd(d); }
+  $("calGrille").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-iso]"); if (!b || b.disabled) return;
+    fermerCalendrier(); changerJour(b.dataset.iso);
+  });
+  $("calPrec").addEventListener("click", function () { calMois = addMoisCal(calMois, -1); rendreCalendrier(); });
+  $("calSuiv").addEventListener("click", function () { calMois = addMoisCal(calMois, 1); rendreCalendrier(); });
+  $("btnCalAuj").addEventListener("click", function () { fermerCalendrier(); changerJour(soireeCourante()); });
+  $("btnFermerCal").addEventListener("click", fermerCalendrier);
+  $("voileCal").addEventListener("click", function (e) { if (e.target === $("voileCal")) fermerCalendrier(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("voileCal").hidden) fermerCalendrier(); });
+
+  /* ---------- « En savoir plus » : une fenêtre au lieu des encadrés d'explication (V6.2) ---------- */
+  var infoRetour = null;
+  function ouvrirInfo(cle, bouton) {
+    var m = document.getElementById("info-" + cle); if (!m) return;
+    $("titreInfo").textContent = m.dataset.titre;
+    $("corpsInfo").replaceChildren(m.content.cloneNode(true));
+    infoRetour = bouton || null;
+    $("voileInfo").hidden = false; document.body.classList.add("feuille-ouverte");
+    $("btnComprisInfo").focus();
+  }
+  function fermerInfo() {
+    if ($("voileInfo").hidden) return;
+    $("voileInfo").hidden = true;
+    if ($("voileEcrire").hidden) document.body.classList.remove("feuille-ouverte");
+    if (infoRetour) infoRetour.focus();
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("button.savoir[data-info]");
+    if (b) { e.preventDefault(); e.stopPropagation(); ouvrirInfo(b.dataset.info, b); }
+  }, true);
+  $("btnFermerInfo").addEventListener("click", fermerInfo);
+  $("btnComprisInfo").addEventListener("click", fermerInfo);
+  $("voileInfo").addEventListener("click", function (e) { if (e.target === $("voileInfo")) fermerInfo(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("voileInfo").hidden) { e.stopImmediatePropagation(); fermerInfo(); } }, true);
 
   /* ---------- Démarrage ---------- */
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}   // demande au navigateur de ne jamais effacer ces données
