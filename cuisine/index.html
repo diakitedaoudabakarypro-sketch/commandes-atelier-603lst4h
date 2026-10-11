@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1C120C">
+<meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cuisine">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<link rel="icon" type="image/png" href="../icons/icon-192.png">
+<title>Cuisine</title>
+<!--
+  AUT-11 V1 · Écran cuisine de L'Atelier des Crêpes (D-082)
+  Rôle : sur le téléphone de la personne qui prépare, afficher en grand les commandes acceptées dans l'application
+  « Commandes du soir », et lui permettre de toucher « Prête ». Android et iPhone (navigateur ou écran d'accueil).
+  Données : dépôt GitHub privé « atelier-cuisine » ; lit soirees/AAAA-MM-JJ.json (écrit par l'application, sans numéro de
+  client) toutes les 10 s ; écrit pretes/AAAA-MM-JJ.json (commandes prêtes). Clé d'accès gardée sur ce téléphone seulement
+  (localStorage), reçue par le lien « …/cuisine/#cle=… » ou collée à la main ; jamais écrite dans ce fichier.
+-->
+<style>
+  :root { --fond:#F7EFE3; --carte:#FFFFFF; --carte2:#FBF5EC; --encre:#1C120C; --doux:#6B5A4A; --bord:rgba(60,40,20,.14);
+          --or:#D4A24C; --accent:#8A6420; --ok:#2F6B1F; --ok-fond:#E4F0DC; --alerte:#9A3412; --alerte-fond:#FBE7DA;
+          --centre:#8A6420; --sud:#1F6B70; --nouveau:#B45309;
+          --ombre:0 1px 2px rgba(40,25,10,.06), 0 10px 28px rgba(40,25,10,.08); --rayon:18px; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --fond:#140D08; --carte:#241912; --carte2:#2C1F16; --encre:#F6EBDC; --doux:#CDB9A0; --bord:rgba(246,235,220,.14);
+            --accent:#E8C47E; --ok:#A7E27A; --ok-fond:#1E2E14; --alerte:#FDBA74; --alerte-fond:#3A2012; --centre:#E8C47E; --sud:#7FD3D8; --nouveau:#FBBF24;
+            --ombre:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35); }
+  }
+  :root[data-theme="dark"] { --fond:#140D08; --carte:#241912; --carte2:#2C1F16; --encre:#F6EBDC; --doux:#CDB9A0; --bord:rgba(246,235,220,.14);
+          --accent:#E8C47E; --ok:#A7E27A; --ok-fond:#1E2E14; --alerte:#FDBA74; --alerte-fond:#3A2012; --centre:#E8C47E; --sud:#7FD3D8; --nouveau:#FBBF24;
+          --ombre:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35); }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--fond); color:var(--encre); font:16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button { font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .haut { position:sticky; top:0; z-index:5; background:#1C120C; color:#F6EBDC; padding:calc(10px + env(safe-area-inset-top)) 16px 10px; }
+  .haut-in { max-width:760px; margin:0 auto; display:flex; align-items:center; gap:12px; }
+  .rond { flex:none; width:38px; height:38px; border-radius:50%; background:#D4A24C; color:#1C120C; display:grid; place-items:center; font-weight:800; letter-spacing:.5px; }
+  .haut h1 { margin:0; font-size:19px; line-height:1.15; }
+  .haut .sous { font-size:13px; color:#CDB9A0; }
+  .etat { margin-left:auto; display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; text-align:right; }
+  .point { flex:none; width:11px; height:11px; border-radius:50%; background:#9CA3AF; }
+  .etat.ok .point { background:#7BD34E; box-shadow:0 0 0 4px rgba(123,211,78,.2); }
+  .etat.ko .point { background:#F97316; box-shadow:0 0 0 4px rgba(249,115,22,.2); }
+  main { max-width:760px; margin:0 auto; padding:14px 16px calc(40px + env(safe-area-inset-bottom)); }
+  .activer { width:100%; margin:0 0 12px; padding:14px 16px; border-radius:14px; border:2px dashed var(--or); background:var(--carte2); font-weight:700; text-align:left; }
+  .activer small { display:block; font-weight:500; color:var(--doux); margin-top:2px; }
+  .totaux { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:12px; }
+  .total { background:var(--carte); border:1px solid var(--bord); border-radius:var(--rayon); padding:12px 10px; text-align:center; box-shadow:var(--ombre); }
+  .total b { display:block; font-size:34px; line-height:1.05; font-variant-numeric:tabular-nums; }
+  .total span { font-size:13px; color:var(--doux); font-weight:600; }
+  .filtres { display:flex; gap:8px; margin:0 0 14px; }
+  .filtres button { flex:1; min-height:46px; border-radius:999px; border:1px solid var(--bord); background:var(--carte); font-weight:700; }
+  .filtres button[aria-pressed="true"] { background:var(--encre); color:var(--fond); border-color:var(--encre); }
+  .carte { position:relative; background:var(--carte); border:1px solid var(--bord); border-radius:var(--rayon); box-shadow:var(--ombre); margin-bottom:12px; padding:14px 14px 14px 22px; overflow:hidden; }
+  .carte::before { content:""; position:absolute; left:0; top:0; bottom:0; width:8px; background:var(--centre); }
+  .carte.sud::before { background:var(--sud); }
+  .carte.neuve { outline:3px solid var(--nouveau); outline-offset:-3px; animation:pulse 1.2s ease-in-out 3; }
+  @keyframes pulse { 50% { transform:scale(1.015); } }
+  @media (prefers-reduced-motion: reduce) { .carte.neuve { animation:none; } }
+  .c-tete { display:flex; justify-content:space-between; gap:10px; align-items:baseline; font-size:15px; font-weight:700; color:var(--doux); }
+  .c-tete .site { color:var(--centre); text-transform:uppercase; letter-spacing:.6px; }
+  .carte.sud .c-tete .site { color:var(--sud); }
+  .c-heure { font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .c-ch { font-size:42px; font-weight:800; line-height:1.05; margin:4px 0 2px; letter-spacing:-.5px; }
+  .c-ch small { font-size:18px; font-weight:700; color:var(--doux); margin-right:6px; letter-spacing:0; }
+  .c-crepes { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
+  .c-crepes span { font-size:22px; font-weight:800; padding:6px 12px; border-radius:12px; background:var(--carte2); border:1px solid var(--bord); }
+  .c-pack { font-size:14px; color:var(--doux); font-weight:600; }
+  .badge { display:inline-block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; padding:3px 8px; border-radius:999px; background:var(--nouveau); color:#1C120C; margin-left:6px; vertical-align:middle; }
+  .prete { width:100%; margin-top:12px; min-height:58px; border-radius:14px; border:none; background:var(--ok); color:var(--fond); font-size:19px; font-weight:800; }
+  .prete:active { transform:scale(.99); }
+  .vide { text-align:center; padding:34px 16px; color:var(--doux); background:var(--carte); border:1px dashed var(--bord); border-radius:var(--rayon); }
+  .vide b { display:block; color:var(--encre); font-size:18px; margin-bottom:4px; }
+  h2 { font-size:15px; text-transform:uppercase; letter-spacing:.8px; color:var(--doux); margin:24px 0 10px; }
+  .ligne-prete { display:flex; align-items:center; gap:10px; background:var(--ok-fond); border-radius:14px; padding:10px 12px; margin-bottom:8px; }
+  .ligne-prete div { flex:1; min-width:0; }
+  .ligne-prete b { font-size:17px; }
+  .ligne-prete small { display:block; color:var(--doux); }
+  .ligne-prete button { flex:none; min-height:44px; padding:0 14px; border-radius:12px; border:1px solid var(--bord); background:var(--carte); font-weight:700; }
+  .message { border-radius:14px; padding:12px 14px; margin:0 0 12px; font-weight:600; }
+  .message.ko { background:var(--alerte-fond); color:var(--alerte); }
+  .pied { margin-top:28px; font-size:13px; color:var(--doux); text-align:center; }
+  .pied button { background:none; border:none; text-decoration:underline; color:var(--doux); padding:10px; }
+  .connexion { max-width:520px; margin:8vh auto 0; background:var(--carte); border:1px solid var(--bord); border-radius:var(--rayon); padding:20px; box-shadow:var(--ombre); }
+  .connexion h2 { margin-top:0; color:var(--encre); font-size:20px; text-transform:none; letter-spacing:0; }
+  .connexion input { width:100%; min-height:50px; border-radius:12px; border:1px solid var(--bord); background:var(--carte2); color:var(--encre); padding:0 12px; font:inherit; }
+  .connexion .principal { width:100%; margin-top:12px; min-height:52px; border-radius:12px; border:none; background:var(--encre); color:var(--fond); font-weight:800; }
+  .aide { color:var(--doux); font-size:14px; }
+  .toast { position:fixed; left:16px; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); max-width:560px; margin:0 auto; background:#1C120C; color:#F6EBDC; border-radius:14px; padding:12px 14px; font-weight:600; box-shadow:0 10px 30px rgba(0,0,0,.35); z-index:20; }
+</style>
+</head>
+<body>
+
+<header class="haut"><div class="haut-in">
+  <div class="rond" aria-hidden="true">AC</div>
+  <div><h1>Cuisine</h1><div class="sous" id="date">L’Atelier des Crêpes</div></div>
+  <div class="etat" id="etat" role="status" aria-live="polite"><span id="etatTexte">Connexion…</span><span class="point" aria-hidden="true"></span></div>
+</div></header>
+
+<main>
+  <section id="ecranConnexion" class="connexion" hidden>
+    <h2>Brancher l’écran cuisine</h2>
+    <p class="aide">Ouvrez le lien envoyé par l’équipe sur WhatsApp : l’écran se branche tout seul. Vous pouvez aussi coller ici la clé d’accès.</p>
+    <label class="aide" for="cle">Clé d’accès</label>
+    <input type="password" id="cle" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="github_pat_…">
+    <button type="button" class="principal" id="btnBrancher">Brancher</button>
+    <button type="button" class="principal" id="btnColler" style="background:var(--carte2);color:var(--encre);border:1px solid var(--bord)">Coller la clé copiée</button>
+    <p class="message ko" id="erreurConnexion" hidden></p>
+    <p class="aide">La clé reste sur ce téléphone. Elle ne donne accès qu’aux commandes du soir, sans aucun numéro de client.</p>
+  </section>
+
+  <section id="ecranService" hidden>
+    <button type="button" class="activer" id="btnActiver">Activer le son et garder l’écran allumé<small>À toucher une fois au début du service : un signal retentit à chaque nouvelle commande.</small></button>
+    <p class="message ko" id="alerte" hidden></p>
+    <div class="totaux" aria-live="polite">
+      <div class="total"><b id="tCommandes">0</b><span>commandes</span></div>
+      <div class="total"><b id="tNature">0</b><span>Nature</span></div>
+      <div class="total"><b id="tNutella">0</b><span>Nutella</span></div>
+    </div>
+    <div class="filtres" role="group" aria-label="Filtrer par site" id="filtres">
+      <button type="button" data-f="tous" aria-pressed="true">Tous</button>
+      <button type="button" data-f="C" aria-pressed="false">Centre</button>
+      <button type="button" data-f="S" aria-pressed="false">Sud</button>
+    </div>
+    <div id="aFaire"></div>
+    <h2 id="titrePretes" hidden>Prêtes, en attente du livreur</h2>
+    <div id="pretes"></div>
+    <div class="pied"><span id="infoPied"></span><br><button type="button" id="btnCopierCle">Copier la clé (pour une icône sur l’écran d’accueil)</button><button type="button" id="btnDebrancher">Débrancher cet écran</button></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="../relais-github.js"></script>
+<script>
+(function () {
+  "use strict";
+  var PROPRIETAIRE = "diakitedaoudabakarypro-sketch", DEPOT = "atelier-cuisine";
+  var CLE_STOCKAGE = "atelier_cuisine_cle_v1", CLE_VUES = "atelier_cuisine_vues_v1", CLE_ATTENTE = "atelier_cuisine_attente_v1";
+  var DECALAGE_H = 4, INTERVALLE = 10000;
+  var SITES = { C: "Centre", S: "Sud" };
+  var JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  var MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, attrs) {
+    var e = document.createElement(tag);
+    for (var k in (attrs || {})) { if (k === "class") e.className = attrs[k]; else if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
+    for (var j = 2; j < arguments.length; j++) { var n = arguments[j]; if (n != null) e.append(n.nodeType ? n : document.createTextNode(n)); }
+    return e;
+  }
+  function p2(n) { return String(n).padStart(2, "0"); }
+  function ymd(d) { return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()); }
+  function soiree() { return ymd(new Date(Date.now() - DECALAGE_H * 3600000)); }
+  function heure(ms) { var d = new Date(ms); return p2(d.getHours()) + ":" + p2(d.getMinutes()); }
+  function nomJour(iso) { var a = iso.split("-"), d = new Date(+a[0], +a[1] - 1, +a[2]); return JOURS[d.getDay()] + " " + d.getDate() + (d.getDate() === 1 ? "er" : "") + " " + MOIS[d.getMonth()]; }
+  function lire(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function ecrire(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function json(k, defaut) { try { return JSON.parse(lire(k) || "null") || defaut; } catch (e) { return defaut; } }
+
+  var minuteToast = null;
+  function toast(t) { var z = $("toast"); z.textContent = t; z.hidden = false; clearTimeout(minuteToast); minuteToast = setTimeout(function () { z.hidden = true; }, 6000); }
+
+  /* ---------- Clé : reçue par le lien (#cle=…) ou collée ---------- */
+  var m = /[#&]cle=([^&]+)/.exec(location.hash);
+  if (m) { ecrire(CLE_STOCKAGE, decodeURIComponent(m[1]).trim()); history.replaceState(null, "", location.pathname + location.search); }   // la clé ne reste pas dans l'adresse
+  var gh = null;
+
+  function montrerConnexion(message) {
+    $("ecranService").hidden = true; $("ecranConnexion").hidden = false;
+    $("erreurConnexion").hidden = !message; $("erreurConnexion").textContent = message || "";
+    etat("ko", "Non branché");
+  }
+  function brancher(cle) {
+    gh = RelaisGitHub.client({ proprietaire: PROPRIETAIRE, depot: DEPOT, cle: cle });
+    return gh.tester().then(function () { ecrire(CLE_STOCKAGE, cle); $("ecranConnexion").hidden = true; $("ecranService").hidden = false; demarrer(); },
+      function (e) {
+        if (e.code === "reseau") { $("ecranConnexion").hidden = true; $("ecranService").hidden = false; demarrer(); return; }   // hors ligne : on garde la clé et on réessaie
+        gh = null; ecrire(CLE_STOCKAGE, null); montrerConnexion(e.message);
+      });
+  }
+  $("btnBrancher").addEventListener("click", function () {
+    var c = $("cle").value.trim();
+    if (!c) { montrerConnexion("Collez d’abord la clé."); return; }
+    $("btnBrancher").disabled = true; brancher(c).then(function () { $("btnBrancher").disabled = false; });
+  });
+  /* iPhone : l'icône de l'écran d'accueil a sa propre mémoire, séparée de Safari. On copie la clé dans Safari,
+     puis on la colle une fois dans l'icône. */
+  $("btnColler").addEventListener("click", function () {
+    if (!navigator.clipboard || !navigator.clipboard.readText) { montrerConnexion("Collage automatique impossible : appuyez longuement dans le champ, puis « Coller »."); return; }
+    navigator.clipboard.readText().then(function (t) { $("cle").value = (t || "").trim(); $("btnBrancher").click(); },
+      function () { montrerConnexion("Collage refusé : appuyez longuement dans le champ, puis « Coller »."); });
+  });
+  $("btnCopierCle").addEventListener("click", function () {
+    var c = lire(CLE_STOCKAGE) || "";
+    var fin = function (ok) { toast(ok ? "Clé copiée. Dans l’icône de l’écran d’accueil, touchez « Coller la clé copiée »." : "Copie impossible sur ce téléphone."); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c).then(function () { fin(true); }, function () { fin(false); }); else fin(false);
+  });
+  $("btnDebrancher").addEventListener("click", function () {
+    if (!confirm("Débrancher cet écran ? Il faudra rouvrir le lien envoyé par l’équipe pour le rebrancher.")) return;
+    ecrire(CLE_STOCKAGE, null); location.reload();
+  });
+
+  /* ---------- État de la connexion ---------- */
+  var derniereReussite = 0, derniereErreur = null;
+  function etat(classe, texte) { $("etat").className = "etat " + classe; $("etatTexte").textContent = texte; }
+  function majEtat() {
+    if (!gh) return;
+    var age = derniereReussite ? Math.round((Date.now() - derniereReussite) / 1000) : null;
+    var attente = Object.keys(enAttente).length;
+    if (derniereErreur && (age === null || age > 35)) {
+      etat("ko", derniereErreur.code === "reseau" ? (derniereReussite ? "Hors connexion depuis " + heure(derniereReussite) : "Hors connexion") : "Erreur");
+      $("alerte").hidden = false;
+      $("alerte").textContent = derniereErreur.message + (derniereErreur.code === "reseau" ? " Les commandes affichées peuvent ne pas être à jour." : "") + (attente ? " " + attente + " « Prête » en attente d’envoi." : "");
+    } else if (age !== null && age > 35) {   // plus aucune lecture réussie depuis 35 s : on ne prétend pas être à jour
+      etat("ko", "Pas de nouvelles depuis " + heure(derniereReussite));
+      $("alerte").hidden = false; $("alerte").textContent = "L’écran n’a pas pu vérifier les commandes depuis " + heure(derniereReussite) + ". Vérifiez la connexion internet.";
+    } else {
+      etat(age === null ? "" : "ok", age === null ? "Connexion…" : attente ? "Envoi en attente…" : "À jour");
+      $("alerte").hidden = true;
+    }
+    $("infoPied").textContent = derniereReussite ? "Dernière vérification à " + heure(derniereReussite) + " · actualisation toutes les 10 secondes" : "";
+  }
+  setInterval(majEtat, 5000);
+
+  /* ---------- Données de la soirée ---------- */
+  var jour = soiree(), commandes = [], pretes = {}, etags = {}, shaPretes = null;
+  var vues = json(CLE_VUES, {});              // { jour, ids: { id: maj } } : ce que cet écran a déjà montré
+  if (vues.jour !== jour) vues = { jour: jour, ids: {} };
+  var enAttente = json(CLE_ATTENTE, {});      // « Prête » touchées mais pas encore enregistrées sur GitHub
+  var neuves = {}, filtre = "tous", premiereLecture = true;
+
+  function cheminSoiree() { return "soirees/" + jour + ".json"; }
+  function cheminPretes() { return "pretes/" + jour + ".json"; }
+  function estPrete(id) { var a = enAttente[id], p = a || pretes[id]; return !!(p && p.prete); }
+
+  var lectureEnCours = false;
+  function lireTout() {
+    if (!gh || lectureEnCours) return Promise.resolve();   // une seule lecture à la fois
+    lectureEnCours = true;
+    var j = soiree();
+    if (j !== jour) { jour = j; commandes = []; pretes = {}; etags = {}; shaPretes = null; vues = { jour: jour, ids: {} }; neuves = {}; premiereLecture = true; }
+    return Promise.all([gh.lire(cheminSoiree(), etags.s), gh.lire(cheminPretes(), etags.p)]).then(function (r) {
+      var s = r[0], p = r[1];
+      if (s.statut === 200) { etags.s = s.etag; try { var o = JSON.parse(s.texte); commandes = Array.isArray(o.commandes) ? o.commandes : []; } catch (e) { commandes = []; } }
+      if (s.statut === 404) { etags.s = null; commandes = []; }
+      if (p.statut === 200) { etags.p = p.etag; shaPretes = p.sha; try { pretes = (JSON.parse(p.texte).pretes) || {}; } catch (e) { pretes = {}; } }
+      if (p.statut === 404) { etags.p = null; shaPretes = null; pretes = {}; }
+      derniereReussite = Date.now(); derniereErreur = null;
+      if (s.statut !== 304 || p.statut !== 304 || premiereLecture) analyser();
+      return envoyerAttente();
+    }).catch(function (e) {
+      derniereErreur = e;
+      if (e.code === "cle" || e.code === "depot") { gh = null; montrerConnexion(e.message + " Demandez un nouveau lien à l’équipe."); }
+    }).then(function () { lectureEnCours = false; majEtat(); });
+  }
+
+  function analyser() {   // nouvelles commandes, commandes modifiées ou retirées depuis la dernière lecture
+    var signal = false, vivantes = {};
+    commandes.forEach(function (c) {
+      vivantes[c.id] = true;
+      var vu = vues.ids[c.id];
+      if (c.livre) { vues.ids[c.id] = c.maj; return; }
+      if (vu === undefined) { if (!premiereLecture) { neuves[c.id] = "Nouvelle"; signal = true; } }
+      else if (vu !== c.maj && !estPrete(c.id)) { neuves[c.id] = "Modifiée"; signal = true; }
+      vues.ids[c.id] = c.maj;
+    });
+    Object.keys(vues.ids).forEach(function (id) {
+      if (!vivantes[id]) { delete vues.ids[id]; if (!premiereLecture) toast("Une commande a été retirée par l’équipe."); }
+    });
+    ecrire(CLE_VUES, JSON.stringify(vues));
+    premiereLecture = false;
+    if (signal) alerter();
+    rendre();
+  }
+
+  /* ---------- « Prête » : enregistrée sur GitHub (fusion si le fichier a changé entre-temps) ---------- */
+  var envoiEnCours = false;
+  function marquer(id, prete) {
+    enAttente[id] = { prete: prete, t: Date.now() }; ecrire(CLE_ATTENTE, JSON.stringify(enAttente));
+    delete neuves[id]; rendre(); majEtat(); envoyerAttente().then(majEtat);
+  }
+  function envoyerAttente(essai) {
+    var ids = Object.keys(enAttente);
+    if (!gh || !ids.length || envoiEnCours) return Promise.resolve();
+    envoiEnCours = true;
+    var fusion = {}; for (var k in pretes) fusion[k] = pretes[k];
+    ids.forEach(function (id) { if (!fusion[id] || fusion[id].t < enAttente[id].t) fusion[id] = enAttente[id]; });
+    var texte = JSON.stringify({ application: "ATELIER-CUISINE-PRETES", version: 1, jour: jour, pretes: fusion }, null, 1);
+    var nb = ids.length;
+    return gh.ecrire(cheminPretes(), texte, shaPretes, "Cuisine : " + nb + (nb > 1 ? " changements" : " changement") + " (" + jour + ")").then(function (r) {
+      envoiEnCours = false;
+      if (!r.verifie) { derniereErreur = { code: "autre", message: "Enregistrement non confirmé par GitHub : nouvel essai automatique." }; return; }
+      shaPretes = r.sha; pretes = fusion; etags.p = null;
+      ids.forEach(function (id) { if (enAttente[id] && fusion[id] === enAttente[id]) delete enAttente[id]; });
+      ecrire(CLE_ATTENTE, JSON.stringify(enAttente)); derniereErreur = null; derniereReussite = Date.now(); rendre();
+    }, function (e) {
+      envoiEnCours = false;
+      if (e.code === "conflit" && !essai) {   // le fichier a changé (autre écran) : on relit, on fusionne, on réessaie une fois
+        return gh.lire(cheminPretes()).then(function (p) {
+          shaPretes = p.statut === 200 ? p.sha : null;
+          try { pretes = p.statut === 200 ? (JSON.parse(p.texte).pretes || {}) : {}; } catch (x) { pretes = {}; }
+          return envoyerAttente(true);
+        });
+      }
+      derniereErreur = e;
+    });
+  }
+
+  /* ---------- Affichage ---------- */
+  function rendre() {
+    var actives = commandes.filter(function (c) { return !c.livre; }).sort(function (a, b) { return a.t - b.t; });   // la plus ancienne d'abord
+    var aFaire = actives.filter(function (c) { return !estPrete(c.id); });
+    var faites = actives.filter(function (c) { return estPrete(c.id); });
+    var n = { tous: aFaire.length, C: 0, S: 0 }; aFaire.forEach(function (c) { n[c.site] = (n[c.site] || 0) + 1; });
+    document.querySelectorAll("#filtres button").forEach(function (b) {
+      var f = b.dataset.f; b.setAttribute("aria-pressed", String(f === filtre)); b.textContent = (f === "tous" ? "Tous" : SITES[f]) + " (" + (n[f] || 0) + ")";
+    });
+    var visibles = aFaire.filter(function (c) { return filtre === "tous" || c.site === filtre; });
+    var na = 0, nu = 0; visibles.forEach(function (c) { na += c.nature || 0; nu += c.nutella || 0; });
+    $("tCommandes").textContent = visibles.length; $("tNature").textContent = na; $("tNutella").textContent = nu;
+
+    var zone = $("aFaire"); zone.replaceChildren();
+    if (!visibles.length) zone.append(el("div", { class: "vide" }, el("b", { text: "Rien à préparer pour l’instant" }), "Les nouvelles commandes apparaissent ici toutes seules."));
+    visibles.forEach(function (c) {
+      var crepes = el("div", { class: "c-crepes" });
+      if (c.nature) crepes.append(el("span", { text: c.nature + " Nature" }));
+      if (c.nutella) crepes.append(el("span", { text: c.nutella + " Nutella" }));
+      var min = Math.max(0, Math.round((Date.now() - c.t) / 60000));
+      zone.append(el("article", { class: "carte" + (c.site === "S" ? " sud" : "") + (neuves[c.id] ? " neuve" : "") },
+        el("div", { class: "c-tete" }, el("span", null, el("span", { class: "site", text: SITES[c.site] || c.site }), " · Résidence " + c.res, neuves[c.id] ? el("span", { class: "badge", text: neuves[c.id] }) : null),
+          el("span", { class: "c-heure", text: heure(c.t) + " · " + (min < 1 ? "à l’instant" : "il y a " + min + " min") })),
+        el("div", { class: "c-ch" }, el("small", { text: "Ch." }), c.chambre),
+        crepes,
+        el("div", { class: "c-pack", text: c.pack || "" }),
+        el("button", { type: "button", class: "prete", "data-id": c.id, "aria-label": "Prête : " + (SITES[c.site] || "") + " résidence " + c.res + " chambre " + c.chambre, text: "Prête" })));
+    });
+
+    $("titrePretes").hidden = !faites.length;
+    var zp = $("pretes"); zp.replaceChildren();
+    faites.slice().reverse().forEach(function (c) {
+      var p = enAttente[c.id] || pretes[c.id] || {};
+      zp.append(el("div", { class: "ligne-prete" },
+        el("div", null, el("b", { text: (SITES[c.site] || c.site) + " · " + c.res + " · ch. " + c.chambre }), el("small", { text: [c.nature ? c.nature + " Nature" : "", c.nutella ? c.nutella + " Nutella" : ""].filter(Boolean).join(" · ") + (p.t ? " · prête à " + heure(p.t) : "") + (enAttente[c.id] ? " · envoi en attente" : "") })),
+        el("button", { type: "button", "data-annuler": c.id, text: "Annuler" })));
+    });
+    $("date").textContent = nomJour(jour);
+  }
+  $("aFaire").addEventListener("click", function (e) { var b = e.target.closest("button[data-id]"); if (b) marquer(b.dataset.id, true); });
+  $("pretes").addEventListener("click", function (e) { var b = e.target.closest("button[data-annuler]"); if (b) marquer(b.dataset.annuler, false); });
+  $("filtres").addEventListener("click", function (e) { var b = e.target.closest("button[data-f]"); if (b) { filtre = b.dataset.f; rendre(); } });
+  $("aFaire").addEventListener("pointerdown", function (e) { var c = e.target.closest(".carte.neuve"); if (c) { var b = c.querySelector("button[data-id]"); if (b) delete neuves[b.dataset.id]; } });
+
+  /* ---------- Son, vibration, écran allumé ---------- */
+  var audio = null, verrou = null, actif = false;
+  function bip(f, debut, duree) {
+    var o = audio.createOscillator(), g = audio.createGain();
+    o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(audio.destination);
+    g.gain.setValueAtTime(0.0001, audio.currentTime + debut);
+    g.gain.exponentialRampToValueAtTime(0.35, audio.currentTime + debut + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + debut + duree);
+    o.start(audio.currentTime + debut); o.stop(audio.currentTime + debut + duree + 0.05);
+  }
+  function alerter() {
+    try { if (navigator.vibrate) navigator.vibrate([220, 120, 220]); } catch (e) {}
+    if (audio) { try { bip(880, 0, 0.22); bip(1320, 0.26, 0.3); } catch (e) {} }
+  }
+  function garderEcran() {
+    if (!actif || !("wakeLock" in navigator) || document.hidden) return;
+    navigator.wakeLock.request("screen").then(function (v) { verrou = v; }).catch(function () {});
+  }
+  $("btnActiver").addEventListener("click", function () {
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); bip(880, 0, 0.15); } catch (e) {}
+    actif = true; garderEcran();
+    $("btnActiver").hidden = true;
+    toast("wakeLock" in navigator ? "Son activé. L’écran restera allumé pendant le service." : "Son activé. Pensez à empêcher la mise en veille de l’écran dans les réglages du téléphone.");
+  });
+
+  /* ---------- Boucle d'actualisation ---------- */
+  var boucle = null;
+  function demarrer() {
+    rendre(); lireTout();
+    clearInterval(boucle); boucle = setInterval(lireTout, INTERVALLE);   // aussi en arrière-plan : le téléphone ralentit lui-même la cadence
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && gh) { lireTout(); garderEcran(); } });
+  window.addEventListener("online", function () { if (gh) lireTout(); });
+
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+  }
+
+  var cle = lire(CLE_STOCKAGE);
+  if (cle) brancher(cle); else montrerConnexion("");
+})();
+</script>
+</body>
+</html>

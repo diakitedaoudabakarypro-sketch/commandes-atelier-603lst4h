@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V5 · 2026-10-10 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6 · 2026-10-11 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -26,6 +26,9 @@
   Les commandes restent dans le stockage de l'application (localStorage + IndexedDB) : fermer l'application ne les efface pas.
   V5 : PAIEMENT « Payé / Non payé » sur chaque commande (à la saisie, sur la carte, dans la liste des livrées, dans le bilan et le fichier du jour) ;
   présentation sobre (plus de pictogrammes dans l'interface) ; message « nouvelle version prête » avec bouton « Actualiser ».
+  V6 : ÉCRAN CUISINE (D-082) : les commandes du jour sont envoyées, SANS numéro de client ni paiement, au dépôt GitHub privé « atelier-cuisine »
+  (relais-github.js, écriture vérifiée par l'empreinte du fichier) ; l'écran cuisine (cuisine/index.html) les affiche et renvoie « Prête », montré sur la carte.
+  Clé d'accès saisie dans Outils, gardée sur le téléphone (localStorage « atelier_cuisine_v1 »), jamais écrite dans le code.
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -103,7 +106,7 @@
   .puces-res button { border-radius:14px; min-height:48px; padding:0; font-size:17px; background:var(--carte2); border:1.5px solid var(--bord); }
   .puces-res button[aria-pressed="true"] { background:var(--encre); color:var(--fond); border-color:var(--encre); }
   .invite { padding:14px; border:1.5px dashed var(--bord); border-radius:14px; color:var(--doux); font-size:14px; text-align:center; }
-  input[type=text], textarea { width:100%; font-size:16px; color:var(--encre); background:var(--carte2); border:1.5px solid var(--bord); border-radius:12px; padding:11px 12px; min-height:50px; appearance:none; -webkit-appearance:none; }
+  input[type=text], input[type=password], textarea { width:100%; font-size:16px; color:var(--encre); background:var(--carte2); border:1.5px solid var(--bord); border-radius:12px; padding:11px 12px; min-height:50px; appearance:none; -webkit-appearance:none; }
   input.chambre { font-size:22px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
   textarea { min-height:110px; resize:vertical; font-size:13px; }
   .pas { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--bord); }
@@ -214,6 +217,8 @@
   @media (min-width:900px) { #vueBilan { grid-column:2; } #vueSaisir { grid-row:1 / span 2; } }
   .appbar .sous { white-space:normal; line-height:1.25; }
   .sauve-etat { font-size:12px; color:#CDB9A0; margin-top:1px; line-height:1.25; }
+  .sauve-etat.cuisine-ok { color:#A7E27A; } .sauve-etat.cuisine-ko { color:#FDBA74; }
+  .prete-badge { display:inline-block; margin-top:5px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:2px 7px; border-radius:999px; background:var(--ok); color:var(--carte); }
   .nav-jour { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 12px; padding:6px; border:1px solid var(--bord); border-radius:999px; background:var(--carte2); }
   .nav-jour button { min-height:42px; padding:0 14px; flex:none; }
   .nav-jour .jour { font-weight:800; text-align:center; flex:1; font-size:15px; line-height:1.2; }
@@ -290,7 +295,7 @@
 
 <header class="appbar"><div class="appbar-in">
   <div class="logo"><div class="rond" aria-hidden="true">AC</div>
-    <div style="min-width:0"><h1>Commandes du soir</h1><div class="sous" id="dateSoiree">L’Atelier des Crêpes</div><div class="sauve-etat" id="etatSauve"></div></div></div>
+    <div style="min-width:0"><h1>Commandes du soir</h1><div class="sous" id="dateSoiree">L’Atelier des Crêpes</div><div class="sauve-etat" id="etatSauve"></div><div class="sauve-etat" id="etatCuisine" hidden></div></div></div>
   <div class="puces" aria-live="polite">
     <div class="puce"><b id="nbAttente">0</b><span>à livrer</span></div>
     <div class="puce"><b id="nbLivrees">0</b><span>livrées</span></div>
@@ -381,6 +386,18 @@
       <div class="retour" id="retourListe" role="status"></div>
       <p class="aide">Seules les commandes <b>à livrer</b> du jour affiché sont envoyées, mises en forme pour WhatsApp. Sans numéro enregistré, WhatsApp te laisse choisir la personne.</p>
       <label class="case"><input type="checkbox" id="avecNumeros"> <span>Ajouter le numéro des clients dans la liste (décoché par défaut : les numéros sont confidentiels)</span></label>
+
+      <span class="etiquette">Écran cuisine (téléphone de ta partenaire)</span>
+      <p class="aide" id="infoCuisine"></p>
+      <label class="aide" for="cleCuisine" style="display:block;margin:0 0 6px">Clé d’accès GitHub (gardée sur ce téléphone uniquement)</label>
+      <input type="password" id="cleCuisine" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="github_pat_…">
+      <div class="rang">
+        <button type="button" class="principal" id="btnCleCuisine">Enregistrer et tester</button>
+        <button type="button" id="btnLienCuisine">Envoyer le lien à la cuisine</button>
+        <button type="button" id="btnPauseCuisine">Arrêter l’envoi</button>
+      </div>
+      <div class="retour" id="retourCuisine" role="status"></div>
+      <p class="aide">Chaque commande du jour part vers l’écran cuisine en quelques secondes, <b>sans le numéro du client ni le paiement</b>. Quand ta partenaire touche « Prête », la carte l’indique ici. Le lien part vers le numéro de ta partenaire (plus haut) et <b>contient la clé</b> : ne l’envoie qu’à elle.</p>
 
       <span class="etiquette">Fichier du jour sur le téléphone (un seul par jour)</span>
       <div class="rang">
@@ -482,6 +499,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastTexte"></span><button type="button" id="toastAnnuler">Annuler</button></div>
 
+<script src="relais-github.js"></script>
 <script>
 (function () {
   "use strict";
@@ -624,6 +642,7 @@
     ecrire(CLE, s); if (idbPret) idb("put", s);
     $("alerteStockage").hidden = stockageOK;
     majEtatSauve();
+    cuisineProgrammer();
   }
   function secoursIdb() {   // localStorage vide mais copie de secours pleine : on restaure ; ensuite seulement on écrit dans la copie
     var nb = function (x) { return Object.keys(x.jours).reduce(function (a, j) { return a + x.jours[j].commandes.length; }, 0) + x.corbeille.length; };
@@ -968,7 +987,7 @@
       }
       var cc = compte(c.q), avecPack = (c.q.mini || c.q.maxi || c.q.mega) > 0;
       carte.append(el("div", { class: "ligne" },
-        el("div", { class: "ch" }, el("small", { text: "Chambre" }), el("b", { text: c.chambre }), el("span", { class: "heure", text: heureDe(c.t) })),
+        el("div", { class: "ch" }, el("small", { text: "Chambre" }), el("b", { text: c.chambre }), el("span", { class: "heure", text: heureDe(c.t) }), cuisinePrete(c.id) ? el("span", { class: "prete-badge", text: "Prête" }) : null),
         el("div", null,
           el("div", { class: "pack", text: libelle(c.q) }),
           el("div", { class: "compo", text: (avecPack ? composition(cc) + " · " : "") + plur(cc.total, "crêpe", "crêpes") }),
@@ -1456,6 +1475,145 @@
     } catch (e) {}
   }
 
+  /* ---------- Écran cuisine (V6, D-082) ----------
+     La soirée du jour est envoyée au dépôt privé « atelier-cuisine » (fichier soirees/AAAA-MM-JJ.json), SANS numéro de client ni paiement.
+     L'écran cuisine écrit pretes/AAAA-MM-JJ.json ; on le relit toutes les 15 s pour afficher « Prête » sur les cartes.
+     Un envoi n'est déclaré réussi que si l'empreinte renvoyée par GitHub est celle du texte envoyé (RelaisGitHub.ecrire → verifie). */
+  var CUISINE_PROPRIETAIRE = "diakitedaoudabakarypro-sketch", CUISINE_DEPOT = "atelier-cuisine", CLE_CUISINE = "atelier_cuisine_v1";
+  var cuisine = { cle: "", actif: false };
+  try { var cu = JSON.parse(lire(CLE_CUISINE) || "{}"); if (cu && typeof cu.cle === "string" && cu.cle) { cuisine.cle = cu.cle; cuisine.actif = cu.actif !== false; } } catch (e) {}
+  var cuisineEtat = { jour: "", sha: undefined, envoye: "", minuterie: null, enCours: false, encore: false, ok: 0, erreur: null, pretes: {}, etagPretes: null, jourPretes: "", pretesLues: false };
+  function cuisineClient() { return RelaisGitHub.client({ proprietaire: CUISINE_PROPRIETAIRE, depot: CUISINE_DEPOT, cle: cuisine.cle }); }
+  function cuisineSauverReglage() { ecrire(CLE_CUISINE, JSON.stringify(cuisine)); }
+  function cuisineBranchee() { return !!(cuisine.cle && cuisine.actif && window.RelaisGitHub && window.crypto && crypto.subtle && !enFichierCuisine); }
+  var enFichierCuisine = location.protocol === "file:" || location.protocol === "content:";
+  function cuisineInstantane(jour) {   // ce que voit la cuisine : jamais le numéro du client ni le paiement
+    var j = etat.jours[jour], liste = j ? j.commandes.slice().sort(function (a, b) { return a.t - b.t; }) : [];
+    return liste.map(function (c) {
+      var n = compte(c.q);
+      return { id: c.id, site: c.site, res: c.res, chambre: c.chambre, pack: libelle(c.q), nature: n.nature, nutella: n.nutella, t: c.t, maj: c.maj, livre: !!c.livre };
+    });
+  }
+  function cuisineProgrammer(delai) {
+    if (typeof cuisineEtat === "undefined") return;   // appel pendant le chargement, avant ce module
+    majEtatCuisine();
+    if (!cuisineBranchee()) return;
+    clearTimeout(cuisineEtat.minuterie);
+    cuisineEtat.minuterie = setTimeout(cuisineEnvoyer, delai == null ? 1500 : delai);
+  }
+  function cuisineEnvoyer(forcer) {   // -> promesse ; ne fait rien si la soirée n'a pas changé depuis le dernier envoi réussi
+    if (!cuisineBranchee()) return Promise.resolve();
+    if (cuisineEtat.enCours) { cuisineEtat.encore = true; return Promise.resolve(); }
+    var jour = soireeCourante(), liste = cuisineInstantane(jour), empreinte = JSON.stringify(liste);
+    if (cuisineEtat.jour !== jour) { cuisineEtat.jour = jour; cuisineEtat.sha = undefined; cuisineEtat.envoye = ""; }
+    if (empreinte === cuisineEtat.envoye && !forcer) { majEtatCuisine(); return Promise.resolve(); }
+    var gh = cuisineClient(), chemin = "soirees/" + jour + ".json";
+    var texte = JSON.stringify({ application: "ATELIER-CUISINE", version: 1, jour: jour, envoyeLe: new Date().toISOString(), commandes: liste }, null, 1);
+    var aFaire = liste.filter(function (c) { return !c.livre; }).length;
+    cuisineEtat.enCours = true; cuisineEtat.encore = false; majEtatCuisine();
+    var shaConnu = cuisineEtat.sha === undefined ? gh.lire(chemin).then(function (r) { return r.sha; }) : Promise.resolve(cuisineEtat.sha);
+    return shaConnu.then(function (sha) {
+      return gh.ecrire(chemin, texte, sha, "Commandes du " + jour + " : " + aFaire + " à préparer, " + liste.length + " en tout");
+    }).then(function (r) {
+      if (!r.verifie) throw { code: "autre", message: "GitHub n’a pas confirmé l’enregistrement." };
+      cuisineEtat.sha = r.sha; cuisineEtat.envoye = empreinte; cuisineEtat.ok = Date.now(); cuisineEtat.erreur = null;
+    }).catch(function (e) {
+      cuisineEtat.erreur = e && e.code ? e : { code: "autre", message: "Erreur inattendue." };
+      if (cuisineEtat.erreur.code === "conflit") cuisineEtat.sha = undefined;   // empreinte périmée : on relira avant le prochain envoi
+    }).then(function () {
+      cuisineEtat.enCours = false; majEtatCuisine();
+      var e = cuisineEtat.erreur;
+      if (cuisineEtat.encore || (e && e.code === "conflit")) cuisineProgrammer(500);
+      else if (e && e.code !== "cle" && e.code !== "depot") cuisineProgrammer(e.code === "limite" ? 120000 : 15000);   // nouvel essai automatique
+    });
+  }
+  function cuisinePrete(id) { var p = cuisineEtat.pretes[id]; return !!(cuisine.cle && cuisine.actif && p && p.prete); }
+  function cuisineLirePretes() {
+    if (!cuisineBranchee() || document.hidden) return Promise.resolve();
+    var jour = soireeCourante();
+    if (cuisineEtat.jourPretes !== jour) { cuisineEtat.jourPretes = jour; cuisineEtat.pretes = {}; cuisineEtat.etagPretes = null; cuisineEtat.pretesLues = false; }
+    return cuisineClient().lire("pretes/" + jour + ".json", cuisineEtat.etagPretes).then(function (r) {
+      if (r.statut === 304) return;
+      var avant = cuisineEtat.pretes, apres = {};
+      if (r.statut === 200) { try { apres = JSON.parse(r.texte).pretes || {}; } catch (e) { apres = {}; } }
+      cuisineEtat.etagPretes = r.etag || null; cuisineEtat.pretes = apres;
+      var nouvelles = Object.keys(apres).filter(function (id) { return apres[id] && apres[id].prete && !(avant[id] && avant[id].prete); });
+      var duJour = etat.jours[jour] ? etat.jours[jour].commandes : [];
+      var c = duJour.find(function (x) { return x.id === nouvelles[0] && !x.livre; });
+      if (c && cuisineEtat.pretesLues && !retablir && $("toast").hidden) {   // jamais par-dessus un bandeau « Annuler »
+        toast("Prête en cuisine : " + SITES[c.site].nom + " · " + c.res + " · ch. " + c.chambre + (nouvelles.length > 1 ? " (+ " + (nouvelles.length - 1) + ")" : ""));
+        vibrer([60, 60, 60]);
+      }
+      cuisineEtat.pretesLues = true;
+      rendreListe();
+    }).catch(function () {});
+  }
+  function majEtatCuisine() {
+    var z = $("etatCuisine"), info = $("infoCuisine");
+    if (!cuisine.cle) {
+      z.hidden = true; $("btnPauseCuisine").hidden = true; $("btnLienCuisine").disabled = true;
+      info.textContent = "Non branché. Colle ci-dessous la clé d’accès créée sur GitHub (marche à suivre : README de l’application).";
+      return;
+    }
+    $("btnPauseCuisine").hidden = false; $("btnLienCuisine").disabled = false;
+    $("btnPauseCuisine").textContent = cuisine.actif ? "Arrêter l’envoi" : "Reprendre l’envoi";
+    var e = cuisineEtat.erreur, t, cls = "";
+    var enRetard = cuisineEtat.jour === soireeCourante() && JSON.stringify(cuisineInstantane(soireeCourante())) !== cuisineEtat.envoye;
+    if (enFichierCuisine) { t = "Cuisine : indisponible dans une page ouverte comme fichier"; cls = "cuisine-ko"; }
+    else if (!cuisine.actif) { t = "Cuisine : envoi arrêté"; cls = "cuisine-ko"; }
+    else if (cuisineEtat.enCours) t = "Cuisine : envoi…";
+    else if (e) {
+      cls = "cuisine-ko";
+      t = e.code === "reseau" ? "Cuisine : en attente (pas de réseau), nouvel essai automatique"
+        : (e.code === "cle" || e.code === "depot") ? "Cuisine : clé refusée, voir Outils"
+        : e.code === "limite" ? "Cuisine : GitHub demande une pause, nouvel essai dans 2 min" : "Cuisine : échec, nouvel essai automatique";
+    }
+    else if (cuisineEtat.ok && !enRetard) { cls = "cuisine-ok"; t = "Cuisine : à jour (" + heureDe(cuisineEtat.ok) + ")"; }
+    else if (cuisineEtat.ok) t = "Cuisine : envoi…";
+    else t = "Cuisine : branchée, en attente du premier envoi";
+    z.hidden = false; z.textContent = t; z.className = "sauve-etat " + cls;
+    info.textContent = t + (e ? ". " + e.message : ".");
+  }
+  function retourCuisine(message, type) { var r = $("retourCuisine"); r.textContent = message; r.className = "retour " + (type || ""); }
+  $("btnCleCuisine").addEventListener("click", function () {
+    var c = $("cleCuisine").value.trim();
+    if (!c) {
+      cuisine = { cle: "", actif: false }; cuisineSauverReglage(); cuisineEtat.erreur = null; cuisineEtat.pretes = {};
+      majEtatCuisine(); rendreListe(); retourCuisine("Clé effacée de ce téléphone : plus rien n’est envoyé à la cuisine.", "ok"); return;
+    }
+    if (/\s/.test(c)) { retourCuisine("La clé ne doit pas contenir d’espace : recopie-la en entier.", "erreur"); return; }
+    retourCuisine("Test de la clé…", "");
+    RelaisGitHub.client({ proprietaire: CUISINE_PROPRIETAIRE, depot: CUISINE_DEPOT, cle: c }).tester().then(function () {
+      cuisine = { cle: c, actif: true }; cuisineSauverReglage();
+      cuisineEtat.erreur = null; cuisineEtat.sha = undefined; cuisineEtat.envoye = ""; cuisineEtat.jour = "";
+      return cuisineEnvoyer(true).then(function () {   // preuve : un vrai envoi, vérifié par l'empreinte
+        var e = cuisineEtat.erreur;
+        if (e) retourCuisine("Clé reconnue, mais l’envoi a échoué : " + e.message, "erreur");
+        else retourCuisine("Clé acceptée : envoi vérifié sur GitHub à " + heureDe(cuisineEtat.ok) + ". Envoie maintenant le lien à ta partenaire.", "ok");
+        cuisineLirePretes();
+      });
+    }).catch(function (e) { retourCuisine((e && e.message) || "Test impossible.", "erreur"); });
+  });
+  $("btnPauseCuisine").addEventListener("click", function () {
+    cuisine.actif = !cuisine.actif; cuisineSauverReglage(); cuisineEtat.erreur = null;
+    if (cuisine.actif) { cuisineEtat.envoye = ""; cuisineProgrammer(0); cuisineLirePretes(); retourCuisine("Envoi vers la cuisine repris.", "ok"); }
+    else { majEtatCuisine(); retourCuisine("Envoi arrêté : la cuisine ne reçoit plus les nouvelles commandes.", "ok"); }
+    rendreListe();
+  });
+  $("btnLienCuisine").addEventListener("click", function () {
+    if (!cuisine.cle) return;
+    var lien = new URL("cuisine/", location.href).href.split("#")[0] + "#cle=" + encodeURIComponent(cuisine.cle);
+    ouvrirWa("Écran cuisine de l’Atelier des Crêpes : ouvre ce lien sur ton téléphone (sur iPhone, dans Safari). Les commandes à préparer y arrivent toutes seules. Ce lien est personnel : ne le transfère pas.\n" + lien, retourCuisine);
+  });
+  function cuisineDemarrer() {
+    $("cleCuisine").value = cuisine.cle;
+    majEtatCuisine();
+    if (cuisineBranchee()) { cuisineProgrammer(0); cuisineLirePretes(); }
+    setInterval(function () { cuisineLirePretes(); majEtatCuisine(); }, 15000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden && cuisineBranchee()) { cuisineProgrammer(0); cuisineLirePretes(); } });
+    window.addEventListener("online", function () { if (cuisineBranchee()) cuisineProgrammer(0); });
+  }
+
   /* ---------- Démarrage ---------- */
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}   // demande au navigateur de ne jamais effacer ces données
   $("numPartenaire").value = ui.partenaire || "";
@@ -1464,7 +1622,7 @@
   restaurerBrouillon();
   document.body.dataset.vue = ["saisir", "liste", "bilan"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
   document.querySelectorAll(".navbas button").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.vue === document.body.dataset.vue)); });
-  sauver(); rendre(); majAppli();
+  sauver(); rendre(); majAppli(); cuisineDemarrer();
   avertissements.forEach(function (m) { toast(m); });
   secoursIdb();
 })();
