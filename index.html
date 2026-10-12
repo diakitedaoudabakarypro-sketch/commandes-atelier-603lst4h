@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.8 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.9 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -45,6 +45,8 @@
   V6.7 (D-091) : tout ce qui ouvre WhatsApp ouvre WHATSAPP BUSINESS sur Android (réglage retiré) ; contacts TRIÉS (nom A → Z, puis chambre Centre A → R / Sud 1 → 17,
   puis sans nom) ; chambre du contact choisie sur des boutons (site, résidence) + numéro ; recherche par chambre (« A17 »).
   V6.8 (D-092) : commande saisie sans numéro → le numéro du contact de la même chambre (carnet) est mis tout seul ; message « Nouveau client » (messages-envois.js).
+  V6.9 (D-094) : Envois : bouton « Copier le texte » ; toucher le texte l'ouvre ou le referme ; « Réduire » reste visible en bas de l'écran pendant la lecture ;
+  options en vrais boutons (Copier, Modifier, Nouveau message, Toutes les affiches, Envoyer / Annuler / Modifier d'un contact).
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -263,8 +265,18 @@
   .etat-gh.ok { color:var(--ok); } .etat-gh.attention { color:var(--alerte); }
   .etat-gh a { color:inherit; }
   select#choixMsg { width:100%; min-height:50px; font:inherit; font-size:16px; color:var(--encre); background:var(--carte2); border:1.5px solid var(--bord); border-radius:12px; padding:0 12px; }
-  .apercu { white-space:pre-wrap; font-size:14px; line-height:1.45; background:var(--carte2); border:1px solid var(--bord); border-radius:12px; padding:12px; margin-top:12px; max-height:9.5em; overflow:hidden; position:relative; }
+  .apercu-boite { margin-top:12px; background:var(--carte2); border:1px solid var(--bord); border-radius:12px; }
+  .apercu { white-space:pre-wrap; font-size:14px; line-height:1.45; padding:12px 12px 4px; max-height:9.5em; overflow:hidden; position:relative; cursor:pointer; }
+  .apercu:not(.tout):not(.court)::after { content:""; position:absolute; left:0; right:0; bottom:0; height:2.4em; background:linear-gradient(rgba(0,0,0,0), var(--carte2)); pointer-events:none; }
   .apercu.tout { max-height:none; }
+  /* V6.9 : « Réduire » reste collé en bas de l'écran (au-dessus de la barre d'onglets) tant qu'on lit le message */
+  button.replier { position:sticky; bottom:calc(80px + env(safe-area-inset-bottom)); z-index:3; display:flex; width:fit-content; margin:4px 8px 8px auto;
+                   min-height:40px; font-size:14px; padding:0 16px; background:var(--carte); border:1.5px solid var(--or); box-shadow:0 2px 8px rgba(40,25,10,.18); }
+  @media (min-width:900px) { button.replier { bottom:12px; } }
+  .actions-msg { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .actions-msg button { flex:1 1 auto; }
+  button.sec { min-height:44px; font-size:14px; padding:0 14px; background:var(--carte2); border:1.5px solid var(--bord); color:var(--encre); }
+  button.sec.fort { border-color:var(--or); }
   .puces-listes { display:flex; flex-wrap:wrap; gap:6px; margin:14px 0 10px; }
   .puces-listes button { min-height:40px; font-size:14px; padding:0 14px; background:var(--carte2); border:1.5px solid var(--bord); }
   .puces-listes button[aria-pressed="true"] { background:var(--encre); color:var(--fond); border-color:var(--encre); }
@@ -278,10 +290,10 @@
   .contact .c-nom b { display:block; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .contact .c-nom small { font-size:12px; color:var(--doux); }
   .contact > button { min-height:40px; font-size:14px; padding:0 12px; flex:none; }
+  .contact > button.sec { min-height:40px; padding:0 10px; font-size:13px; }
   .contact.fait .c-nom b { color:var(--ok); }
   #listeContacts { margin-top:8px; max-height:60vh; overflow-y:auto; }
   .contact .c-nom { background:none; border:0; box-shadow:none; padding:0; min-height:44px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; text-align:left; color:var(--encre); border-radius:8px; }
-  .liens-msg { display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; margin-top:4px; }
   button.ajout-contact { width:100%; margin-top:12px; min-height:50px; background:var(--carte2); border:1.5px dashed var(--or); color:var(--encre); font-weight:800; font-size:16px; }
   #msgTexte { height:42vh; min-height:200px; font-size:15px; line-height:1.4; }
   .feuille.info > button.lien { display:block; margin:12px auto 0; }
@@ -609,13 +621,16 @@
       <button type="button" data-cible="contacts" aria-pressed="true">Contacts</button>
       <button type="button" data-cible="groupe" aria-pressed="false">Groupe</button>
     </div>
-    <div class="apercu" id="apercuEnvoi"></div>
-    <div class="liens-msg">
-      <button type="button" class="lien" id="btnApercuTout">Voir tout le message</button>
-      <button type="button" class="lien" id="btnModifMsg">Modifier</button>
-      <button type="button" class="lien" id="btnNouveauMsg">Nouveau message</button>
+    <div class="apercu-boite" id="boiteApercu">
+      <div class="apercu" id="apercuEnvoi" aria-label="Texte du message : toucher pour l'ouvrir ou le refermer"></div>
+      <button type="button" class="replier" id="btnApercuTout" aria-controls="apercuEnvoi" aria-expanded="false">Tout lire ▾</button>
     </div>
-    <div class="aff-tete"><span class="etiquette">Affiches</span><button type="button" class="lien" id="btnToutesAffiches">Toutes les affiches</button></div>
+    <div class="actions-msg">
+      <button type="button" class="sec fort" id="btnCopierEnvoi">Copier le texte</button>
+      <button type="button" class="sec" id="btnModifMsg">Modifier</button>
+      <button type="button" class="sec" id="btnNouveauMsg">Nouveau message</button>
+    </div>
+    <div class="aff-tete"><span class="etiquette">Affiches</span><button type="button" class="sec" id="btnToutesAffiches">Toutes les affiches</button></div>
     <div class="aff-rang" id="affichesMsg"></div>
     <div id="zoneGroupe" hidden>
       <button type="button" class="principal gros" id="btnGroupe">Copier et ouvrir le groupe</button>
@@ -2277,7 +2292,11 @@
     var m = variante(sel.base, sel.cible);
     $("apercuEnvoi").textContent = m ? m.texte : "Aucun message.";
     $("apercuEnvoi").classList.toggle("tout", sel.apercuTout);
-    $("btnApercuTout").textContent = sel.apercuTout ? "Réduire" : "Voir tout le message";
+    $("btnApercuTout").textContent = sel.apercuTout ? "Réduire ▴" : "Tout lire ▾";
+    $("btnApercuTout").setAttribute("aria-expanded", String(sel.apercuTout));
+    var ap = $("apercuEnvoi");   // message court, déjà lisible en entier : pas de bouton (mesure seulement si l'onglet est affiché)
+    $("btnApercuTout").hidden = !sel.apercuTout && !!ap.offsetParent && ap.scrollHeight <= ap.clientHeight + 2;
+    ap.classList.toggle("court", $("btnApercuTout").hidden);
     $("affichesMsg").replaceChildren.apply($("affichesMsg"), affichesDe(sel.base).map(function (a) { return vignette(a, false); }));
     $("zoneGroupe").hidden = sel.cible !== "groupe"; $("zoneContacts").hidden = sel.cible === "groupe";
     var faits = envoisDuJour()[cleEnvoi()] || {};
@@ -2310,8 +2329,8 @@
         el("button", { type: "button", class: "c-nom", "data-modifier-contact": c.tel, "aria-label": "Modifier " + libContact(c) },
           el("b", { text: libContact(c) }),
           el("small", { text: [nomReel(c) ? libChambre(c) : "", nomReel(c) || libChambre(c) ? joliTel(c.tel) : "", t ? "envoyé à " + heureDe(t) : ""].filter(Boolean).join(" · ") })),
-        t ? el("button", { type: "button", class: "lien", "data-annuler-envoi": c.tel, text: "Annuler" }) : el("button", { type: "button", "data-envoyer": c.tel, text: "Envoyer" }),
-        el("button", { type: "button", class: "lien", "data-modifier-contact": c.tel, "aria-label": "Modifier " + libContact(c), text: "Modifier" })));
+        t ? el("button", { type: "button", class: "sec", "data-annuler-envoi": c.tel, text: "Annuler" }) : el("button", { type: "button", "data-envoyer": c.tel, text: "Envoyer" }),
+        el("button", { type: "button", class: "sec", "data-modifier-contact": c.tel, "aria-label": "Modifier " + libContact(c), text: "Modifier" })));
     });
     var e = carnet.erreur;
     $("etatContacts").textContent = (!depotDonnees.cle ? "Contacts : sauvegarde GitHub non branchée." :
@@ -2344,7 +2363,25 @@
   }
   $("choixMsg").addEventListener("change", function () { sel.base = this.value; sel.apercuTout = false; rendreEnvois(); });
   $("cibleEnvoi").addEventListener("click", function (e) { var b = e.target.closest("button[data-cible]"); if (b) { sel.cible = b.dataset.cible; rendreEnvois(); } });
-  $("btnApercuTout").addEventListener("click", function () { sel.apercuTout = !sel.apercuTout; rendreEnvois(); });
+  function basculerApercu() {
+    var refermer = sel.apercuTout; sel.apercuTout = !sel.apercuTout; rendreEnvois();
+    if (refermer) {   // on revient au début du message si on l'avait lu plus bas
+      var haut = $("boiteApercu").getBoundingClientRect().top, barre = document.querySelector(".appbar").offsetHeight;
+      if (haut < barre) window.scrollBy(0, haut - barre - 12);
+    }
+  }
+  $("btnApercuTout").addEventListener("click", basculerApercu);
+  $("apercuEnvoi").addEventListener("click", function () {   // toucher le texte l'ouvre ou le referme (pas pendant une sélection)
+    if (String(window.getSelection ? window.getSelection() : "").length || $("btnApercuTout").hidden) return;
+    basculerApercu();
+  });
+  $("btnCopierEnvoi").addEventListener("click", function () {
+    var m = variante(sel.base, sel.cible); if (!m) return;
+    copier(m.texte).then(function (ok) {
+      if (ok) { toast("Message copié. Colle-le dans WhatsApp.", null, true); vibrer(15); }
+      else toast("Copie automatique impossible : appuie longuement sur le texte pour le sélectionner.");
+    });
+  });
   $("listesEnvoi").addEventListener("click", function (e) {
     var b = e.target.closest("button[data-liste]"); if (!b) return;
     sel.liste = b.dataset.liste;
