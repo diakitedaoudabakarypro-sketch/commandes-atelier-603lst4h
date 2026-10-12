@@ -1,4 +1,4 @@
-/* AUT-12 · messages-envois.js — ÉCRIT PAR 13_AUTOMATISATION/generer_messages_semaine.py (AUT-06 V5) : NE PAS MODIFIER À LA MAIN.
+/* AUT-12 · messages-envois.js — ÉCRIT PAR 13_AUTOMATISATION/generer_messages_semaine.py (AUT-06 V5.1) : NE PAS MODIFIER À LA MAIN.
    Les messages de l'onglet « Envois » de l'application (mêmes textes que la page d'envoi DAT-02). Aucun contact ici (D-081, D-087).
    semaine : 0 = dimanche … 6 = samedi ; variante : idée 1 ou 2, alternées chaque semaine à partir du lundi 2026-10-12 (REF_LUNDI). */
 var MESSAGES_ENVOIS = [
@@ -262,6 +262,15 @@ var MESSAGES_ENVOIS = [
   "variante": 1,
   "rubrique": "apres",
   "texte": "🙏 *Merci pour votre patience*\n\nOn s'améliore chaque soir. Dites-nous ce qu'on peut faire mieux, votre avis nous aide à progresser.\n\n📲 Écrivez-nous en privé : https://wa.me/2250713030212"
+ },
+ {
+  "id": "ap3p",
+  "type": "prive",
+  "titre": "Nouveau client : rejoindre le groupe et nous recommander",
+  "semaine": "",
+  "variante": 1,
+  "rubrique": "apres",
+  "texte": "Bonjour 😊 Merci d'avoir commandé chez L'Atelier des Crêpes, nous espérons que nos crêpes vous ont plu 🥞\n\nPour ne plus avoir à nous chercher quand l'envie de crêpes vous prend, rejoignez notre groupe : les menus du soir, les heures de livraison et les nouveautés y sont annoncés en premier 🔔\n👥 *Groupe ATELIER DES CRÊPES :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG\n\nVous avez aimé ? Parlez-en à vos amis et à vos voisins de couloir : c'est la plus belle façon de nous soutenir 🙏\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "f1p",

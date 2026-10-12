@@ -1,11 +1,11 @@
-/* AUT-05 V6.7 · service worker de l'application « Commandes du soir »
+/* AUT-05 V6.8 · service worker de l'application « Commandes du soir »
    Rôle : garder la page et les icônes dans le téléphone pour que l'application s'ouvre SANS internet.
    Il ne touche jamais aux commandes : elles sont dans le stockage de l'application (localStorage + IndexedDB), pas dans ce cache.
    Les liens WhatsApp (wa.me), GitHub (api.github.com) et tout ce qui vient d'un autre site ne sont jamais interceptés.
    Mise à jour : à chaque ouverture, le téléphone vérifie ce fichier ; s'il a changé (VERSION), la nouvelle version est téléchargée en
    arrière-plan, puis l'application affiche « Une nouvelle version est prête » avec un bouton « Actualiser ».
    Pour publier une mise à jour : changer VERSION ci-dessous. */
-var VERSION = "atelier-commandes-v6-8";
+var VERSION = "atelier-commandes-v6-9";
 var FICHIERS = ["./", "index.html", "relais-github.js", "messages-envois.js", "affiches.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "wave/carte-wave.png"];
 
 self.addEventListener("install", function (e) {

@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.7 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.8 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -44,6 +44,7 @@
   « Toutes les affiches » (aujourd'hui, soirée, permanentes, autres jours) ; visionneuse plein écran, « Partager » (menu de partage du téléphone) et « Enregistrer ».
   V6.7 (D-091) : tout ce qui ouvre WhatsApp ouvre WHATSAPP BUSINESS sur Android (réglage retiré) ; contacts TRIÉS (nom A → Z, puis chambre Centre A → R / Sud 1 → 17,
   puis sans nom) ; chambre du contact choisie sur des boutons (site, résidence) + numéro ; recherche par chambre (« A17 »).
+  V6.8 (D-092) : commande saisie sans numéro → le numéro du contact de la même chambre (carnet) est mis tout seul ; message « Nouveau client » (messages-envois.js).
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -762,7 +763,7 @@
     <button type="button" class="principal" id="btnComprisInfo">Compris</button>
   </div>
 </div>
-<template id="info-saisie" data-titre="Nouvelle commande"><ul><li>Après l’enregistrement, le <b>site et la résidence restent choisis</b> : il suffit de taper la chambre suivante.</li><li>Le <b>numéro du client</b> est facultatif. Tu peux l’ajouter plus tard avec « Message » sur la commande. Il reste dans le téléphone et n’apparaît jamais dans le bilan.</li><li><b>Déjà payé</b> : le client a payé avant la livraison.</li></ul></template>
+<template id="info-saisie" data-titre="Nouvelle commande"><ul><li>Après l’enregistrement, le <b>site et la résidence restent choisis</b> : il suffit de taper la chambre suivante.</li><li>Le <b>numéro du client</b> est facultatif. Laissé vide, il est pris dans le carnet si un contact a la même chambre. Tu peux l’ajouter plus tard avec « Message » sur la commande. Il reste dans le téléphone et n’apparaît jamais dans le bilan.</li><li><b>Déjà payé</b> : le client a payé avant la livraison.</li></ul></template>
 <template id="info-appli" data-titre="Application sur le téléphone"><p>Installée, l’application garde les commandes dans le téléphone, même fermée, et s’ouvre sans internet.</p><p>Pour l’installer : menu <b>⋮</b> de Chrome, puis <b>Installer l’application</b>.</p><p>« Stockage protégé » : le téléphone ne supprimera pas les commandes pour libérer de la place.</p></template>
 <template id="info-liste" data-titre="Envoyer la liste"><ul><li>Seules les commandes <b>à livrer</b> du jour affiché sont envoyées, mises en forme pour WhatsApp.</li><li>Sans numéro enregistré, WhatsApp te laisse choisir la personne.</li><li>Les numéros des clients sont confidentiels : ils ne sont ajoutés que si la case est cochée.</li></ul></template>
 <template id="info-cuisine" data-titre="Écran cuisine"><ul><li>Chaque commande du jour part vers l’écran cuisine en quelques secondes, <b>sans le numéro du client ni le paiement</b>.</li><li>Quand ta partenaire touche « Prête », la carte affiche <b>Prête</b>.</li><li>L’état de l’envoi est écrit en haut de l’écran : « Cuisine : à jour ».</li><li>Le lien part vers le numéro de ta partenaire et <b>contient la clé</b> : ne l’envoie qu’à elle.</li></ul></template>
@@ -1219,20 +1220,32 @@
   function viderSaisie() {
     PACKS.forEach(function (p) { saisieQ[p.id] = 0; }); $("chambre").value = ""; $("telClient").value = ""; $("dejaPaye").checked = false; edition = null;
   }
+  /* V6.7 (demande de l'équipe) : commande enregistrée SANS numéro → l'application cherche dans le carnet un contact de la même chambre
+     (site, résidence, chambre ; « 06 » = « 6 ») et met son numéro sur la commande. Plusieurs contacts dans la chambre : le premier dans l'ordre du carnet. */
+  function cleChambre(x) { return String(x || "").toUpperCase().replace(/\s/g, "").replace(/^0+(?=\d)/, ""); }
+  function contactsDeChambre(site, res, chambre) {
+    var k = cleChambre(chambre); if (!k || typeof carnet === "undefined" || !carnet) return [];
+    return carnet.contacts.filter(function (c) { return c.site === site && String(c.res) === String(res) && cleChambre(c.chambre) === k && c.tel; }).sort(comparerContacts);
+  }
   function enregistrer() {
     if ($("btnEnregistrer").disabled) return;
     var site = etat.saisie.site, res = etat.saisie.res, chambre = $("chambre").value.trim().toUpperCase();
     var q = {}; PACKS.forEach(function (p) { q[p.id] = saisieQ[p.id]; });
     var maintenant = Date.now(), tel = normaliserTel($("telClient").value).tel || "", paye = $("dejaPaye").checked;
+    var ancienne = edition ? etat.commandes.find(function (x) { return x.id === edition; }) : null, auto = "";
+    if (!tel && (!ancienne || !ancienne.tel)) {   // numéro effacé exprès sur une commande qui en avait un : on ne le remet pas
+      var trouves = contactsDeChambre(site, res, chambre);
+      if (trouves.length) { tel = trouves[0].tel; auto = " · numéro du carnet : " + libContact(trouves[0]) + (trouves.length > 1 ? " (" + trouves.length + " contacts dans cette chambre)" : ""); }
+    }
     if (edition) {
       var id = edition;
-      muter("Commande modifiée : " + SITES[site].nom + " · " + res + " · ch. " + chambre, function () {
+      muter("Commande modifiée : " + SITES[site].nom + " · " + res + " · ch. " + chambre + auto, function () {
         var c = etat.commandes.find(function (x) { return x.id === id; });
         if (c) { c.site = site; c.res = res; c.chambre = chambre; c.q = q; c.tel = tel; if (paye !== !!c.paye) { c.paye = paye; c.tp = paye ? maintenant : null; } c.maj = maintenant; }
       });
     } else {
       var nouvelle = { id: "c" + maintenant.toString(36) + Math.random().toString(36).slice(2, 6), site: site, res: res, chambre: chambre, q: q, tel: tel, paye: paye, tp: paye ? maintenant : null, t: maintenant, maj: maintenant, livre: false, tl: null };
-      muter("Ajouté : " + SITES[site].nom + " · " + res + " · ch. " + chambre + " — " + libelle(q), function () { etat.commandes.push(nouvelle); });
+      muter("Ajouté : " + SITES[site].nom + " · " + res + " · ch. " + chambre + " — " + libelle(q) + auto, function () { etat.commandes.push(nouvelle); });
     }
     viderSaisie(); majForm(); vibrer(25);
     noterChangement();
