@@ -1,4 +1,4 @@
-/* AUT-12 · messages-envois.js — ÉCRIT PAR 13_AUTOMATISATION/generer_messages_semaine.py (AUT-06 V5.1) : NE PAS MODIFIER À LA MAIN.
+/* AUT-12 · messages-envois.js — ÉCRIT PAR 13_AUTOMATISATION/generer_messages_semaine.py (AUT-06 V5.2) : NE PAS MODIFIER À LA MAIN.
    Les messages de l'onglet « Envois » de l'application (mêmes textes que la page d'envoi DAT-02). Aucun contact ici (D-081, D-087).
    semaine : 0 = dimanche … 6 = samedi ; variante : idée 1 ou 2, alternées chaque semaine à partir du lundi 2026-10-12 (REF_LUNDI). */
 var MESSAGES_ENVOIS = [
@@ -9,7 +9,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 1,
   "variante": 1,
   "rubrique": "",
-  "texte": "Bon lundi 🥰 On repart tout en douceur : un petit réconfort pour bien commencer la semaine ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander :* https://wa.me/2250713030212"
+  "texte": "Bon lundi 🥰 On repart tout en douceur : un petit réconfort pour bien commencer la semaine ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "w1g",
@@ -18,7 +18,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 1,
   "variante": 1,
   "rubrique": "",
-  "texte": "Bon lundi la famille 🥞 On repart en douceur : un petit réconfort pour bien commencer la semaine ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bon lundi la famille 🥞 On repart en douceur : un petit réconfort pour bien commencer la semaine ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w2p",
@@ -27,7 +27,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 2,
   "variante": 1,
   "rubrique": "",
-  "texte": "Mardi, c'est crêpes ! 🥞 Votre petit rendez-vous de la semaine, livré en chambre.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella — 5 crêpes, pour vous ou pour deux\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander :* https://wa.me/2250713030212"
+  "texte": "Mardi, c'est crêpes ! 🥞 Votre petit rendez-vous de la semaine, livré en chambre.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella — 5 crêpes, pour vous ou pour deux\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "w2g",
@@ -36,7 +36,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 2,
   "variante": 1,
   "rubrique": "",
-  "texte": "Bonsoir la famille ! Mardi, c'est crêpes 🥞 Le petit rendez-vous de la semaine, livré en chambre.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella — 5 crêpes, pour vous ou pour deux\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bonsoir la famille ! Mardi, c'est crêpes 🥞 Le petit rendez-vous de la semaine, livré en chambre.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella — 5 crêpes, pour vous ou pour deux\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w3p",
@@ -45,7 +45,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 3,
   "variante": 1,
   "rubrique": "",
-  "texte": "Mercredi, on souffle 😌 Une pause gourmande au milieu de la semaine ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander :* https://wa.me/2250713030212"
+  "texte": "Mercredi, on souffle 😌 Une pause gourmande au milieu de la semaine ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "w3g",
@@ -54,7 +54,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 3,
   "variante": 1,
   "rubrique": "",
-  "texte": "Bonsoir la famille 😌 Mercredi, on souffle : une pause gourmande au milieu de la semaine ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bonsoir la famille 😌 Mercredi, on souffle : une pause gourmande au milieu de la semaine ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w4p",
@@ -63,7 +63,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 4,
   "variante": 1,
   "rubrique": "",
-  "texte": "Révisions, TD, devoirs… tenez bon 📚 Une pause gourmande pour garder la forme ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella — la pause pour vous\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — pour réviser à plusieurs\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander :* https://wa.me/2250713030212"
+  "texte": "Révisions, TD, devoirs… tenez bon 📚 Une pause gourmande pour garder la forme ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella — la pause pour vous\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — pour réviser à plusieurs\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "w4g",
@@ -72,7 +72,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 4,
   "variante": 1,
   "rubrique": "",
-  "texte": "Bonsoir la famille 📚 Révisions, TD, devoirs… tenez bon ! Une pause gourmande pour garder la forme ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella — la pause pour vous\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — pour réviser à plusieurs\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bonsoir la famille 📚 Révisions, TD, devoirs… tenez bon ! Une pause gourmande pour garder la forme ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella — la pause pour vous\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — pour réviser à plusieurs\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w5p",
@@ -81,7 +81,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 5,
   "variante": 1,
   "rubrique": "",
-  "texte": "Vendredi, on partage ! 🎉 Fin de semaine entre amis : un MÉGA pour toute la chambrée ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — à 5, soit 300 F chacun\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander :* https://wa.me/2250713030212"
+  "texte": "Vendredi, on partage ! 🎉 Fin de semaine entre amis : un MÉGA pour toute la chambrée ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — à 5, soit 300 F chacun\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "w5g",
@@ -90,7 +90,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 5,
   "variante": 1,
   "rubrique": "",
-  "texte": "Bonsoir la famille 🎉 Vendredi, on partage ! Fin de semaine entre amis : un MÉGA pour toute la chambrée ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — à 5, soit 300 F chacun\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bonsoir la famille 🎉 Vendredi, on partage ! Fin de semaine entre amis : un MÉGA pour toute la chambrée ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — à 5, soit 300 F chacun\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w6p",
@@ -99,7 +99,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 6,
   "variante": 1,
   "rubrique": "",
-  "texte": "Samedi soir en chambrée 🎬 Un film, des amis… et des crêpes chaudes ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella — pour un film à deux\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — pour toute la chambrée\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander :* https://wa.me/2250713030212"
+  "texte": "Samedi soir en chambrée 🎬 Un film, des amis… et des crêpes chaudes ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella — pour un film à deux\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — pour toute la chambrée\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "w6g",
@@ -108,7 +108,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 6,
   "variante": 1,
   "rubrique": "",
-  "texte": "Bonsoir la famille 🎬 Samedi soir en chambrée : un film, des amis… et des crêpes chaudes ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella — pour un film à deux\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — pour toute la chambrée\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bonsoir la famille 🎬 Samedi soir en chambrée : un film, des amis… et des crêpes chaudes ?\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella — pour un film à deux\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — pour toute la chambrée\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w7p",
@@ -117,7 +117,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 0,
   "variante": 1,
   "rubrique": "",
-  "texte": "Dimanche douceur ☕ On récupère, on se fait plaisir et on prépare la semaine.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander :* https://wa.me/2250713030212"
+  "texte": "Dimanche douceur ☕ On récupère, on se fait plaisir et on prépare la semaine.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "w7g",
@@ -126,7 +126,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 0,
   "variante": 1,
   "rubrique": "",
-  "texte": "Bonsoir la famille ☕ Dimanche douceur : on récupère, on se fait plaisir et on prépare la semaine.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bonsoir la famille ☕ Dimanche douceur : on récupère, on se fait plaisir et on prépare la semaine.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w8p",
@@ -135,7 +135,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 1,
   "variante": 2,
   "rubrique": "",
-  "texte": "Lundi, une petite envie ? 🥞 Une crêpe ou un pack : à vous de choisir.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella — −150 F par rapport à l'unité\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella — −100 F par rapport à l'unité\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — −300 F par rapport à l'unité\n💡 Un pack coûte toujours moins cher que les mêmes crêpes à l'unité\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander :* https://wa.me/2250713030212"
+  "texte": "Lundi, une petite envie ? 🥞 Une crêpe ou un pack : à vous de choisir.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella — −150 F par rapport à l'unité\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella — −100 F par rapport à l'unité\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — −300 F par rapport à l'unité\n💡 Un pack coûte toujours moins cher que les mêmes crêpes à l'unité\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "w8g",
@@ -144,7 +144,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 1,
   "variante": 2,
   "rubrique": "",
-  "texte": "Bonsoir la famille 🥞 Lundi, une petite envie ? Une crêpe ou un pack : à vous de choisir.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella — −150 F par rapport à l'unité\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella — −100 F par rapport à l'unité\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — −300 F par rapport à l'unité\n💡 Un pack coûte toujours moins cher que les mêmes crêpes à l'unité\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bonsoir la famille 🥞 Lundi, une petite envie ? Une crêpe ou un pack : à vous de choisir.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella — −150 F par rapport à l'unité\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella — −100 F par rapport à l'unité\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — −300 F par rapport à l'unité\n💡 Un pack coûte toujours moins cher que les mêmes crêpes à l'unité\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w9p",
@@ -153,7 +153,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 2,
   "variante": 2,
   "rubrique": "",
-  "texte": "Mardi, livré en chambre, sans bouger 🛵 Vous commandez sur WhatsApp, on s'occupe du reste.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander :* https://wa.me/2250713030212"
+  "texte": "Mardi, livré en chambre, sans bouger 🛵 Vous commandez sur WhatsApp, on s'occupe du reste.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "w9g",
@@ -162,7 +162,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 2,
   "variante": 2,
   "rubrique": "",
-  "texte": "Bonsoir la famille 🛵 Livré en chambre, sans bouger : vous commandez sur WhatsApp, on s'occupe du reste.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bonsoir la famille 🛵 Livré en chambre, sans bouger : vous commandez sur WhatsApp, on s'occupe du reste.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n⭐ *MAXI · 800 F* : 2 Nature + 3 Nutella\n🥞 *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager)\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Invitez vos voisins de couloir :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w10p",
@@ -171,7 +171,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 3,
   "variante": 2,
   "rubrique": "",
-  "texte": "Mercredi, on commande ensemble ? 🥞 Le MÉGA : 10 crêpes à partager entre voisins.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — à 5, soit 300 F chacun\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Rejoignez le groupe ATELIER DES CRÊPES (offres en avant-première) :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Mercredi, on commande ensemble ? 🥞 Le MÉGA : 10 crêpes à partager entre voisins.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — à 5, soit 300 F chacun\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Rejoignez le groupe ATELIER DES CRÊPES (offres en avant-première) :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "w10g",
@@ -180,7 +180,7 @@ var MESSAGES_ENVOIS = [
   "semaine": 3,
   "variante": 2,
   "rubrique": "",
-  "texte": "Bonsoir la famille 🥞 On commande ensemble ? Le MÉGA : 10 crêpes à partager entre voisins.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — à 5, soit 300 F chacun\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Rejoignez le groupe ATELIER DES CRÊPES (offres en avant-première) :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Bonsoir la famille 🥞 On commande ensemble ? Le MÉGA : 10 crêpes à partager entre voisins.\n\n🥞 *MINI · 500 F* : 3 Nature + 1 Nutella\n🥞 *MAXI · 800 F* : 2 Nature + 3 Nutella\n⭐ *MÉGA · 1 500 F* : 4 Nature + 6 Nutella (10 crêpes à partager) — à 5, soit 300 F chacun\n🥞 À l'unité : Nature *150 F* · Nutella *200 F*\n\n🛵 Livré en chambre : *Centre dès 19h30* · *Sud dès 20h30*\n🎁 Livraison offerte : Centre dès le *MAXI* · Sud avec le *MÉGA*\n💬 Sinon, livraison par chambre : *100 F* au Centre · *200 F* au Sud\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Commander (en privé) :* https://wa.me/2250713030212\n👥 *Rejoignez le groupe ATELIER DES CRÊPES (offres en avant-première) :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "so1p",
@@ -189,7 +189,7 @@ var MESSAGES_ENVOIS = [
   "semaine": "",
   "variante": 1,
   "rubrique": "soiree",
-  "texte": "🔥 C'EST OUVERT ! 🔥\n\nLes crêpes sont en préparation 🥞\n• MINI 500 F : 3 Nature + 1 Nutella\n• MAXI 800 F : 2 Nature + 3 Nutella\n• MÉGA 1 500 F : 4 Nature + 6 Nutella (10 crêpes)\n🥞 À l'unité : Nature 150 F · Nutella 200 F\n\n🛵 Centre dès 19h30 · Sud dès 20h30\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\nEnvoyez : votre pack + votre chambre + votre paiement 👇\n📲 https://wa.me/2250713030212\n👥 Groupe (à partager) : https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "🔥 C'EST OUVERT ! 🔥\n\nLes crêpes sont en préparation 🥞\n• MINI 500 F : 3 Nature + 1 Nutella\n• MAXI 800 F : 2 Nature + 3 Nutella\n• MÉGA 1 500 F : 4 Nature + 6 Nutella (10 crêpes)\n🥞 À l'unité : Nature 150 F · Nutella 200 F\n\n🛵 Centre dès 19h30 · Sud dès 20h30\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\nEnvoyez : votre pack + votre chambre + votre paiement 👇\n📲 https://wa.me/2250713030212\n👥 Groupe (à partager) : https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "so1g",
@@ -198,7 +198,7 @@ var MESSAGES_ENVOIS = [
   "semaine": "",
   "variante": 1,
   "rubrique": "soiree",
-  "texte": "🔥 C'EST OUVERT ! 🔥\n\nLes crêpes sont en préparation 🥞\n• MINI 500 F : 3 Nature + 1 Nutella\n• MAXI 800 F : 2 Nature + 3 Nutella\n• MÉGA 1 500 F : 4 Nature + 6 Nutella (10 crêpes)\n🥞 À l'unité : Nature 150 F · Nutella 200 F\n\n🛵 Centre dès 19h30 · Sud dès 20h30\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\nEnvoyez : votre pack + votre chambre + votre paiement 👇\n📲 https://wa.me/2250713030212\n👥 Groupe (à partager) : https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "🔥 C'EST OUVERT ! 🔥\n\nLes crêpes sont en préparation 🥞\n• MINI 500 F : 3 Nature + 1 Nutella\n• MAXI 800 F : 2 Nature + 3 Nutella\n• MÉGA 1 500 F : 4 Nature + 6 Nutella (10 crêpes)\n🥞 À l'unité : Nature 150 F · Nutella 200 F\n\n🛵 Centre dès 19h30 · Sud dès 20h30\n💳 Wave · Orange Money · MTN · Moov · Espèces\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\nEnvoyez : votre pack + votre chambre + votre paiement 👇\n📲 https://wa.me/2250713030212\n👥 Groupe (à partager) : https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "so2g",
@@ -228,13 +228,22 @@ var MESSAGES_ENVOIS = [
   "texte": "🙏 MERCI pour cette soirée !\n\nVous avez été au rendez-vous et ça nous fait chaud au cœur 🥰\nL'ATELIER DES CRÊPES est fermé pour ce soir.\n\nLa prochaine ouverture sera annoncée ici en premier 🔔\n👥 Invitez vos voisins de couloir : https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
+  "id": "nc1p",
+  "type": "prive",
+  "titre": "Nouveau client (dès la commande) : rejoindre le groupe",
+  "semaine": "",
+  "variante": 1,
+  "rubrique": "soiree",
+  "texte": "Bonjour 😊 Merci pour votre commande chez L'Atelier des Crêpes, elle est bien enregistrée 🥞\n\nPour ne plus avoir à nous chercher quand l'envie de crêpes vous prend, rejoignez notre groupe : les menus du soir, les heures de livraison et les nouveautés y sont annoncés en premier 🔔\n👥 *Groupe ATELIER DES CRÊPES :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 *Pour vos prochaines commandes :* https://wa.me/2250713030212"
+ },
+ {
   "id": "ap1p",
   "type": "prive",
   "titre": "Merci + demande d'avis (le lendemain d'une soirée)",
   "semaine": "",
   "variante": 1,
   "rubrique": "apres",
-  "texte": "Coucou 🥰\n\nMerci encore à tous ceux qui ont commandé hier ! 🥞\n\nVotre avis compte pour nous : qu'avez-vous préféré ? Qu'est-ce qu'on peut améliorer ? Répondez-nous en privé, on lit tout 🙏\n\n📲 https://wa.me/2250713030212\n👥 Groupe (à partager) : https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Coucou 🥰\n\nMerci encore à tous ceux qui ont commandé hier ! 🥞\n\nVotre avis compte pour nous : qu'avez-vous préféré ? Qu'est-ce qu'on peut améliorer ? Répondez-nous en privé, on lit tout 🙏\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 https://wa.me/2250713030212\n👥 Groupe (à partager) : https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "ap1g",
@@ -243,7 +252,7 @@ var MESSAGES_ENVOIS = [
   "semaine": "",
   "variante": 1,
   "rubrique": "apres",
-  "texte": "Coucou 🥰\n\nMerci encore à tous ceux qui ont commandé hier ! 🥞\n\nVotre avis compte pour nous : qu'avez-vous préféré ? Qu'est-ce qu'on peut améliorer ? Répondez-nous en privé, on lit tout 🙏\n\n📲 https://wa.me/2250713030212\n👥 Groupe (à partager) : https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
+  "texte": "Coucou 🥰\n\nMerci encore à tous ceux qui ont commandé hier ! 🥞\n\nVotre avis compte pour nous : qu'avez-vous préféré ? Qu'est-ce qu'on peut améliorer ? Répondez-nous en privé, on lit tout 🙏\n\n🏅 *Fidélité : après 6 commandes, nous vous offrons 1 crêpe (MINI), 2 crêpes (MAXI) ou 1 pack MINI (MÉGA)*\n\n📲 https://wa.me/2250713030212\n👥 Groupe (à partager) : https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG"
  },
  {
   "id": "ap2p",
@@ -262,15 +271,6 @@ var MESSAGES_ENVOIS = [
   "variante": 1,
   "rubrique": "apres",
   "texte": "🙏 *Merci pour votre patience*\n\nOn s'améliore chaque soir. Dites-nous ce qu'on peut faire mieux, votre avis nous aide à progresser.\n\n📲 Écrivez-nous en privé : https://wa.me/2250713030212"
- },
- {
-  "id": "ap3p",
-  "type": "prive",
-  "titre": "Nouveau client : rejoindre le groupe et nous recommander",
-  "semaine": "",
-  "variante": 1,
-  "rubrique": "apres",
-  "texte": "Bonjour 😊 Merci d'avoir commandé chez L'Atelier des Crêpes, nous espérons que nos crêpes vous ont plu 🥞\n\nPour ne plus avoir à nous chercher quand l'envie de crêpes vous prend, rejoignez notre groupe : les menus du soir, les heures de livraison et les nouveautés y sont annoncés en premier 🔔\n👥 *Groupe ATELIER DES CRÊPES :* https://chat.whatsapp.com/KgsF8HcOfr08o2GEBuiESG\n\nVous avez aimé ? Parlez-en à vos amis et à vos voisins de couloir : c'est la plus belle façon de nous soutenir 🙏\n\n📲 *Commander :* https://wa.me/2250713030212"
  },
  {
   "id": "f1p",
