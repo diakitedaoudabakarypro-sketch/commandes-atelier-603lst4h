@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.5 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.6 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -39,7 +39,9 @@
   V6.4 : liste « Anciens clients » retirée de l'onglet Envois.
   V6.5 (D-089) : fenêtre « Contact » (ajouter, renommer, changer le numéro, supprimer ; depuis « Clients d'hier » : ajouter au carnet) ;
   fenêtre « Message » : modifier ou remplacer entièrement le texte, renommer, revenir au texte d'origine, créer ses propres messages (« Mes messages ») ;
-  messages personnalisés gardés dans le téléphone et dans le dépôt privé (messages-perso.json).
+  messages personnalisés gardés dans le téléphone et dans le dépôt privé (messages-perso.json). Validations : petite fenêtre en haut avec croix.
+  V6.6 (D-090) : AFFICHES dans l'onglet Envois (affiches.js + affiches/, écrits par generer_affiches_appli.py) : celles du message choisi,
+  « Toutes les affiches » (aujourd'hui, soirée, permanentes, autres jours) ; visionneuse plein écran, « Partager » (menu de partage du téléphone) et « Enregistrer ».
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -280,6 +282,28 @@
   #msgTexte { height:42vh; min-height:200px; font-size:15px; line-height:1.4; }
   .feuille.info > button.lien { display:block; margin:12px auto 0; }
   button.lien.danger-lien { color:var(--alerte); }
+  .aff-tete { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:14px 0 6px; }
+  .aff-tete .etiquette { margin:0; }
+  .aff-rang { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+  .aff-rang:empty { display:none; }
+  button.aff-vignette { flex:none; display:flex; flex-direction:column; align-items:stretch; gap:4px; padding:0; min-height:0; background:none; border:0; box-shadow:none; width:104px; color:var(--encre); text-align:left; border-radius:12px; }
+  button.aff-vignette img { display:block; width:100%; height:auto; aspect-ratio:9/16; object-fit:cover; object-position:top; border-radius:10px; border:1px solid var(--bord); background:var(--carte2); }
+  button.aff-vignette.groupe img { aspect-ratio:4/5; }
+  button.aff-vignette small { font-size:12px; font-weight:700; color:var(--doux); line-height:1.25; }
+  button.aff-vignette small b { display:block; color:var(--encre); font-size:12.5px; }
+  .galerie-titre { font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--doux); margin:16px 0 8px; }
+  .galerie { display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:10px; align-items:start; }
+  .galerie button.aff-vignette { width:auto; }
+  .aff-plein { position:fixed; inset:0; z-index:100; background:#120A06; color:#F6EBDC; display:flex; flex-direction:column; gap:10px;
+               padding:calc(10px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
+  .aff-plein[hidden] { display:none; }
+  .aff-plein-tete { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .aff-plein-tete b { font-size:16px; }
+  .aff-plein-tete button { flex:none; background:none; border:0; box-shadow:none; color:#F6EBDC; min-width:48px; min-height:48px; padding:0; font-size:24px; }
+  .aff-plein img { flex:1; min-height:0; width:100%; object-fit:contain; }
+  .aff-plein-pied { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .aff-plein-pied .principal { min-height:52px; }
+  a.btn-sec { display:flex; align-items:center; justify-content:center; min-height:52px; border-radius:999px; border:1.5px solid #E8C47E; color:#F6EBDC; font-weight:700; text-decoration:none; }
   .wave-groupe { margin:18px 0 8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--doux); }
   .wave-grille { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:8px; }
   button.wave-btn { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; min-height:64px; padding:10px 14px; border-radius:14px;
@@ -593,6 +617,8 @@
       <button type="button" class="lien" id="btnModifMsg">Modifier</button>
       <button type="button" class="lien" id="btnNouveauMsg">Nouveau message</button>
     </div>
+    <div class="aff-tete"><span class="etiquette">Affiches</span><button type="button" class="lien" id="btnToutesAffiches">Toutes les affiches</button></div>
+    <div class="aff-rang" id="affichesMsg"></div>
     <div id="zoneGroupe" hidden>
       <button type="button" class="principal gros" id="btnGroupe">Copier et ouvrir le groupe</button>
       <p class="suivant" id="infoGroupe"></p>
@@ -677,6 +703,20 @@
   <button type="button" id="btnFermerQr">Fermer</button>
 </div>
 
+<div class="aff-plein" id="vueAffiche" role="dialog" aria-modal="true" aria-labelledby="titreAffiche" hidden>
+  <div class="aff-plein-tete"><b id="titreAffiche"></b><button type="button" id="btnFermerAffiche" aria-label="Fermer">✕</button></div>
+  <img id="imgAffiche" alt="">
+  <div class="aff-plein-pied">
+    <button type="button" class="principal" id="btnPartagerAffiche">Partager</button>
+    <a class="btn-sec" id="lienEnregAffiche" download>Enregistrer</a>
+  </div>
+</div>
+<div class="voile info" id="voileAffiches" hidden>
+  <div class="feuille info" role="dialog" aria-modal="true" aria-labelledby="titreAffiches">
+    <div class="feuille-tete"><h2 id="titreAffiches">Affiches</h2><button type="button" class="lien" id="btnFermerAffiches">Fermer</button></div>
+    <div id="galerieAffiches"></div>
+  </div>
+</div>
 <div class="voile info" id="voileCal" hidden>
   <div class="feuille info" role="dialog" aria-modal="true" aria-labelledby="titreCal">
     <div class="feuille-tete"><h2 id="titreCal">Calendrier</h2><button type="button" class="lien" id="btnFermerCal">Fermer</button></div>
@@ -724,7 +764,7 @@
 <template id="info-transfert" data-titre="Transférer vers un autre appareil"><p>Sur l’autre appareil, colle le code et touche « Importer » : les commandes sont <b>ajoutées ou mises à jour</b>, sans rien effacer.</p><p><b>Confidentiel</b> : le code contient les numéros des clients. Ne le partage qu’avec ta partenaire.</p></template>
 <template id="info-zero" data-titre="Remise à zéro"><ul><li>Il n’y a pas de « clôture » : chaque soirée a son propre enregistrement et le jour suivant démarre tout seul.</li><li>Ce bouton efface seulement les commandes du jour affiché, après avoir créé un fichier de sauvegarde.</li><li>Les commandes effacées restent <b>récupérables pendant 30 jours</b>.</li></ul></template>
 <template id="info-donnees" data-titre="Sauvegarde GitHub"><ul><li>En fin de soirée, le bouton <b>« La vente est finie »</b> (onglet Bilan) enregistre toutes les commandes du jour, numéros et paiements compris, avec le bilan, dans ton dépôt privé <b>atelier-donnees</b>.</li><li>« Sur GitHub » ne s’affiche qu’après vérification : GitHub renvoie l’empreinte du fichier, l’application la compare.</li><li>Sans réseau, l’envoi reste en attente et repart tout seul.</li><li>Les contacts de l’onglet Envois et l’historique des envois sont aussi gardés dans ce dépôt.</li><li>Cette clé ne va <b>que sur ton téléphone</b>, jamais sur celui de la cuisine.</li></ul></template>
-<template id="info-envois" data-titre="Envois"><ul><li>Le message du jour est choisi tout seul ; tu peux en prendre un autre dans la liste.</li><li><b>Modifier</b> : change ou remplace tout le texte. « Revenir au texte d’origine » annule. <b>Nouveau message</b> : il se range dans « Mes messages ». Tes textes sont gardés dans le téléphone et dans ton dépôt privé.</li><li>Toucher un contact permet de le <b>renommer</b>, de <b>changer son numéro</b> ou de le supprimer. Depuis « Clients d’hier », il s’ajoute au carnet.</li><li><b>Contacts</b> : « Envoyer au suivant » ouvre WhatsApp sur le prochain contact, message déjà écrit, et le coche.</li><li><b>Clients d’hier</b> : les clients de la veille qui ont laissé leur numéro, pour la relance (merci et avis).</li><li><b>Groupe</b> : le message est copié et le groupe s’ouvre ; colle-le.</li><li>Les envois du jour sont gardés dans le téléphone et dans le dépôt privé (historique).</li></ul></template>
+<template id="info-envois" data-titre="Envois"><ul><li>Le message du jour est choisi tout seul ; tu peux en prendre un autre dans la liste.</li><li><b>Modifier</b> : change ou remplace tout le texte. « Revenir au texte d’origine » annule. <b>Nouveau message</b> : il se range dans « Mes messages ». Tes textes sont gardés dans le téléphone et dans ton dépôt privé.</li><li><b>Affiches</b> : celles du message choisi sont sous le texte. Touche-en une, puis <b>Partager</b> : choisis WhatsApp, puis le groupe, un contact ou ton statut. Une affiche « groupe » part avec le message en légende. « Toutes les affiches » montre aussi celles de fin de soirée et des autres jours.</li><li>Toucher un contact permet de le <b>renommer</b>, de <b>changer son numéro</b> ou de le supprimer. Depuis « Clients d’hier », il s’ajoute au carnet.</li><li><b>Contacts</b> : « Envoyer au suivant » ouvre WhatsApp sur le prochain contact, message déjà écrit, et le coche.</li><li><b>Clients d’hier</b> : les clients de la veille qui ont laissé leur numéro, pour la relance (merci et avis).</li><li><b>Groupe</b> : le message est copié et le groupe s’ouvre ; colle-le.</li><li>Les envois du jour sont gardés dans le téléphone et dans le dépôt privé (historique).</li></ul></template>
 <template id="info-bilan" data-titre="Bilan"><ul><li>Montants estimés avec les prix des packs (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F), <b>sans les frais de livraison</b>.</li><li>Les paiements sont ceux que tu as marqués « Payé ».</li></ul></template>
 <template id="info-wave" data-titre="Paiement Wave"><ul><li><b>QR Wave</b> : plein écran, même sans internet. Le client scanne avec son application Wave et saisit le montant.</li><li><b>Liens</b> : choisis le site, puis touche ce que la chambre a commandé. Le message de paiement est copié, montant compris : packs + livraison + 1 % Wave.</li><li>Une seule livraison par chambre. <b>Centre</b> : 100 F, offerte dès qu’il y a un MAXI ou un MÉGA. <b>Sud</b> : 200 F, offerte avec un MÉGA.</li><li>Crêpes à l’unité : crée le lien dans l’application Wave.</li></ul></template>
 <template id="info-ecrire" data-titre="Écrire au client"><p>WhatsApp s’ouvre sur la conversation du client, message déjà écrit : il reste à appuyer sur « Envoyer ». Le contact n’est pas enregistré dans ton téléphone.</p><p>Si WhatsApp et WhatsApp Business sont installés, Android peut demander lequel ouvrir.</p></template>
@@ -733,6 +773,7 @@
 
 <script src="relais-github.js"></script>
 <script src="messages-envois.js"></script>
+<script src="affiches.js"></script>
 <script>
 (function () {
   "use strict";
@@ -2149,6 +2190,7 @@
     $("apercuEnvoi").textContent = m ? m.texte : "Aucun message.";
     $("apercuEnvoi").classList.toggle("tout", sel.apercuTout);
     $("btnApercuTout").textContent = sel.apercuTout ? "Réduire" : "Voir tout le message";
+    $("affichesMsg").replaceChildren.apply($("affichesMsg"), affichesDe(sel.base).map(function (a) { return vignette(a, false); }));
     $("zoneGroupe").hidden = sel.cible !== "groupe"; $("zoneContacts").hidden = sel.cible === "groupe";
     var faits = envoisDuJour()[cleEnvoi()] || {};
     if (sel.cible === "groupe") {
@@ -2333,6 +2375,89 @@
     $(id).addEventListener("focus", function () { document.body.classList.add("clavier"); });
     $(id).addEventListener("blur", function () { document.body.classList.remove("clavier"); });
   });
+  /* ---------- Affiches (V6.6, D-090) : liste dans affiches.js (écrit par 13_AUTOMATISATION/generer_affiches_appli.py), images dans affiches/ ----------
+     Sous le message choisi : ses affiches (statut 9:16, groupe 4:5). « Partager » envoie l'image par le menu de partage du téléphone (WhatsApp) ;
+     une affiche « groupe » part avec le texte du message en légende (aussi copié). Images gardées dans le téléphone (cache « atelier-affiches-v1 » du service worker). */
+  var AFFICHES = (window.AFFICHES || []).slice(), afficheVue = null, blobAffiche = null;
+  function affichesDe(base) {
+    return (AFFICHES || []).filter(function (a) { return a.messages.indexOf(base) >= 0; }).sort(function (x, y) { return x.format === y.format ? 0 : x.format === "statut" ? -1 : 1; });
+  }
+  function vignette(a, avecJour) {
+    return el("button", { type: "button", class: "aff-vignette " + a.format, "data-affiche": a.id },
+      el("img", { src: a.mini, alt: "", loading: "lazy", width: "360", height: String(Math.round(360 * a.h / a.l)) }),
+      el("small", {}, el("b", { text: a.titre }), document.createTextNode((avecJour && a.rubrique === "semaine" ? a.jour + " · " : "") + (a.format === "statut" ? "Statut" : "Groupe"))));
+  }
+  function rendreGalerie() {
+    var g = $("galerieAffiches"), auj = baseDuJour(), demain = (dateDe(soireeCourante()).getDay() + 1) % 7;
+    var ordreJour = function (a) { var m = MSGS_ORIGINE.find(function (x) { return baseDe(x.id) === a.messages[0]; }); return m ? ((m.semaine - demain + 7) % 7) * 10 + (m.variante || 1) : 99; };
+    var sections = [
+      ["Aujourd’hui", affichesDe(auj)],
+      ["Pendant et après la soirée", AFFICHES.filter(function (a) { return a.rubrique === "soiree"; })],
+      ["Permanentes", AFFICHES.filter(function (a) { return a.rubrique === "permanente"; })],
+      ["Autres jours", AFFICHES.filter(function (a) { return a.rubrique === "semaine" && a.messages.indexOf(auj) < 0; }).sort(function (x, y) { return ordreJour(x) - ordreJour(y); })],
+      ["Reprise (10 et 11 octobre)", AFFICHES.filter(function (a) { return a.rubrique === "reprise"; })]
+    ];
+    g.replaceChildren();
+    sections.forEach(function (s) {
+      if (!s[1].length) return;
+      var grille = el("div", { class: "galerie" }); grille.append.apply(grille, s[1].map(function (a) { return vignette(a, true); }));
+      g.append(el("p", { class: "galerie-titre", text: s[0] }), grille);
+    });
+  }
+  function ouvrirAffiche(id) {
+    var a = AFFICHES.find(function (x) { return x.id === id; }); if (!a) return;
+    afficheVue = a; blobAffiche = null;
+    $("titreAffiche").textContent = a.titre + " · " + (a.format === "statut" ? "statut" : "groupe");
+    $("imgAffiche").src = a.img; $("imgAffiche").alt = "Affiche « " + a.titre + " »";
+    $("lienEnregAffiche").href = a.img; $("lienEnregAffiche").setAttribute("download", "atelier-des-crepes_" + a.id.toLowerCase() + ".jpg");
+    var b = $("btnPartagerAffiche"); b.disabled = true; b.textContent = "Partager";
+    fetch(a.img).then(function (r) { if (!r.ok) throw new Error(); return r.blob(); })
+      .then(function (bl) { if (afficheVue === a) { blobAffiche = bl; b.disabled = false; } })
+      .catch(function () { if (afficheVue === a) b.textContent = "Pas de réseau"; });
+    $("vueAffiche").hidden = false;
+    try { history.pushState({ affiche: true }, ""); } catch (e) {}
+    $("btnFermerAffiche").focus();
+  }
+  function fermerAffiche(depuisRetour) {
+    if ($("vueAffiche").hidden) return;
+    $("vueAffiche").hidden = true; afficheVue = null; blobAffiche = null;
+    if (!depuisRetour && history.state && history.state.affiche) history.back();
+  }
+  function texteAffiche(a) {   // une affiche « groupe » part avec le texte (version groupe) du message choisi, ou de son message lié
+    if (a.format !== "groupe") return "";
+    var b = a.messages.indexOf(sel.base) >= 0 ? sel.base : a.messages[0], m = b && variante(b, "groupe");
+    return m ? m.texte : "";
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-affiche]"); if (b) ouvrirAffiche(b.dataset.affiche);
+  });
+  $("btnPartagerAffiche").addEventListener("click", function () {
+    var a = afficheVue; if (!a || !blobAffiche) return;
+    var d = { files: [new File([blobAffiche], "atelier-des-crepes_" + a.id.toLowerCase() + ".jpg", { type: "image/jpeg" })] }, texte = texteAffiche(a);
+    if (texte) { d.text = texte; copier(texte); }
+    if (navigator.canShare && navigator.canShare(d)) {
+      navigator.share(d).then(function () { toast(texte ? "Affiche partagée, avec le message (aussi copié)." : "Affiche partagée.", null, true); })
+        .catch(function (e) { if (!e || e.name !== "AbortError") toast("Partage impossible : touche « Enregistrer », puis envoie l’image depuis ta galerie."); });
+    } else {
+      $("lienEnregAffiche").click();
+      toast("Partage direct impossible sur ce téléphone : l’affiche est enregistrée, envoie-la depuis ta galerie.");
+    }
+  });
+  $("btnFermerAffiche").addEventListener("click", function () { fermerAffiche(false); });
+  window.addEventListener("popstate", function () { fermerAffiche(true); });
+  $("btnToutesAffiches").addEventListener("click", function () { rendreGalerie(); ouvrirFeuille("voileAffiches"); });
+  $("btnFermerAffiches").addEventListener("click", function () { fermerFeuille("voileAffiches"); });
+  $("voileAffiches").addEventListener("click", function (e) { if (e.target === $("voileAffiches")) fermerFeuille("voileAffiches"); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (!$("vueAffiche").hidden) fermerAffiche(false); else if (!$("voileAffiches").hidden) fermerFeuille("voileAffiches");
+  });
+  function prechargerAffiches() {   // vignettes + affiches du jour et de fin de soirée : prêtes même sans réseau le soir
+    if (navigator.onLine === false) return;
+    var urls = AFFICHES.map(function (a) { return a.mini; })
+      .concat(affichesDe(baseDuJour()).concat(AFFICHES.filter(function (a) { return a.rubrique === "soiree"; })).map(function (a) { return a.img; }));
+    (function suivant() { var u = urls.shift(); if (u) fetch(u).catch(function () {}).then(suivant); })();
+  }
   function modifierPerso() { perso.sale = true; sauverPerso(); appliquerPerso(); rendreEnvois(); programmerPersoGh(); }
   var minuteriePerso = null;
   function programmerPersoGh() { clearTimeout(minuteriePerso); minuteriePerso = setTimeout(function () { envoyerPersoGh(false); }, 1500); }
@@ -2415,7 +2540,7 @@
   function envoisDemarrer() {
     $("cleDonnees").value = depotDonnees.cle; majInfoDonnees(); majEtatGh();
     document.querySelectorAll("#waApp button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.wa === (ui.waApp === "standard" ? "standard" : "business"))); });
-    rendreEnvois(); chargerContactsGitHub(); chargerPersoGitHub(); reessayerGh();
+    rendreEnvois(); chargerContactsGitHub(); chargerPersoGitHub(); reessayerGh(); setTimeout(prechargerAffiches, 4000);
     window.addEventListener("online", function () { reessayerGh(); envoyerCarnetGh(false); envoyerPersoGh(false); });
     document.addEventListener("visibilitychange", function () {
       if (document.hidden) { if (carnet.sale) envoyerCarnetGh(true); if (perso.sale) envoyerPersoGh(true); clearTimeout(minuterieEnvois); envoyerEnvoisGh(true); }
