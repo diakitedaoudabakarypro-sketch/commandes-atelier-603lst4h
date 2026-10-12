@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.4 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.5 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -33,10 +33,13 @@
   arrondi au franc supérieur ; combinaisons de 1 à 3 packs par site + « autre quantité » ; pas les crêpes à l'unité (demande de l'équipe, D-084).
   QR Wave marchand en plein écran (wave/carte-wave.png, carte officielle de l'équipe, gardée dans le téléphone : s'affiche sans internet).
   V6.2 : interface épurée (demande de l'équipe) : plus d'encadrés d'explication ; un lien « En savoir plus » ouvre une fenêtre (modèles <template id="info-…">) ;
+  libellés raccourcis ; CALENDRIER : toucher la date (Liste, Bilan) ouvre un mois, jours avec commandes marqués, jours futurs fermés.
   V6.3 (D-087) : envoi à la cuisine immédiat (et forcé quand l'application passe en arrière-plan) ; case « Emballée » ; cartes : résidence et chambre en grand ;
   SAUVEGARDE GITHUB de la soirée (dépôt privé atelier-donnees, clé « données ») ; onglet ENVOIS (messages, carnet de contacts, « Clients d'hier »).
   V6.4 : liste « Anciens clients » retirée de l'onglet Envois.
-  libellés raccourcis ; CALENDRIER : toucher la date (Liste, Bilan) ouvre un mois, jours avec commandes marqués, jours futurs fermés.
+  V6.5 (D-089) : fenêtre « Contact » (ajouter, renommer, changer le numéro, supprimer ; depuis « Clients d'hier » : ajouter au carnet) ;
+  fenêtre « Message » : modifier ou remplacer entièrement le texte, renommer, revenir au texte d'origine, créer ses propres messages (« Mes messages ») ;
+  messages personnalisés gardés dans le téléphone et dans le dépôt privé (messages-perso.json).
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -204,10 +207,16 @@
   .alerte { max-width:1180px; margin:12px auto 0; padding:10px 14px; border-radius:12px; background:rgba(154,52,18,.12); border:1px solid var(--alerte); color:var(--alerte); font-weight:600; font-size:14px;
             display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
   .alerte-zone { padding:0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
-  .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(84px + env(safe-area-inset-bottom)); z-index:60; max-width:min(560px, calc(100vw - 24px)); width:max-content;
-           background:#1C120C; color:#F6EBDC; border:1px solid rgba(232,196,126,.4); border-radius:14px; padding:8px 8px 8px 16px; display:flex; align-items:center; gap:10px; box-shadow:0 10px 30px rgba(0,0,0,.4); font-size:15px; }
-  .toast button { background:#E8C47E; color:#1C120C; min-height:42px; padding:0 14px; }
-  @media (min-width:900px) { .toast { bottom:24px; } }
+  .toast { position:fixed; left:50%; transform:translateX(-50%); top:calc(10px + env(safe-area-inset-top)); z-index:120; width:min(520px, calc(100vw - 24px));
+           background:var(--carte); color:var(--encre); border:1px solid var(--bord); border-radius:16px; padding:8px 4px 8px 14px; display:flex; align-items:center; gap:10px;
+           box-shadow:0 14px 36px rgba(0,0,0,.30); font-size:15px; font-weight:600; line-height:1.35; animation:toast-entree .18s ease-out; }
+  @keyframes toast-entree { from { opacity:0; transform:translate(-50%, -8px); } to { opacity:1; transform:translate(-50%, 0); } }
+  .toast .t-coche { flex:none; width:26px; height:26px; border-radius:50%; background:var(--ok); display:grid; place-items:center; }
+  .toast .t-coche svg { width:16px; height:16px; fill:none; stroke:#fff; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+  #toastTexte { flex:1; min-width:0; }
+  .toast #toastAnnuler { flex:none; background:var(--carte2); color:var(--encre); border:1.5px solid var(--or); min-height:40px; padding:0 12px; font-size:14px; }
+  .toast #toastFermer { flex:none; background:none; border:0; box-shadow:none; min-width:44px; min-height:44px; padding:0; font-size:20px; color:var(--doux); }
+  @media (prefers-reduced-motion:reduce) { .toast { animation:none; } }
   .navbas { position:fixed; left:0; right:0; bottom:0; z-index:40; display:grid; grid-template-columns:1fr 1fr; gap:8px;
             padding:8px max(12px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
             background:linear-gradient(180deg,var(--cacao2),var(--cacao)); border-top:1px solid rgba(232,196,126,.25); }
@@ -265,6 +274,12 @@
   .contact > button { min-height:40px; font-size:14px; padding:0 12px; flex:none; }
   .contact.fait .c-nom b { color:var(--ok); }
   #listeContacts { margin-top:8px; max-height:60vh; overflow-y:auto; }
+  .contact .c-nom { background:none; border:0; box-shadow:none; padding:0; min-height:44px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; text-align:left; color:var(--encre); border-radius:8px; }
+  .liens-msg { display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; margin-top:4px; }
+  button.ajout-contact { width:100%; margin-top:12px; min-height:50px; background:var(--carte2); border:1.5px dashed var(--or); color:var(--encre); font-weight:800; font-size:16px; }
+  #msgTexte { height:42vh; min-height:200px; font-size:15px; line-height:1.4; }
+  .feuille.info > button.lien { display:block; margin:12px auto 0; }
+  button.lien.danger-lien { color:var(--alerte); }
   .wave-groupe { margin:18px 0 8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--doux); }
   .wave-grille { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:8px; }
   button.wave-btn { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; min-height:64px; padding:10px 14px; border-radius:14px;
@@ -573,7 +588,11 @@
       <button type="button" data-cible="groupe" aria-pressed="false">Groupe</button>
     </div>
     <div class="apercu" id="apercuEnvoi"></div>
-    <button type="button" class="lien" id="btnApercuTout">Voir tout le message</button>
+    <div class="liens-msg">
+      <button type="button" class="lien" id="btnApercuTout">Voir tout le message</button>
+      <button type="button" class="lien" id="btnModifMsg">Modifier</button>
+      <button type="button" class="lien" id="btnNouveauMsg">Nouveau message</button>
+    </div>
     <div id="zoneGroupe" hidden>
       <button type="button" class="principal gros" id="btnGroupe">Copier et ouvrir le groupe</button>
       <p class="suivant" id="infoGroupe"></p>
@@ -585,13 +604,7 @@
       <p class="suivant" id="infoSuivant"></p>
       <input type="search" id="chercheContact" placeholder="Rechercher un contact" autocomplete="off">
       <div id="listeContacts"></div>
-      <details class="outils" id="ajoutContactBloc">
-        <summary>Ajouter un contact</summary>
-        <label class="etiquette" for="ajoutNom">Nom</label><input type="text" id="ajoutNom" autocomplete="off" placeholder="facultatif">
-        <label class="etiquette" for="ajoutTel">Numéro WhatsApp</label><input type="text" id="ajoutTel" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
-        <div class="rang"><button type="button" class="principal" id="btnAjoutContact">Ajouter au carnet</button></div>
-        <div class="retour" id="retourAjout" role="status"></div>
-      </details>
+      <button type="button" class="ajout-contact" id="btnAjoutContact">+ Ajouter un contact</button>
     </div>
     <p class="aide" id="etatContacts"></p>
   </section>
@@ -672,6 +685,29 @@
     <button type="button" class="principal" id="btnCalAuj">Aujourd’hui</button>
   </div>
 </div>
+<div class="voile info" id="voileContact" hidden>
+  <div class="feuille info" role="dialog" aria-modal="true" aria-labelledby="titreContact">
+    <div class="feuille-tete"><h2 id="titreContact">Contact</h2><button type="button" class="lien" id="btnFermerContact">Fermer</button></div>
+    <label class="etiquette" for="contactNom">Nom</label><input type="text" id="contactNom" autocomplete="off" placeholder="facultatif">
+    <label class="etiquette" for="contactTel">Numéro WhatsApp</label><input type="text" id="contactTel" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
+    <div class="retour" id="retourContact" role="status"></div>
+    <button type="button" class="principal" id="btnEnregContact">Enregistrer</button>
+    <button type="button" class="lien danger-lien" id="btnSupprContact">Supprimer du carnet</button>
+  </div>
+</div>
+<div class="voile info" id="voileMsg" hidden>
+  <div class="feuille info" role="dialog" aria-modal="true" aria-labelledby="titreMsgEdit">
+    <div class="feuille-tete"><h2 id="titreMsgEdit">Message</h2><button type="button" class="lien" id="btnFermerMsg">Fermer</button></div>
+    <p class="resume" id="resumeMsgEdit"></p>
+    <label class="etiquette" for="msgTitre">Nom dans la liste</label><input type="text" id="msgTitre" autocomplete="off" maxlength="80">
+    <span class="etiquette avec-info"><label for="msgTexte">Texte</label><button type="button" class="lien" id="btnViderMsg" style="margin-left:auto">Tout effacer</button></span>
+    <textarea id="msgTexte" spellcheck="true"></textarea>
+    <p class="manque" id="manqueMsg" aria-live="polite"></p>
+    <button type="button" class="principal" id="btnEnregMsg">Enregistrer</button>
+    <button type="button" class="lien" id="btnOrigineMsg">Revenir au texte d’origine</button>
+    <button type="button" class="lien danger-lien" id="btnSupprMsg">Supprimer ce message</button>
+  </div>
+</div>
 <div class="voile info" id="voileInfo" hidden>
   <div class="feuille info" role="dialog" aria-modal="true" aria-labelledby="titreInfo">
     <div class="feuille-tete"><h2 id="titreInfo"></h2><button type="button" class="lien" id="btnFermerInfo">Fermer</button></div>
@@ -688,12 +724,12 @@
 <template id="info-transfert" data-titre="Transférer vers un autre appareil"><p>Sur l’autre appareil, colle le code et touche « Importer » : les commandes sont <b>ajoutées ou mises à jour</b>, sans rien effacer.</p><p><b>Confidentiel</b> : le code contient les numéros des clients. Ne le partage qu’avec ta partenaire.</p></template>
 <template id="info-zero" data-titre="Remise à zéro"><ul><li>Il n’y a pas de « clôture » : chaque soirée a son propre enregistrement et le jour suivant démarre tout seul.</li><li>Ce bouton efface seulement les commandes du jour affiché, après avoir créé un fichier de sauvegarde.</li><li>Les commandes effacées restent <b>récupérables pendant 30 jours</b>.</li></ul></template>
 <template id="info-donnees" data-titre="Sauvegarde GitHub"><ul><li>En fin de soirée, le bouton <b>« La vente est finie »</b> (onglet Bilan) enregistre toutes les commandes du jour, numéros et paiements compris, avec le bilan, dans ton dépôt privé <b>atelier-donnees</b>.</li><li>« Sur GitHub » ne s’affiche qu’après vérification : GitHub renvoie l’empreinte du fichier, l’application la compare.</li><li>Sans réseau, l’envoi reste en attente et repart tout seul.</li><li>Les contacts de l’onglet Envois et l’historique des envois sont aussi gardés dans ce dépôt.</li><li>Cette clé ne va <b>que sur ton téléphone</b>, jamais sur celui de la cuisine.</li></ul></template>
-<template id="info-envois" data-titre="Envois"><ul><li>Le message du jour est choisi tout seul ; tu peux en prendre un autre dans la liste.</li><li><b>Contacts</b> : « Envoyer au suivant » ouvre WhatsApp sur le prochain contact, message déjà écrit, et le coche.</li><li><b>Clients d’hier</b> : les clients de la veille qui ont laissé leur numéro, pour la relance (merci et avis).</li><li><b>Groupe</b> : le message est copié et le groupe s’ouvre ; colle-le.</li><li>Les envois du jour sont gardés dans le téléphone et dans le dépôt privé (historique).</li></ul></template>
+<template id="info-envois" data-titre="Envois"><ul><li>Le message du jour est choisi tout seul ; tu peux en prendre un autre dans la liste.</li><li><b>Modifier</b> : change ou remplace tout le texte. « Revenir au texte d’origine » annule. <b>Nouveau message</b> : il se range dans « Mes messages ». Tes textes sont gardés dans le téléphone et dans ton dépôt privé.</li><li>Toucher un contact permet de le <b>renommer</b>, de <b>changer son numéro</b> ou de le supprimer. Depuis « Clients d’hier », il s’ajoute au carnet.</li><li><b>Contacts</b> : « Envoyer au suivant » ouvre WhatsApp sur le prochain contact, message déjà écrit, et le coche.</li><li><b>Clients d’hier</b> : les clients de la veille qui ont laissé leur numéro, pour la relance (merci et avis).</li><li><b>Groupe</b> : le message est copié et le groupe s’ouvre ; colle-le.</li><li>Les envois du jour sont gardés dans le téléphone et dans le dépôt privé (historique).</li></ul></template>
 <template id="info-bilan" data-titre="Bilan"><ul><li>Montants estimés avec les prix des packs (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F), <b>sans les frais de livraison</b>.</li><li>Les paiements sont ceux que tu as marqués « Payé ».</li></ul></template>
 <template id="info-wave" data-titre="Paiement Wave"><ul><li><b>QR Wave</b> : plein écran, même sans internet. Le client scanne avec son application Wave et saisit le montant.</li><li><b>Liens</b> : choisis le site, puis touche ce que la chambre a commandé. Le message de paiement est copié, montant compris : packs + livraison + 1 % Wave.</li><li>Une seule livraison par chambre. <b>Centre</b> : 100 F, offerte dès qu’il y a un MAXI ou un MÉGA. <b>Sud</b> : 200 F, offerte avec un MÉGA.</li><li>Crêpes à l’unité : crée le lien dans l’application Wave.</li></ul></template>
 <template id="info-ecrire" data-titre="Écrire au client"><p>WhatsApp s’ouvre sur la conversation du client, message déjà écrit : il reste à appuyer sur « Envoyer ». Le contact n’est pas enregistré dans ton téléphone.</p><p>Si WhatsApp et WhatsApp Business sont installés, Android peut demander lequel ouvrir.</p></template>
 
-<div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastTexte"></span><button type="button" id="toastAnnuler">Annuler</button></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden><span class="t-coche" id="toastCoche" aria-hidden="true" hidden><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span id="toastTexte"></span><button type="button" id="toastAnnuler">Annuler</button><button type="button" id="toastFermer" aria-label="Fermer">✕</button></div>
 
 <script src="relais-github.js"></script>
 <script src="messages-envois.js"></script>
@@ -1018,7 +1054,7 @@
     var tn = normaliserTel($("telPanneau").value);
     if (tn.erreur) { majLien(); return; }
     enregistrerTel(c, tn.tel || ""); majLien();
-    toast(tn.tel ? "Numéro enregistré : " + tn.joli + "." : "Numéro retiré de cette commande.");
+    toast(tn.tel ? "Numéro enregistré : " + tn.joli + "." : "Numéro retiré de cette commande.", null, true);
   });
   $("lienWa").addEventListener("click", function () {   // le lien s'ouvre normalement ; on garde le numéro saisi
     if (this.getAttribute("aria-disabled") === "true") return;
@@ -1029,7 +1065,7 @@
   });
   $("btnCopierMsg").addEventListener("click", function () {
     var t = $("apercuMsg").value; if (!t.trim()) return;
-    copier(t).then(function (ok) { toast(ok ? "Message copié." : "Copie automatique impossible : sélectionne le texte et copie-le à la main."); });
+    copier(t).then(function (ok) { toast(ok ? "Message copié." : "Copie automatique impossible : sélectionne le texte et copie-le à la main.", null, ok); });
   });
   $("btnFermerEcrire").addEventListener("click", fermerEcrire);
   $("voileEcrire").addEventListener("click", function (e) { if (e.target === this) fermerEcrire(); });
@@ -1037,17 +1073,26 @@
   $("avecNumeros").addEventListener("change", function () { ui.avecNumeros = this.checked; sauverUi(); });
 
   /* ---------- Annulation (un seul niveau, depuis le bandeau de confirmation) ---------- */
+  /* V6.5 : une petite fenêtre en haut (demande de l'équipe) au lieu du texte vert et du bandeau du bas ; elle reste jusqu'à la croix.
+     Avec « Annuler », elle se ferme seule après 10 s (l'annulation n'a de sens que tout de suite). Les erreurs restent écrites en rouge près du champ. */
   var minuterie = null, retablir = null;
-  function toast(message, annuler) {
+  function toast(message, annuler, valide) {
     $("toastTexte").textContent = message; retablir = annuler || null;
-    $("toastAnnuler").hidden = !annuler; $("toast").hidden = false;
-    clearTimeout(minuterie); minuterie = setTimeout(function () { $("toast").hidden = true; retablir = null; }, 7000);
+    $("toastAnnuler").hidden = !annuler; $("toastCoche").hidden = !valide; $("toast").hidden = false;
+    clearTimeout(minuterie); if (annuler) minuterie = setTimeout(fermerToast, 10000);
   }
-  $("toastAnnuler").addEventListener("click", function () { if (retablir) retablir(); $("toast").hidden = true; retablir = null; });
+  function fermerToast() { clearTimeout(minuterie); $("toast").hidden = true; retablir = null; }
+  function retourEn(id, message, type) {   // texte sous un bouton : rouge si erreur ; une validation part dans la petite fenêtre
+    var r = $(id);
+    if (type === "ok") { r.textContent = ""; r.className = "retour"; toast(message, null, true); }
+    else { r.textContent = message; r.className = "retour " + (type || ""); }
+  }
+  $("toastAnnuler").addEventListener("click", function () { if (retablir) retablir(); fermerToast(); });
+  $("toastFermer").addEventListener("click", fermerToast);
   function muter(message, action) {
     var jour = etat.jourVu, avant = JSON.stringify(etat.commandes);
     action(); sauver(); rendre();
-    toast(message, function () { etat.jourVu = jour; etat.commandes = JSON.parse(avant); sauver(); rendre(); });
+    toast(message, function () { etat.jourVu = jour; etat.commandes = JSON.parse(avant); sauver(); rendre(); }, true);
   }
 
   /* ---------- Saisie ---------- */
@@ -1436,7 +1481,7 @@
     if (n.length === 13 && n.indexOf("225") === 0) return n;
     return n.length === 10 ? "225" + n : "";
   }
-  function retourListe(message, type) { var r = $("retourListe"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function retourListe(message, type) { retourEn("retourListe", message, type); }
   $("btnEnvoyerWa").addEventListener("click", function () {
     if (!enAttente().length) { retourListe("Rien à envoyer : aucune commande en attente.", "erreur"); return; }
     var brut = $("numPartenaire").value.trim(), n = "";
@@ -1458,7 +1503,7 @@
   $("btnCopierListe").addEventListener("click", function () {
     if (!enAttente().length) { toast("Rien à copier : aucune commande en attente."); return; }
     var t = texteListe();
-    copier(t).then(function (ok) { if (ok) toast("Liste copiée. Colle-la dans WhatsApp."); else { $("zoneCode").value = t; $("zoneCode").select(); toast("Copie automatique impossible : le texte est dans la zone ci-dessous, copie-le à la main."); } });
+    copier(t).then(function (ok) { if (ok) toast("Liste copiée. Colle-la dans WhatsApp.", null, true); else { $("zoneCode").value = t; $("zoneCode").select(); toast("Copie automatique impossible : le texte est dans la zone ci-dessous, copie-le à la main."); } });
   });
   if (navigator.share) {
     $("btnPartager").hidden = false;
@@ -1476,10 +1521,10 @@
     var t = Number(c.t) || Date.now();
     return { id: c.id, site: c.site, res: String(c.res), chambre: ch, q: q, tel: normaliserTel(c.tel).tel || "", paye: !!c.paye, tp: c.paye ? (Number(c.tp) || Number(c.maj) || t) : null, t: t, maj: Number(c.maj) || t, livre: !!c.livre, tl: c.livre ? (Number(c.tl) || Number(c.maj) || t) : null, emb: !!c.emb, te: c.emb ? (Number(c.te) || Number(c.maj) || t) : null };
   }
-  function retourCode(message, type) { var r = $("retourCode"); r.textContent = message; r.className = "retour " + (type || ""); }
-  function retourFichier(message, type) { var r = $("retourFichier"); r.textContent = message; r.className = "retour " + (type || ""); }
-  function retourSauve(message, type) { var r = $("retourSauve"); r.textContent = message; r.className = "retour " + (type || ""); }
-  function retourBilan(message, type) { var r = $("retourBilan"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function retourCode(message, type) { retourEn("retourCode", message, type); }
+  function retourFichier(message, type) { retourEn("retourFichier", message, type); }
+  function retourSauve(message, type) { retourEn("retourSauve", message, type); }
+  function retourBilan(message, type) { retourEn("retourBilan", message, type); }
   function ouvrirWa(texte, retour) {
     var brut = $("numPartenaire").value.trim(), n = "";
     if (brut) { n = numeroWa(brut); if (!n) { retour("Numéro invalide : il faut 10 chiffres, par exemple 07 12 34 56 78.", "erreur"); return; } }
@@ -1600,7 +1645,7 @@
     var c = etat.corbeille.shift(); if (!c) return;
     var r = fusionner(c.jour, c.commandes); etat.jourVu = c.jour; edition = null;
     sauver(); rendre();
-    toast(plur(r.ajoutees + r.majs, "commande restaurée", "commandes restaurées") + " (" + nomJour(c.jour) + ").");
+    toast(plur(r.ajoutees + r.majs, "commande restaurée", "commandes restaurées") + " (" + nomJour(c.jour) + ").", null, true);
   }
   function fermerZero() { $("confirmeZero").hidden = true; $("btnZero").hidden = false; }
   $("btnZero").addEventListener("click", function () {
@@ -1657,7 +1702,7 @@
     $("btnMaj").addEventListener("click", function () { location.reload(); });   // le brouillon du formulaire est gardé
   }
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); invitation = e; majAppli(); });
-  window.addEventListener("appinstalled", function () { invitation = null; enAppli = true; majAppli(); toast("Application installée : ouvre-la depuis son icône sur l’écran d’accueil."); });
+  window.addEventListener("appinstalled", function () { invitation = null; enAppli = true; majAppli(); toast("Application installée : ouvre-la depuis son icône sur l’écran d’accueil.", null, true); });
   $("btnInstaller").addEventListener("click", function () {
     if (!invitation) return;
     invitation.prompt();
@@ -1745,7 +1790,7 @@
       var duJour = etat.jours[jour] ? etat.jours[jour].commandes : [];
       var c = duJour.find(function (x) { return x.id === nouvelles[0] && !x.livre; });
       if (c && cuisineEtat.pretesLues && !retablir && $("toast").hidden) {   // jamais par-dessus un bandeau « Annuler »
-        toast("Prête en cuisine : " + SITES[c.site].nom + " · " + c.res + " · ch. " + c.chambre + (nouvelles.length > 1 ? " (+ " + (nouvelles.length - 1) + ")" : ""));
+        toast("Prête en cuisine : " + SITES[c.site].nom + " · " + c.res + " · ch. " + c.chambre + (nouvelles.length > 1 ? " (+ " + (nouvelles.length - 1) + ")" : ""), null, true);
         vibrer([60, 60, 60]);
       }
       cuisineEtat.pretesLues = true;
@@ -1778,7 +1823,7 @@
     z.hidden = false; z.textContent = t; z.className = "sauve-etat " + cls;
     info.textContent = t + (e ? ". " + e.message : ".");
   }
-  function retourCuisine(message, type) { var r = $("retourCuisine"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function retourCuisine(message, type) { retourEn("retourCuisine", message, type); }
   $("btnCleCuisine").addEventListener("click", function () {
     var c = $("cleCuisine").value.trim();
     if (!c) {
@@ -1867,8 +1912,7 @@
       document.querySelectorAll(".wave-btn.copie").forEach(function (x) { x.classList.remove("copie"); var s = x.querySelector(".w-mt small"); if (s) s.textContent = "Copier"; });
       if (ok) {
         if (bouton) { bouton.classList.add("copie"); var s = bouton.querySelector(".w-mt small"); if (s) s.textContent = "Copié"; }
-        var r = $("retourWave"); r.textContent = "Copié : " + lib + ". Colle-le dans la conversation du client."; r.className = "retour ok";
-        toast("Lien Wave copié : " + lib); vibrer(25);
+        retourEn("retourWave", "Copié : " + lib + ". Colle-le dans la conversation du client.", "ok"); vibrer(25);
       } else {
         var r2 = $("retourWave"); r2.textContent = "Copie impossible sur ce téléphone. Lien : " + WAVE_LIEN + m.wave; r2.className = "retour erreur";
       }
@@ -1970,7 +2014,7 @@
       return false;
     });
   }
-  function retourGh(message, type) { var r = $("retourGh"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function retourGh(message, type) { retourEn("retourGh", message, type); }
   function etatGhJour(j) {   // "ok" | "modifie" | "attente" | "aucun"
     var g = suiviGh(j); if (!g) return "aucun";
     if (g.attente) return "attente";
@@ -1997,7 +2041,7 @@
     Object.keys(etat.sauvegarde.jours || {}).forEach(function (j) { var g = suiviGh(j); if (g && g.attente && !ghEnCours[j]) sauverSoireeGitHub(j, true); });
   }
   $("btnFinSoiree").addEventListener("click", function () { sauverSoireeGitHub(etat.jourVu, false); });
-  function retourDonnees(message, type) { var r = $("retourDonnees"); r.textContent = message; r.className = "retour " + (type || ""); }
+  function retourDonnees(message, type) { retourEn("retourDonnees", message, type); }
   function majInfoDonnees() { $("infoDonnees").textContent = depotDonnees.cle ? "Branchée : dépôt privé « " + DONNEES_DEPOT + " »." : "Non branchée."; }
   $("btnCleDonnees").addEventListener("click", function () {
     var c = $("cleDonnees").value.trim();
@@ -2011,15 +2055,28 @@
       if (!r.verifie) throw { message: "GitHub n’a pas confirmé l’écriture." };
       depotDonnees.cle = c; ecrire(CLE_DONNEES, JSON.stringify(depotDonnees)); majInfoDonnees(); majEtatGh();
       retourDonnees("Clé acceptée : écriture vérifiée sur GitHub à " + heureDe(Date.now()) + ".", "ok");
-      chargerContactsGitHub(); reessayerGh();
+      chargerContactsGitHub(); chargerPersoGitHub(); reessayerGh();
     }).catch(function (e) { retourDonnees((e && e.message) || "Test impossible.", "erreur"); });
   });
 
   /* ---------- Envois (V6.3, D-087) : message du jour, carnet de contacts, « Clients d'hier », progression un par un ----------
      Messages : messages-envois.js (écrit par generer_messages_semaine.py). Contacts : contacts.json du dépôt privé (copie dans le téléphone).
      Envois du jour : envois/AAAA-MM-JJ.json du dépôt privé (historique des messages envoyés). */
-  var MSGS = (window.MESSAGES_ENVOIS || []).slice(), GROUPES = (window.GROUPES_ENVOIS || []).slice();
-  var REF_LUNDI = "2026-10-12", CLE_CONTACTS = "atelier_contacts_v1", CLE_ENVOIS = "atelier_envois_v1";
+  var MSGS_ORIGINE = (window.MESSAGES_ENVOIS || []).slice(), MSGS = MSGS_ORIGINE, GROUPES = (window.GROUPES_ENVOIS || []).slice();
+  var REF_LUNDI = "2026-10-12", CLE_CONTACTS = "atelier_contacts_v1", CLE_ENVOIS = "atelier_envois_v1", CLE_PERSO = "atelier_messages_perso_v1";
+  /* V6.5 : messages modifiés ou ajoutés par l'équipe (messages-perso.json du dépôt privé, copie dans le téléphone).
+     modifies[id] = { texte, t } remplace le texte d'un message généré (id avec p ou g) ; titres[base] renomme ; ajoutes = [{ id, titre, texte, t }] */
+  var perso = { modifies: {}, titres: {}, ajoutes: [], sha: null, sale: false, ok: 0, erreur: null };
+  try { var pe = JSON.parse(lire(CLE_PERSO) || "{}"); if (pe && pe.modifies) perso = Object.assign(perso, pe, { erreur: null }); } catch (e) {}
+  function sauverPerso() { ecrire(CLE_PERSO, JSON.stringify({ modifies: perso.modifies, titres: perso.titres, ajoutes: perso.ajoutes, sha: perso.sha, sale: perso.sale, ok: perso.ok })); }
+  function appliquerPerso() {
+    MSGS = MSGS_ORIGINE.map(function (m) {
+      var mo = perso.modifies[m.id], ti = perso.titres[baseDe(m.id)];
+      return mo || ti ? Object.assign({}, m, mo ? { texte: mo.texte, modifie: true } : {}, ti ? { titre: ti } : {}) : m;
+    });
+    perso.ajoutes.forEach(function (a) { MSGS.push({ id: a.id + "p", type: "perso", titre: a.titre, texte: a.texte, rubrique: "perso", perso: true }); });
+  }
+  appliquerPerso();
   var carnet = { contacts: [], sha: null, sale: false, chargeLe: 0, ok: 0, erreur: null };
   try { var cn = JSON.parse(lire(CLE_CONTACTS) || "{}"); if (cn && Array.isArray(cn.contacts)) carnet = Object.assign(carnet, cn, { erreur: null }); } catch (e) {}
   var envois = { jours: {} }; try { var ev = JSON.parse(lire(CLE_ENVOIS) || "{}"); if (ev && ev.jours) envois = ev; } catch (e) {}
@@ -2048,10 +2105,11 @@
   function construireChoixMsg() {
     var s = $("choixMsg"); s.replaceChildren();
     var j = soireeCourante(), auj = dateDe(j).getDay(), duJour = baseDuJour();
-    var groupes = [["Aujourd’hui", []], ["Pendant la soirée", []], ["Après la soirée", []], ["Autres jours", []]];
+    var groupes = [["Aujourd’hui", []], ["Pendant la soirée", []], ["Après la soirée", []], ["Autres jours", []], ["Mes messages", []]];
     bases().forEach(function (b) {
-      var m = variante(b, "contacts"), lib = m.titre;
-      if (b === duJour) groupes[0][1].push([b, lib]);
+      var m = variante(b, "contacts"), lib = m.titre + (m.modifie || variante(b, "groupe").modifie ? " · modifié" : "");
+      if (m.perso) groupes[4][1].push([b, lib]);
+      else if (b === duJour) groupes[0][1].push([b, lib]);
       else if (m.rubrique === "soiree") groupes[1][1].push([b, lib]);
       else if (m.rubrique === "apres") groupes[2][1].push([b, lib]);
       else groupes[3][1].push([b, JOURS_FR[m.semaine].replace(/^./, function (c) { return c.toUpperCase(); }) + " · " + lib, ((m.semaine - auj + 7) % 7) || 7]);
@@ -2115,13 +2173,15 @@
     visibles.slice(0, 300).forEach(function (c) {
       var t = faits[c.tel];
       zc.append(el("div", { class: "contact" + (t ? " fait" : "") },
-        el("div", { class: "c-nom" }, el("b", { text: c.nom || joliTel(c.tel) }), el("small", { text: [c.nom ? joliTel(c.tel) : "", t ? "envoyé à " + heureDe(t) : ""].filter(Boolean).join(" · ") })),
+        el("button", { type: "button", class: "c-nom", "data-modifier-contact": c.tel, "aria-label": "Modifier " + (c.nom || joliTel(c.tel)) },
+          el("b", { text: c.nom || joliTel(c.tel) }), el("small", { text: [c.nom ? joliTel(c.tel) : "", t ? "envoyé à " + heureDe(t) : ""].filter(Boolean).join(" · ") })),
         t ? el("button", { type: "button", class: "lien", "data-annuler-envoi": c.tel, text: "Annuler" }) : el("button", { type: "button", "data-envoyer": c.tel, text: "Envoyer" }),
-        sel.liste !== "hier" ? el("button", { type: "button", class: "lien", "data-supprimer-contact": c.id, "aria-label": "Supprimer " + (c.nom || c.tel), text: "Supprimer" }) : null));
+        el("button", { type: "button", class: "lien", "data-modifier-contact": c.tel, "aria-label": "Modifier " + (c.nom || joliTel(c.tel)), text: "Modifier" })));
     });
     var e = carnet.erreur;
-    $("etatContacts").textContent = !depotDonnees.cle ? "Contacts : sauvegarde GitHub non branchée." :
-      e ? "Contacts : " + e.message : carnet.sale ? "Contacts : modification en attente d’envoi vers GitHub." : carnet.ok ? "Contacts : " + carnet.contacts.length + " · sur GitHub (" + heureDe(carnet.ok) + ")." : "Contacts : chargement…";
+    $("etatContacts").textContent = (!depotDonnees.cle ? "Contacts : sauvegarde GitHub non branchée." :
+      e ? "Contacts : " + e.message : carnet.sale ? "Contacts : modification en attente d’envoi vers GitHub." : carnet.ok ? "Contacts : " + carnet.contacts.length + " · sur GitHub (" + heureDe(carnet.ok) + ")." : "Contacts : chargement…") +
+      (!depotDonnees.cle ? "" : perso.erreur ? " Messages : " + perso.erreur.message : perso.sale ? " Messages : modification en attente d’envoi vers GitHub." : "");
   }
   function lienWhatsApp(tel, texte) {
     var t = encodeURIComponent(texte), standard = "https://wa.me/" + tel + "?text=" + t;
@@ -2136,7 +2196,7 @@
     var m = variante(sel.base, "contacts"); if (!m) return;
     ouvrirLien(lienWhatsApp(c.tel, m.texte));
     var cle = m.id; noterEnvoi(cle, c.tel); rendreEnvois(); vibrer(20);
-    toast("Envoyé : " + (c.nom || joliTel(c.tel)), function () { annulerEnvoi(cle, c.tel); rendreEnvois(); });
+    toast("Envoyé : " + (c.nom || joliTel(c.tel)), function () { annulerEnvoi(cle, c.tel); rendreEnvois(); }, true);
   }
   $("choixMsg").addEventListener("change", function () { sel.base = this.value; sel.apercuTout = false; rendreEnvois(); });
   $("cibleEnvoi").addEventListener("click", function (e) { var b = e.target.closest("button[data-cible]"); if (b) { sel.cible = b.dataset.cible; rendreEnvois(); } });
@@ -2156,27 +2216,159 @@
     var b = e.target.closest("button"); if (!b) return;
     if (b.dataset.envoyer) { var c = listeCourante().find(function (x) { return x.tel === b.dataset.envoyer; }); if (c) envoyerA(c); }
     else if (b.dataset.annulerEnvoi) { annulerEnvoi(cleEnvoi(), b.dataset.annulerEnvoi); rendreEnvois(); }
-    else if (b.dataset.supprimerContact) {
-      var i = carnet.contacts.findIndex(function (x) { return x.id === b.dataset.supprimerContact; }); if (i < 0) return;
-      var retire = carnet.contacts.splice(i, 1)[0]; modifierCarnet();
-      toast("Supprimé du carnet : " + (retire.nom || joliTel(retire.tel)), function () { carnet.contacts.splice(i, 0, retire); modifierCarnet(); });
-    }
+    else if (b.dataset.modifierContact) ouvrirContact(b.dataset.modifierContact);
   });
+
+  /* ---------- Fenêtre « Contact » (V6.5) : ajouter, renommer, changer le numéro, supprimer ----------
+     Depuis « Clients d'hier », le client est ajouté au carnet (ou son contact est modifié s'il y est déjà). */
+  var contactEdite = null;   // id du contact modifié ; null = nouveau contact
+  function ouvrirFeuille(id) { $(id).hidden = false; document.body.classList.add("feuille-ouverte"); }
+  function fermerFeuille(id) { $(id).hidden = true; if ($("voileEcrire").hidden) document.body.classList.remove("feuille-ouverte"); }
+  function ouvrirContact(tel) {
+    var k = tel ? carnet.contacts.find(function (x) { return x.tel === tel; }) : null;
+    contactEdite = k ? k.id : null;
+    $("titreContact").textContent = k ? "Modifier le contact" : tel ? "Ajouter au carnet" : "Ajouter un contact";
+    $("contactNom").value = k ? k.nom || "" : "";
+    $("contactTel").value = tel ? joliTel(tel) : "";
+    $("btnEnregContact").textContent = k ? "Enregistrer" : "Ajouter au carnet";
+    $("btnSupprContact").hidden = !k;
+    $("retourContact").textContent = ""; $("retourContact").className = "retour";
+    ouvrirFeuille("voileContact");
+    (tel ? $("contactNom") : $("contactTel")).focus();
+  }
+  function fermerContact() { fermerFeuille("voileContact"); contactEdite = null; }
+  function enregistrerContact() {
+    var nom = $("contactNom").value.trim(), n = normaliserTel($("contactTel").value), r = $("retourContact");
+    if (n.vide || n.erreur) { r.textContent = n.erreur || "Entre le numéro."; r.className = "retour erreur"; $("contactTel").focus(); return; }
+    var double = carnet.contacts.find(function (c) { return c.tel === n.tel && c.id !== contactEdite; });
+    if (double) { r.textContent = "Ce numéro est déjà dans le carnet" + (double.nom ? " : " + double.nom : "") + "."; r.className = "retour erreur"; return; }
+    var k = contactEdite && carnet.contacts.find(function (c) { return c.id === contactEdite; });
+    if (k) { k.nom = nom; k.tel = n.tel; k.majLe = new Date().toISOString(); }
+    else carnet.contacts.unshift({ id: "k" + Date.now().toString(36), nom: nom, tel: n.tel, listes: [], ajouteLe: new Date().toISOString() });
+    fermerContact(); modifierCarnet(); vibrer(15);
+    toast((k ? "Contact enregistré : " : "Ajouté au carnet : ") + (nom || n.joli), null, true);
+  }
+  function supprimerContact() {
+    var i = carnet.contacts.findIndex(function (x) { return x.id === contactEdite; }); if (i < 0) return;
+    var retire = carnet.contacts.splice(i, 1)[0]; fermerContact(); modifierCarnet();
+    toast("Supprimé du carnet : " + (retire.nom || joliTel(retire.tel)), function () { carnet.contacts.splice(i, 0, retire); modifierCarnet(); });
+  }
+  $("btnAjoutContact").addEventListener("click", function () { ouvrirContact(null); });
+  $("btnEnregContact").addEventListener("click", enregistrerContact);
+  $("btnSupprContact").addEventListener("click", supprimerContact);
+  $("btnFermerContact").addEventListener("click", fermerContact);
+  $("contactTel").addEventListener("keydown", function (e) { if (e.key === "Enter") enregistrerContact(); });
+  $("contactNom").addEventListener("keydown", function (e) { if (e.key === "Enter") $("contactTel").focus(); });
+  $("voileContact").addEventListener("click", function (e) { if (e.target === $("voileContact")) fermerContact(); });
+
+  /* ---------- Fenêtre « Message » (V6.5) : modifier ou remplacer le texte, renommer, créer un message ----------
+     Un message généré garde son texte d'origine (« Revenir au texte d'origine ») ; un message créé sert aux contacts et au groupe. */
+  var msgEdite = null;   // { id } du message affiché, ou { nouveau: true }
+  function verifierOffre(t) {   // D-085 : un message qui parle des packs les cite tous, avec les heures et les frais
+    if (!/MINI|MAXI|M[ÉE]GA|pack/i.test(t)) return [];
+    var m = [];
+    ["MINI", "MAXI"].forEach(function (p) { if (t.indexOf(p) < 0) m.push(p); });
+    if (!/M[ÉE]GA/.test(t)) m.push("MÉGA");
+    if (!/19h30/.test(t)) m.push("Centre 19h30"); if (!/20h30/.test(t)) m.push("Sud 20h30");
+    if (!/100\s*F/.test(t)) m.push("100 F Centre"); if (!/200\s*F/.test(t)) m.push("200 F Sud");
+    return m;
+  }
+  function majManqueMsg() { var m = verifierOffre($("msgTexte").value); $("manqueMsg").textContent = m.length ? "Il manque : " + m.join(" · ") : ""; }
+  function ouvrirMsg(nouveau) {
+    var m = nouveau ? null : variante(sel.base, sel.cible); if (!nouveau && !m) return;
+    msgEdite = nouveau ? { nouveau: true } : { id: m.id, base: sel.base, perso: !!m.perso };
+    var deux = m && !m.perso && MSGS_ORIGINE.some(function (x) { return x.id === sel.base + "p"; }) && MSGS_ORIGINE.some(function (x) { return x.id === sel.base + "g"; });
+    $("titreMsgEdit").textContent = nouveau ? "Nouveau message" : "Modifier le message";
+    $("resumeMsgEdit").textContent = deux ? (m.id.slice(-1) === "g" ? "Version pour le groupe" : "Version pour les contacts") : "";
+    $("resumeMsgEdit").hidden = !deux;
+    $("msgTitre").value = m ? m.titre : "";
+    $("msgTexte").value = m ? m.texte : "";
+    $("btnEnregMsg").textContent = nouveau ? "Créer le message" : "Enregistrer";
+    $("btnOrigineMsg").hidden = !(m && m.modifie);
+    $("btnSupprMsg").hidden = !(m && m.perso);
+    majManqueMsg(); ouvrirFeuille("voileMsg");
+    (nouveau ? $("msgTitre") : $("msgTexte")).focus();
+  }
+  function fermerMsg() { fermerFeuille("voileMsg"); msgEdite = null; }
+  function enregistrerMsg() {
+    var titre = $("msgTitre").value.trim(), texte = $("msgTexte").value.replace(/\s+$/, ""), t = Date.now();
+    if (!texte.trim()) { $("manqueMsg").textContent = "Le texte est vide."; $("msgTexte").focus(); return; }
+    if (msgEdite.nouveau || msgEdite.perso) {
+      if (!titre) titre = texte.split("\n")[0].replace(/[*_~]/g, "").slice(0, 40).trim() || "Mon message";
+      if (msgEdite.nouveau) { var id = "u" + t.toString(36); perso.ajoutes.push({ id: id, titre: titre, texte: texte, t: t }); sel.base = id; }
+      else { var a = perso.ajoutes.find(function (x) { return x.id === msgEdite.base; }); if (a) { a.titre = titre; a.texte = texte; a.t = t; } }
+    } else {
+      var orig = MSGS_ORIGINE.find(function (x) { return x.id === msgEdite.id; });
+      if (orig && texte === orig.texte) delete perso.modifies[msgEdite.id]; else perso.modifies[msgEdite.id] = { texte: texte, t: t };
+      var titreOrig = (MSGS_ORIGINE.find(function (x) { return baseDe(x.id) === msgEdite.base; }) || {}).titre;
+      if (titre && titre !== titreOrig) perso.titres[msgEdite.base] = titre; else delete perso.titres[msgEdite.base];
+    }
+    var nouveau = msgEdite.nouveau; fermerMsg(); modifierPerso(); vibrer(15);
+    toast(nouveau ? "Message créé : il est dans « Mes messages »." : "Message enregistré.", null, true);
+  }
+  function origineMsg() {
+    var id = msgEdite.id, base = msgEdite.base, ancien = perso.modifies[id], ancienTitre = perso.titres[base];
+    delete perso.modifies[id]; delete perso.titres[base]; fermerMsg(); modifierPerso();
+    toast("Texte d’origine remis.", function () { if (ancien) perso.modifies[id] = ancien; if (ancienTitre) perso.titres[base] = ancienTitre; modifierPerso(); });
+  }
+  function supprimerMsg() {
+    var i = perso.ajoutes.findIndex(function (x) { return x.id === msgEdite.base; }); if (i < 0) return;
+    var retire = perso.ajoutes.splice(i, 1)[0]; fermerMsg(); sel.base = null; modifierPerso();
+    toast("Message supprimé : " + retire.titre, function () { perso.ajoutes.splice(i, 0, retire); sel.base = retire.id; modifierPerso(); });
+  }
+  $("btnModifMsg").addEventListener("click", function () { ouvrirMsg(false); });
+  $("btnNouveauMsg").addEventListener("click", function () { ouvrirMsg(true); });
+  $("btnEnregMsg").addEventListener("click", enregistrerMsg);
+  $("btnOrigineMsg").addEventListener("click", origineMsg);
+  $("btnSupprMsg").addEventListener("click", supprimerMsg);
+  $("btnFermerMsg").addEventListener("click", fermerMsg);
+  $("btnViderMsg").addEventListener("click", function () { $("msgTexte").value = ""; majManqueMsg(); $("msgTexte").focus(); });
+  $("msgTexte").addEventListener("input", majManqueMsg);
+  $("voileMsg").addEventListener("click", function (e) { if (e.target === $("voileMsg")) fermerMsg(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (!$("voileContact").hidden) fermerContact(); else if (!$("voileMsg").hidden) fermerMsg();
+  });
+  ["contactNom", "contactTel", "msgTitre", "msgTexte"].forEach(function (id) {   // clavier ouvert : la barre du bas se range
+    $(id).addEventListener("focus", function () { document.body.classList.add("clavier"); });
+    $(id).addEventListener("blur", function () { document.body.classList.remove("clavier"); });
+  });
+  function modifierPerso() { perso.sale = true; sauverPerso(); appliquerPerso(); rendreEnvois(); programmerPersoGh(); }
+  var minuteriePerso = null;
+  function programmerPersoGh() { clearTimeout(minuteriePerso); minuteriePerso = setTimeout(function () { envoyerPersoGh(false); }, 1500); }
+  function envoyerPersoGh(garder) {
+    if (!donneesBranchees() || !perso.sale) return Promise.resolve();
+    var gh = donneesClient(), n = Object.keys(perso.modifies).length + perso.ajoutes.length;
+    var texte = JSON.stringify({ application: "ATELIER-MESSAGES", version: 1, majLe: new Date().toISOString(), modifies: perso.modifies, titres: perso.titres, ajoutes: perso.ajoutes }, null, 1);
+    var essai = function (sha, deuxieme) {
+      return gh.ecrire("messages-perso.json", texte, sha, "Messages personnalisés : " + n, garder).catch(function (e) {
+        if (e && e.code === "conflit" && !deuxieme) return gh.lire("messages-perso.json").then(function (r) { return essai(r.sha, true); });
+        throw e;
+      });
+    };
+    return essai(perso.sha, false).then(function (r) {
+      if (!r.verifie) throw { message: "GitHub n’a pas confirmé l’enregistrement." };
+      perso.sha = r.sha; perso.sale = false; perso.ok = Date.now(); perso.erreur = null; sauverPerso(); rendreEnvois();
+    }).catch(function (e) { perso.erreur = { message: ((e && e.message) || "erreur") + " (nouvel essai automatique)" }; rendreEnvois(); });
+  }
+  function chargerPersoGitHub() {
+    if (!donneesBranchees()) return;
+    if (perso.sale) { envoyerPersoGh(false); return; }   // modification locale pas encore envoyée : elle passe d'abord
+    donneesClient().lire("messages-perso.json").then(function (r) {
+      if (r.statut === 200) {
+        var o = JSON.parse(r.texte);
+        perso.modifies = o.modifies || {}; perso.titres = o.titres || {}; perso.ajoutes = Array.isArray(o.ajoutes) ? o.ajoutes : []; perso.sha = r.sha;
+      }
+      perso.ok = Date.now(); perso.erreur = null; sauverPerso(); appliquerPerso(); rendreEnvois();
+    }).catch(function (e) { perso.erreur = { message: ((e && e.message) || "erreur") + " (copie du téléphone utilisée)" }; rendreEnvois(); });
+  }
   $("btnGroupe").addEventListener("click", function () {
     var m = variante(sel.base, "groupe"), g = GROUPES[0]; if (!m || !g) return;
     copier(m.texte).then(function (ok) {
       noterEnvoi(m.id, "groupe:" + g.nom); rendreEnvois();
-      toast(ok ? "Message copié : colle-le dans le groupe." : "Copie impossible : copie le texte à la main.");
+      toast(ok ? "Message copié : colle-le dans le groupe." : "Copie impossible : copie le texte à la main.", null, ok);
       window.open(g.lien, "_blank", "noopener");
     });
-  });
-  $("btnAjoutContact").addEventListener("click", function () {
-    var nom = $("ajoutNom").value.trim(), n = normaliserTel($("ajoutTel").value), r = $("retourAjout");
-    if (n.vide || n.erreur) { r.textContent = n.erreur || "Entre le numéro."; r.className = "retour erreur"; return; }
-    if (carnet.contacts.some(function (c) { return c.tel === n.tel; })) { r.textContent = "Ce numéro est déjà dans le carnet."; r.className = "retour erreur"; return; }
-    carnet.contacts.unshift({ id: "k" + Date.now().toString(36), nom: nom, tel: n.tel, listes: [], ajouteLe: new Date().toISOString() });
-    $("ajoutNom").value = ""; $("ajoutTel").value = ""; r.textContent = "Ajouté : " + (nom || n.joli) + "."; r.className = "retour ok";
-    modifierCarnet();
   });
   function modifierCarnet() { carnet.sale = true; sauverCarnet(); rendreEnvois(); programmerCarnetGh(); }
   var minuterieCarnet = null, minuterieEnvois = null;
@@ -2223,10 +2415,10 @@
   function envoisDemarrer() {
     $("cleDonnees").value = depotDonnees.cle; majInfoDonnees(); majEtatGh();
     document.querySelectorAll("#waApp button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.wa === (ui.waApp === "standard" ? "standard" : "business"))); });
-    rendreEnvois(); chargerContactsGitHub(); reessayerGh();
-    window.addEventListener("online", function () { reessayerGh(); envoyerCarnetGh(false); });
+    rendreEnvois(); chargerContactsGitHub(); chargerPersoGitHub(); reessayerGh();
+    window.addEventListener("online", function () { reessayerGh(); envoyerCarnetGh(false); envoyerPersoGh(false); });
     document.addEventListener("visibilitychange", function () {
-      if (document.hidden) { if (carnet.sale) envoyerCarnetGh(true); clearTimeout(minuterieEnvois); envoyerEnvoisGh(true); }
+      if (document.hidden) { if (carnet.sale) envoyerCarnetGh(true); if (perso.sale) envoyerPersoGh(true); clearTimeout(minuterieEnvois); envoyerEnvoisGh(true); }
       else { reessayerGh(); rendreEnvois(); }
     });
   }

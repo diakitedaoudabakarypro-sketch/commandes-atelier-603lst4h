@@ -5,7 +5,7 @@
    Mise à jour : à chaque ouverture, le téléphone vérifie ce fichier ; s'il a changé (VERSION), la nouvelle version est téléchargée en
    arrière-plan, puis l'application affiche « Une nouvelle version est prête » avec un bouton « Actualiser ».
    Pour publier une mise à jour : changer VERSION ci-dessous. */
-var VERSION = "atelier-commandes-v6-5";
+var VERSION = "atelier-commandes-v6-6";
 var FICHIERS = ["./", "index.html", "relais-github.js", "messages-envois.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "wave/carte-wave.png"];
 
 self.addEventListener("install", function (e) {
