@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.3 · 2026-10-11 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.4 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -35,6 +35,7 @@
   V6.2 : interface épurée (demande de l'équipe) : plus d'encadrés d'explication ; un lien « En savoir plus » ouvre une fenêtre (modèles <template id="info-…">) ;
   V6.3 (D-087) : envoi à la cuisine immédiat (et forcé quand l'application passe en arrière-plan) ; case « Emballée » ; cartes : résidence et chambre en grand ;
   SAUVEGARDE GITHUB de la soirée (dépôt privé atelier-donnees, clé « données ») ; onglet ENVOIS (messages, carnet de contacts, « Clients d'hier »).
+  V6.4 : liste « Anciens clients » retirée de l'onglet Envois.
   libellés raccourcis ; CALENDRIER : toucher la date (Liste, Bilan) ouvre un mois, jours avec commandes marqués, jours futurs fermés.
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
@@ -2076,7 +2077,7 @@
     });
     return r;
   }
-  var NOMS_LISTES = { groupe: "Groupe", anciens: "Anciens clients" };
+  var NOMS_LISTES = { groupe: "Groupe" };   // V6.4 : pas de liste « Anciens clients » à l'écran (demande de l'équipe) ; ces contacts restent dans « Tous »
   function listeCourante() {
     if (sel.liste === "hier") return clientsHier();
     if (sel.liste === "tous") return carnet.contacts;
