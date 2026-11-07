@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.9 · 2026-10-12 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.10 · 2026-11-07 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -47,6 +47,8 @@
   V6.8 (D-092) : commande saisie sans numéro → le numéro du contact de la même chambre (carnet) est mis tout seul ; message « Nouveau client » (messages-envois.js).
   V6.9 (D-094) : Envois : bouton « Copier le texte » ; toucher le texte l'ouvre ou le referme ; « Réduire » reste visible en bas de l'écran pendant la lecture ;
   options en vrais boutons (Copier, Modifier, Nouveau message, Toutes les affiches, Envoyer / Annuler / Modifier d'un contact).
+  V6.10 (D-095) : la cuisine reçoit aussi les quantités par pack (q : mini, maxi, mega, nature, nutella) pour classer par pack ; écran cuisine V2.0 ;
+  « Prête » relue toutes les 5 s au lieu de 15 s (une seule lecture à la fois ; réponse « inchangé » 304 gratuite pour la limite GitHub).
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -1802,7 +1804,7 @@
 
   /* ---------- Écran cuisine (V6, D-082) ----------
      La soirée du jour est envoyée au dépôt privé « atelier-cuisine » (fichier soirees/AAAA-MM-JJ.json), SANS numéro de client ni paiement.
-     L'écran cuisine écrit pretes/AAAA-MM-JJ.json ; on le relit toutes les 15 s pour afficher « Prête » sur les cartes.
+     L'écran cuisine écrit pretes/AAAA-MM-JJ.json ; on le relit toutes les 5 s (V6.10) pour afficher « Prête » sur les cartes.
      Un envoi n'est déclaré réussi que si l'empreinte renvoyée par GitHub est celle du texte envoyé (RelaisGitHub.ecrire → verifie). */
   var CUISINE_PROPRIETAIRE = "diakitedaoudabakarypro-sketch", CUISINE_DEPOT = "atelier-cuisine", CLE_CUISINE = "atelier_cuisine_v1";
   var cuisine = { cle: "", actif: false };
@@ -1816,7 +1818,8 @@
     var j = etat.jours[jour], liste = j ? j.commandes.slice().sort(function (a, b) { return a.t - b.t; }) : [];
     return liste.map(function (c) {
       var n = compte(c.q);
-      return { id: c.id, site: c.site, res: c.res, chambre: c.chambre, pack: libelle(c.q), nature: n.nature, nutella: n.nutella, t: c.t, maj: c.maj, livre: !!c.livre, emb: !!c.emb };
+      var q = {}; PACKS.forEach(function (p) { q[p.id] = c.q[p.id] || 0; });   // V6.10 : quantités par pack, pour le classement par pack en cuisine
+      return { id: c.id, site: c.site, res: c.res, chambre: c.chambre, pack: libelle(c.q), q: q, nature: n.nature, nutella: n.nutella, t: c.t, maj: c.maj, livre: !!c.livre, emb: !!c.emb };
     });
   }
   function cuisineProgrammer(delai) {
@@ -1854,10 +1857,11 @@
   }
   function cuisinePrete(id) { var p = cuisineEtat.pretes[id]; return !!(cuisine.cle && cuisine.actif && p && p.prete); }
   function cuisineLirePretes() {
-    if (!cuisineBranchee() || document.hidden) return Promise.resolve();
+    if (!cuisineBranchee() || document.hidden || cuisineEtat.lecture) return Promise.resolve();   // V6.10 : une seule lecture à la fois
     var jour = soireeCourante();
     if (cuisineEtat.jourPretes !== jour) { cuisineEtat.jourPretes = jour; cuisineEtat.pretes = {}; cuisineEtat.etagPretes = null; cuisineEtat.pretesLues = false; }
-    return cuisineClient().lire("pretes/" + jour + ".json", cuisineEtat.etagPretes).then(function (r) {
+    cuisineEtat.lecture = true;
+    return cuisineClient().lire("pretes/" + jour + ".json", cuisineEtat.etagPretes).finally(function () { cuisineEtat.lecture = false; }).then(function (r) {
       if (r.statut === 304) return;
       var avant = cuisineEtat.pretes, apres = {};
       if (r.statut === 200) { try { apres = JSON.parse(r.texte).pretes || {}; } catch (e) { apres = {}; } }
@@ -1934,7 +1938,7 @@
     $("cleCuisine").value = cuisine.cle;
     majEtatCuisine();
     if (cuisineBranchee()) { cuisineProgrammer(0); cuisineLirePretes(); }
-    setInterval(function () { cuisineLirePretes(); majEtatCuisine(); }, 15000);
+    setInterval(function () { cuisineLirePretes(); majEtatCuisine(); }, 5000);   // V6.10 : 5 s (15 s avant) ; « inchangé » (304) ne compte pas dans la limite GitHub
     document.addEventListener("visibilitychange", function () {
       if (!cuisineBranchee()) return;
       if (document.hidden) { clearTimeout(cuisineEtat.minuterie); cuisineEnvoyer(false, true); }   // départ vers WhatsApp : l'envoi part tout de suite et se termine en arrière-plan

@@ -15,27 +15,45 @@
 <link rel="icon" type="image/png" href="../icons/icon-192.png">
 <title>Cuisine</title>
 <!--
-  AUT-11 V1.2 · Écran cuisine de L'Atelier des Crêpes (D-082)
+  AUT-11 V2.0 · Écran cuisine de L'Atelier des Crêpes (D-082, D-095)
   Rôle : sur le téléphone de la personne qui prépare, afficher en grand les commandes acceptées dans l'application
   « Commandes du soir », et lui permettre de toucher « Prête ». Android et iPhone (navigateur ou écran d'accueil).
   Données : dépôt GitHub privé « atelier-cuisine » ; lit soirees/AAAA-MM-JJ.json (écrit par l'application, sans numéro de
-  client) toutes les 10 s ; écrit pretes/AAAA-MM-JJ.json (commandes prêtes). Clé d'accès gardée sur ce téléphone seulement
+  client) toutes les 4 s (10 s avant la V2.0 ; réponse « inchangé » 304 gratuite pour la limite GitHub) ; écrit pretes/AAAA-MM-JJ.json (commandes prêtes). Clé d'accès gardée sur ce téléphone seulement
   (localStorage), reçue par le lien « …/cuisine/#cle=… » ou collée à la main ; jamais écrite dans ce fichier.
+  V2.0 (D-095, demande de l'équipe) :
+  - Classement PAR SITE PUIS PAR PACK (MINI, MAXI, MÉGA, plusieurs packs, à l'unité), ou par heure d'arrivée ; filtre Tous / Centre / Sud ;
+    totaux par pack ; ligne d'avancement de la soirée (à préparer, prêtes, livrées). Choix gardés dans le téléphone.
+  - Interrupteurs « Son » et « Écran allumé » toujours visibles (on coche, on décoche) ; gardés après une mise à jour ;
+    le son se réactive au premier toucher (un téléphone n'autorise pas le son sans toucher).
+  - Bandeau en haut (reste jusqu'à « J'ai vu ») : nouvelle commande, commande modifiée (avant → après), commande retirée ;
+    son et vibration différents, rappel toutes les 30 s (4 fois au plus). « Modifiée » seulement si la chambre ou les crêpes
+    changent (Payé, Emballée, numéro : ignorés). Crêpes changées après « Prête » : la commande revient « à refaire ».
+    Liste « Retirées par l'équipe » de la soirée.
+  - Son FORT pour une cuisine (~7 m) : ondes carrées 1,2–2,7 kHz, volume maximal + compresseur, motif joué deux fois ; bouton « Essayer le son ».
+    iPhone (la cuisine utilise un iPhone 13) : audioSession « playback » (le son passe même interrupteur latéral sur silencieux, Safari 16.4+),
+    déverrouillage à la fin du toucher (touchend / click), son vide joué pendant le toucher. Le volume du téléphone doit être au maximum.
+  - Résumé de la soirée en une carte (à préparer, Nature, Nutella, packs, barre d'avancement) ; sélecteurs en un bloc.
+  - Mise à jour : l'écran vérifie toutes les 10 min (et au retour sur l'écran) si une nouvelle version est publiée → bouton « Actualiser ».
+    VERSION_PAGE ci-dessous doit être identique à VERSION de cuisine/sw.js.
 -->
 <style>
   :root { --fond:#F7EFE3; --carte:#FFFFFF; --carte2:#FBF5EC; --encre:#1C120C; --doux:#6B5A4A; --bord:rgba(60,40,20,.14);
           --or:#D4A24C; --accent:#8A6420; --ok:#2F6B1F; --ok-fond:#E4F0DC; --alerte:#9A3412; --alerte-fond:#FBE7DA;
-          --centre:#8A6420; --sud:#1F6B70; --nouveau:#B45309;
+          --centre:#8A6420; --sud:#1F6B70; --nouveau:#B45309; --modif:#1D4ED8; --modif-fond:#DBEAFE; --modif-texte:#1E3A8A;
           --ombre:0 1px 2px rgba(40,25,10,.06), 0 10px 28px rgba(40,25,10,.08); --rayon:18px; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) { --fond:#140D08; --carte:#241912; --carte2:#2C1F16; --encre:#F6EBDC; --doux:#CDB9A0; --bord:rgba(246,235,220,.14);
             --accent:#E8C47E; --ok:#A7E27A; --ok-fond:#1E2E14; --alerte:#FDBA74; --alerte-fond:#3A2012; --centre:#E8C47E; --sud:#7FD3D8; --nouveau:#FBBF24;
+            --modif:#93C5FD; --modif-fond:#172554; --modif-texte:#DBEAFE;
             --ombre:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35); }
   }
   :root[data-theme="dark"] { --fond:#140D08; --carte:#241912; --carte2:#2C1F16; --encre:#F6EBDC; --doux:#CDB9A0; --bord:rgba(246,235,220,.14);
           --accent:#E8C47E; --ok:#A7E27A; --ok-fond:#1E2E14; --alerte:#FDBA74; --alerte-fond:#3A2012; --centre:#E8C47E; --sud:#7FD3D8; --nouveau:#FBBF24;
+          --modif:#93C5FD; --modif-fond:#172554; --modif-texte:#DBEAFE;
           --ombre:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35); }
   * { box-sizing:border-box; }
+  [hidden] { display:none !important; }   /* V2.0 : sans cette règle, un « display:flex » affiche un élément caché */
   html { -webkit-text-size-adjust:100%; }
   body { margin:0; background:var(--fond); color:var(--encre); font:16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   button { font:inherit; color:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -48,20 +66,63 @@
   .point { flex:none; width:11px; height:11px; border-radius:50%; background:#9CA3AF; }
   .etat.ok .point { background:#7BD34E; box-shadow:0 0 0 4px rgba(123,211,78,.2); }
   .etat.ko .point { background:#F97316; box-shadow:0 0 0 4px rgba(249,115,22,.2); }
+  /* Bandeau des nouveautés et mise à jour : dans l'en-tête, donc toujours visibles */
+  .maj, .bandeau { max-width:760px; margin:10px auto 0; border-radius:14px; color:#1C120C; }
+  .maj { display:flex; align-items:center; gap:10px; background:#E8C47E; padding:8px 8px 8px 12px; font-weight:700; font-size:14px; }
+  .maj span { flex:1; }
+  .maj button, .bandeau-tete button { flex:none; min-height:44px; padding:0 16px; border-radius:12px; border:none; background:#1C120C; color:#F6EBDC; font-weight:800; }
+  .bandeau { background:#FFF4CC; padding:8px 8px 4px 12px; box-shadow:0 0 0 3px #FBBF24; }
+  .bandeau-tete { display:flex; align-items:center; gap:10px; }
+  .bandeau-tete b { flex:1; font-size:15.5px; line-height:1.25; }
+  .ev { display:flex; gap:8px; align-items:baseline; width:100%; padding:6px 0; border:none; border-top:1px solid rgba(28,18,12,.12); background:none; color:#1C120C; text-align:left; font-weight:700; font-size:14.5px; line-height:1.3; }
+  .ev span:last-child { flex:1; min-width:0; }
+  .tag { flex:none; font-size:11.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; padding:2px 7px; border-radius:999px; color:#fff; }
+  .tag.nouvelle { background:#B45309; } .tag.modifiee { background:#1D4ED8; } .tag.retiree { background:#B91C1C; }
+  .ev-plus { font-size:13px; color:#6B5A4A; padding:4px 0 6px; font-weight:600; }
   main { max-width:760px; margin:0 auto; padding:14px 16px calc(40px + env(safe-area-inset-bottom)); }
-  .activer { width:100%; margin:0 0 12px; padding:14px 16px; border-radius:14px; border:2px dashed var(--or); background:var(--carte2); font-weight:700; text-align:left; }
-  .activer small { display:block; font-weight:500; color:var(--doux); margin-top:2px; }
-  .totaux { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:12px; }
-  .total { background:var(--carte); border:1px solid var(--bord); border-radius:var(--rayon); padding:12px 10px; text-align:center; box-shadow:var(--ombre); }
-  .total b { display:block; font-size:34px; line-height:1.05; font-variant-numeric:tabular-nums; }
+  /* Interrupteurs Son / Écran allumé */
+  .reglages { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 14px; }
+  .essai { grid-column:1 / -1; min-height:42px; border-radius:12px; border:1.5px solid var(--or); background:var(--carte2); font-size:14.5px; font-weight:700; }
+  .essai:active, .seg button:active, .prete:active { transform:scale(.985); }
+  .inter { display:flex; align-items:center; gap:10px; min-height:58px; padding:8px 12px; border-radius:14px; border:1px solid var(--bord); background:var(--carte); text-align:left; box-shadow:var(--ombre); }
+  .inter .piste { flex:none; position:relative; width:46px; height:28px; border-radius:999px; background:#B8AC9C; transition:background .15s; }
+  .inter .piste::after { content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:transform .15s; }
+  .inter[aria-checked="true"] .piste { background:var(--ok); }
+  .inter[aria-checked="true"] .piste::after { transform:translateX(18px); }
+  .inter span.txt { min-width:0; }
+  .inter b { display:block; font-size:15px; line-height:1.2; }
+  .inter small { display:block; font-size:12.5px; line-height:1.25; color:var(--doux); font-weight:600; }
+  .inter small.attention { color:var(--alerte); }
+  @media (prefers-reduced-motion: reduce) { .inter .piste, .inter .piste::after { transition:none; } }
+  /* Résumé de la soirée : une seule carte (totaux, packs, avancement) */
+  .resume { background:var(--carte); border:1px solid var(--bord); border-radius:var(--rayon); box-shadow:var(--ombre); padding:14px 12px 12px; margin:0 0 14px; }
+  .totaux { display:grid; grid-template-columns:repeat(3, 1fr); margin-bottom:10px; }
+  .total { text-align:center; padding:0 6px; }
+  .total + .total { border-left:1px solid var(--bord); }
+  .total b { display:block; font-size:36px; line-height:1.05; font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
   .total span { font-size:13px; color:var(--doux); font-weight:600; }
-  .filtres { display:flex; gap:8px; margin:0 0 14px; }
-  .filtres button { flex:1; min-height:46px; border-radius:999px; border:1px solid var(--bord); background:var(--carte); font-weight:700; }
-  .filtres button[aria-pressed="true"] { background:var(--encre); color:var(--fond); border-color:var(--encre); }
-  .carte { position:relative; background:var(--carte); border:1px solid var(--bord); border-radius:var(--rayon); box-shadow:var(--ombre); margin-bottom:12px; padding:14px 14px 14px 22px; overflow:hidden; }
+  .chips { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
+  .chips:empty { display:none; }
+  .chips span { font-size:14.5px; font-weight:800; padding:5px 11px; border-radius:999px; background:var(--carte2); border:1px solid var(--bord); font-variant-numeric:tabular-nums; }
+  .progression { height:8px; border-radius:999px; background:var(--carte2); border:1px solid var(--bord); overflow:hidden; margin:12px 2px 6px; }
+  .progression span { display:block; height:100%; width:0; border-radius:999px; background:var(--ok); transition:width .4s ease; }
+  .avancement { text-align:center; font-size:13.5px; font-weight:600; color:var(--doux); }
+  /* Sélecteurs en un seul bloc (site, classement) */
+  .seg { display:flex; gap:4px; padding:4px; margin:0 0 10px; border-radius:16px; background:var(--carte2); border:1px solid var(--bord); }
+  .seg button { flex:1; min-height:46px; border:none; border-radius:12px; background:transparent; font-weight:700; color:var(--doux); }
+  .seg button[aria-pressed="true"] { background:var(--encre); color:var(--fond); box-shadow:0 2px 6px rgba(28,18,12,.25); }
+  .seg.vues button { min-height:40px; font-size:14px; }
+  @media (prefers-reduced-motion: reduce) { .progression span { transition:none; } }
+  .site-titre { font-size:20px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:var(--centre); margin:22px 0 2px; }
+  .site-titre.sud { color:var(--sud); }
+  .site-titre small { font-size:14px; font-weight:700; color:var(--doux); text-transform:none; letter-spacing:0; margin-left:6px; }
+  .groupe-titre { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin:14px 0 8px; padding-bottom:4px; border-bottom:2px solid var(--or); font-size:18px; font-weight:800; }
+  .groupe-titre small { font-size:14px; font-weight:700; color:var(--doux); text-align:right; }
+  .carte { position:relative; background:var(--carte); border:1px solid var(--bord); border-radius:var(--rayon); box-shadow:var(--ombre); margin-bottom:12px; padding:14px 14px 14px 22px; overflow:hidden; scroll-margin-top:200px; }
   .carte::before { content:""; position:absolute; left:0; top:0; bottom:0; width:8px; background:var(--centre); }
   .carte.sud::before { background:var(--sud); }
   .carte.neuve { outline:3px solid var(--nouveau); outline-offset:-3px; animation:pulse 1.2s ease-in-out 3; }
+  .carte.modifiee { outline-color:var(--modif); }
   @keyframes pulse { 50% { transform:scale(1.015); } }
   @media (prefers-reduced-motion: reduce) { .carte.neuve { animation:none; } }
   .c-tete { display:flex; justify-content:space-between; gap:10px; align-items:baseline; font-size:15px; font-weight:700; color:var(--doux); }
@@ -72,8 +133,11 @@
   .c-ch .sep { color:var(--doux); font-weight:600; margin:0 8px; }
   .c-crepes { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
   .c-crepes span { font-size:18px; font-weight:800; padding:5px 11px; border-radius:12px; background:var(--carte2); border:1px solid var(--bord); }
-  .c-pack { font-size:14px; color:var(--doux); font-weight:600; }
+  .c-pack { font-size:15px; color:var(--doux); font-weight:700; }
   .badge { display:inline-block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; padding:3px 8px; border-radius:999px; background:var(--nouveau); color:#1C120C; margin-left:6px; vertical-align:middle; }
+  .carte.modifiee .badge { background:var(--modif); color:var(--fond); }
+  .changement { margin:10px 0 2px; padding:9px 11px; border-radius:12px; background:var(--modif-fond); color:var(--modif-texte); font-size:15px; font-weight:700; }
+  .changement b { display:block; text-transform:uppercase; font-size:12.5px; letter-spacing:.5px; }
   .prete { width:100%; margin-top:12px; min-height:58px; border-radius:14px; border:none; background:var(--ok); color:var(--fond); font-size:19px; font-weight:800; }
   .prete:active { transform:scale(.99); }
   .vide { text-align:center; padding:34px 16px; color:var(--doux); background:var(--carte); border:1px dashed var(--bord); border-radius:var(--rayon); }
@@ -83,7 +147,10 @@
   .ligne-prete div { flex:1; min-width:0; }
   .ligne-prete b { font-size:17px; }
   .ligne-prete small { display:block; color:var(--doux); }
+  .ligne-prete small.chg { color:var(--modif-texte); background:var(--modif-fond); border-radius:8px; padding:3px 7px; margin-top:4px; font-weight:700; }
   .ligne-prete button { flex:none; min-height:44px; padding:0 14px; border-radius:12px; border:1px solid var(--bord); background:var(--carte); font-weight:700; }
+  .ligne-retiree { background:var(--alerte-fond); color:var(--alerte); border-radius:14px; padding:10px 12px; margin-bottom:8px; font-weight:700; scroll-margin-top:200px; }
+  .ligne-retiree small { display:block; font-weight:600; }
   .message { border-radius:14px; padding:12px 14px; margin:0 0 12px; font-weight:600; }
   .message.ko { background:var(--alerte-fond); color:var(--alerte); }
   .pied { margin-top:28px; font-size:13px; color:var(--doux); text-align:center; }
@@ -98,11 +165,18 @@
 </head>
 <body>
 
-<header class="haut"><div class="haut-in">
-  <div class="rond" aria-hidden="true">AC</div>
-  <div><h1>Cuisine</h1><div class="sous" id="date">L’Atelier des Crêpes</div></div>
-  <div class="etat" id="etat" role="status" aria-live="polite"><span id="etatTexte">Connexion…</span><span class="point" aria-hidden="true"></span></div>
-</div></header>
+<header class="haut">
+  <div class="haut-in">
+    <div class="rond" aria-hidden="true">AC</div>
+    <div><h1>Cuisine</h1><div class="sous" id="date">L’Atelier des Crêpes</div></div>
+    <div class="etat" id="etat" role="status" aria-live="polite"><span id="etatTexte">Connexion…</span><span class="point" aria-hidden="true"></span></div>
+  </div>
+  <div class="maj" id="alerteMaj" hidden><span>Nouvelle version de l’écran cuisine.</span><button type="button" id="btnMaj">Actualiser</button></div>
+  <div class="bandeau" id="bandeau" role="alert" hidden>
+    <div class="bandeau-tete"><b id="bandeauTitre"></b><button type="button" id="btnVu">J’ai vu</button></div>
+    <div id="bandeauListe"></div>
+  </div>
+</header>
 
 <main>
   <section id="ecranConnexion" class="connexion" hidden>
@@ -116,21 +190,36 @@
   </section>
 
   <section id="ecranService" hidden>
-    <button type="button" class="activer" id="btnActiver">Activer le son et garder l’écran allumé</button>
-    <p class="message ko" id="alerte" hidden></p>
-    <div class="totaux" aria-live="polite">
-      <div class="total"><b id="tCommandes">0</b><span>commandes</span></div>
-      <div class="total"><b id="tNature">0</b><span>Nature</span></div>
-      <div class="total"><b id="tNutella">0</b><span>Nutella</span></div>
+    <div class="reglages">
+      <button type="button" class="inter" id="swSon" role="switch" aria-checked="false"><span class="piste" aria-hidden="true"></span><span class="txt"><b>Son</b><small id="etatSon"></small></span></button>
+      <button type="button" class="inter" id="swEcran" role="switch" aria-checked="false"><span class="piste" aria-hidden="true"></span><span class="txt"><b>Écran allumé</b><small id="etatEcran"></small></span></button>
+      <button type="button" class="essai" id="btnEssai">Essayer le son</button>
     </div>
-    <div class="filtres" role="group" aria-label="Filtrer par site" id="filtres">
+    <p class="message ko" id="alerte" hidden></p>
+    <section class="resume" aria-label="Résumé de la soirée">
+      <div class="totaux" aria-live="polite">
+        <div class="total"><b id="tCommandes">0</b><span>à préparer</span></div>
+        <div class="total"><b id="tNature">0</b><span>Nature</span></div>
+        <div class="total"><b id="tNutella">0</b><span>Nutella</span></div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="progression" id="progression" hidden><span id="barre"></span></div>
+      <div class="avancement" id="avancement"></div>
+    </section>
+    <div class="filtres seg" role="group" aria-label="Filtrer par site" id="filtres">
       <button type="button" data-f="tous" aria-pressed="true">Tous</button>
       <button type="button" data-f="C" aria-pressed="false">Centre</button>
       <button type="button" data-f="S" aria-pressed="false">Sud</button>
     </div>
+    <div class="filtres seg vues" role="group" aria-label="Classer les commandes" id="vues">
+      <button type="button" data-v="pack" aria-pressed="true">Par pack</button>
+      <button type="button" data-v="heure" aria-pressed="false">Par heure d’arrivée</button>
+    </div>
     <div id="aFaire"></div>
     <h2 id="titrePretes" hidden>Prêtes, en attente du livreur</h2>
     <div id="pretes"></div>
+    <h2 id="titreRetirees" hidden>Retirées par l’équipe ce soir</h2>
+    <div id="retirees"></div>
     <div class="pied"><span id="infoPied"></span><br><button type="button" id="btnCopierCle">Copier la clé</button><button type="button" id="btnDebrancher">Débrancher cet écran</button></div>
   </section>
 </main>
@@ -141,10 +230,14 @@
 <script>
 (function () {
   "use strict";
+  var VERSION_PAGE = "atelier-cuisine-v2-0";   // = VERSION de cuisine/sw.js ; si sw.js en ligne a une autre valeur, une mise à jour est publiée
   var PROPRIETAIRE = "diakitedaoudabakarypro-sketch", DEPOT = "atelier-cuisine";
-  var CLE_STOCKAGE = "atelier_cuisine_cle_v1", CLE_VUES = "atelier_cuisine_vues_v1", CLE_ATTENTE = "atelier_cuisine_attente_v1";
-  var DECALAGE_H = 4, INTERVALLE = 10000;
+  var CLE_STOCKAGE = "atelier_cuisine_cle_v1", CLE_VUES = "atelier_cuisine_vues_v1", CLE_ATTENTE = "atelier_cuisine_attente_v1", CLE_REGLAGES = "atelier_cuisine_reglages_v1";
+  var DECALAGE_H = 4, INTERVALLE = 4000, RAPPEL = 30000, RAPPELS_MAX = 4, VERIF_VERSION = 10 * 60000;
   var SITES = { C: "Centre", S: "Sud" };
+  var PACKS = [{ k: "mini", nom: "MINI" }, { k: "maxi", nom: "MAXI" }, { k: "mega", nom: "MÉGA" }];
+  var NOMS_PACKS = { MINI: "mini", MAXI: "maxi", "MÉGA": "mega" };
+  var GROUPES = [{ k: "mini", nom: "MINI" }, { k: "maxi", nom: "MAXI" }, { k: "mega", nom: "MÉGA" }, { k: "plusieurs", nom: "Plusieurs packs" }, { k: "unite", nom: "À l’unité" }];
   var JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
   var MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
@@ -160,12 +253,21 @@
   function soiree() { return ymd(new Date(Date.now() - DECALAGE_H * 3600000)); }
   function heure(ms) { var d = new Date(ms); return p2(d.getHours()) + ":" + p2(d.getMinutes()); }
   function nomJour(iso) { var a = iso.split("-"), d = new Date(+a[0], +a[1] - 1, +a[2]); return JOURS[d.getDay()] + " " + d.getDate() + (d.getDate() === 1 ? "er" : "") + " " + MOIS[d.getMonth()]; }
+  function plur(n, un, plusieurs) { return n + " " + (n > 1 ? plusieurs : un); }
   function lire(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function ecrire(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
   function json(k, defaut) { try { return JSON.parse(lire(k) || "null") || defaut; } catch (e) { return defaut; } }
 
   var minuteToast = null;
   function toast(t) { var z = $("toast"); z.textContent = t; z.hidden = false; clearTimeout(minuteToast); minuteToast = setTimeout(function () { z.hidden = true; }, 6000); }
+
+  /* ---------- Réglages gardés dans le téléphone (survivent à « Actualiser ») ---------- */
+  var reglages = json(CLE_REGLAGES, {});
+  if (typeof reglages.son !== "boolean") reglages.son = true;
+  if (typeof reglages.ecran !== "boolean") reglages.ecran = true;
+  if (reglages.vue !== "heure") reglages.vue = "pack";
+  if (!/^(tous|C|S)$/.test(reglages.filtre || "")) reglages.filtre = "tous";
+  function sauverReglages() { ecrire(CLE_REGLAGES, JSON.stringify(reglages)); }
 
   /* ---------- Clé : reçue par le lien (#cle=…) ou collée ---------- */
   var m = /[#&]cle=([^&]+)/.exec(location.hash);
@@ -229,12 +331,45 @@
   }
   setInterval(majEtat, 5000);
 
+  /* ---------- Contenu d'une commande ---------- */
+  function quantites(c) {   // { mini, maxi, mega, nature, nutella } : envoyé par l'application (q) ; sinon relu dans le libellé « 2 × MINI + 1 Nature »
+    var q = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0 };
+    if (c.q && typeof c.q === "object") { for (var k in q) q[k] = Math.max(0, parseInt(c.q[k], 10) || 0); return q; }
+    String(c.pack || "").split(" + ").forEach(function (part) {
+      var t = part.trim(), x = /^(?:(\d+) × )?(MINI|MAXI|MÉGA)$/.exec(t);
+      if (x) { q[NOMS_PACKS[x[2]]] += x[1] ? +x[1] : 1; return; }
+      x = /^(\d+) (Nature|Nutella)$/.exec(t); if (x) q[x[2].toLowerCase()] += +x[1];
+    });
+    return q;
+  }
+  function groupe(c) {   // une seule sorte de pack → son groupe (avec ses crêpes à l'unité) ; plusieurs sortes → « plusieurs » ; aucune → « unite »
+    var q = quantites(c), sortes = PACKS.filter(function (p) { return q[p.k] > 0; });
+    return sortes.length === 1 ? sortes[0].k : sortes.length ? "plusieurs" : "unite";
+  }
+  function lieu(c) { return (SITES[c.site] || c.site) + " · Rés. " + c.res + " · ch. " + c.chambre; }
+  function photo(c) { return { s: c.site, r: String(c.res), c: String(c.chambre), p: c.pack || "", n: c.nature || 0, u: c.nutella || 0, l: !!c.livre }; }
+  function lieuPhoto(a) { return (SITES[a.s] || a.s) + " · Rés. " + a.r + " · ch. " + a.c; }
+  function contenuPhoto(a) { return a.p || [a.n ? a.n + " Nature" : "", a.u ? a.u + " Nutella" : ""].filter(Boolean).join(" + "); }
+  function contenuChange(a, b) { return a.p !== b.p || a.n !== b.n || a.u !== b.u; }
+  function differences(a, b) {   // seulement ce qui compte pour la cuisine : où livrer, quoi préparer
+    var d = [];
+    if (a.s !== b.s || a.r !== b.r || a.c !== b.c) d.push("Chambre : " + lieuPhoto(a) + " → " + lieuPhoto(b));
+    if (contenuChange(a, b)) d.push("Commande : " + contenuPhoto(a) + " → " + contenuPhoto(b));
+    return d;
+  }
+
   /* ---------- Données de la soirée ---------- */
   var jour = soiree(), commandes = [], pretes = {}, etags = {}, shaPretes = null;
-  var vues = json(CLE_VUES, {});              // { jour, ids: { id: maj } } : ce que cet écran a déjà montré
-  if (vues.jour !== jour) vues = { jour: jour, ids: {} };
+  function nouvellesVues(j) { return { jour: j, ids: {}, pret: false, evts: [], marques: {}, retirees: [] }; }
+  /* vues : ce que cet écran a déjà vu (photo de chaque commande), les nouveautés pas encore vues (evts, bandeau),
+     les marques des cartes (Nouvelle / Modifiée + détail) et les commandes retirées. Gardé dans le téléphone pour la soirée. */
+  var vues = json(CLE_VUES, {});
+  if (vues.jour !== jour) vues = nouvellesVues(jour);
+  if (typeof vues.pret !== "boolean") vues.pret = Object.keys(vues.ids || {}).length > 0;   // mémoire de la V1 : l'écran était déjà en service
+  vues.ids = vues.ids || {}; vues.evts = vues.evts || []; vues.marques = vues.marques || {}; vues.retirees = vues.retirees || [];
+  function sauverVues() { ecrire(CLE_VUES, JSON.stringify(vues)); }
   var enAttente = json(CLE_ATTENTE, {});      // « Prête » touchées mais pas encore enregistrées sur GitHub
-  var neuves = {}, filtre = "tous", premiereLecture = true;
+  var premiereLecture = true;
 
   function cheminSoiree() { return "soirees/" + jour + ".json"; }
   function cheminPretes() { return "pretes/" + jour + ".json"; }
@@ -245,7 +380,7 @@
     if (!gh || lectureEnCours) return Promise.resolve();   // une seule lecture à la fois
     lectureEnCours = true;
     var j = soiree();
-    if (j !== jour) { jour = j; commandes = []; pretes = {}; etags = {}; shaPretes = null; vues = { jour: jour, ids: {} }; neuves = {}; premiereLecture = true; }
+    if (j !== jour) { jour = j; commandes = []; pretes = {}; etags = {}; shaPretes = null; vues = nouvellesVues(jour); sauverVues(); premiereLecture = true; }
     return Promise.all([gh.lire(cheminSoiree(), etags.s), gh.lire(cheminPretes(), etags.p)]).then(function (r) {
       var s = r[0], p = r[1];
       if (s.statut === 200) { etags.s = s.etag; try { var o = JSON.parse(s.texte); commandes = Array.isArray(o.commandes) ? o.commandes : []; } catch (e) { commandes = []; } }
@@ -261,30 +396,51 @@
     }).then(function () { lectureEnCours = false; majEtat(); });
   }
 
-  function analyser() {   // nouvelles commandes, commandes modifiées ou retirées depuis la dernière lecture
-    var signal = false, vivantes = {};
+  function analyser() {   // nouvelles commandes, commandes modifiées (chambre ou crêpes) ou retirées depuis la dernière lecture
+    var vivantes = {}, maintenant = Date.now(), nouveaux = [], aRefaire = [];
     commandes.forEach(function (c) {
       vivantes[c.id] = true;
-      var vu = vues.ids[c.id];
-      if (c.livre) { vues.ids[c.id] = c.maj; return; }
-      if (vu === undefined) { if (!premiereLecture) { neuves[c.id] = "Nouvelle"; signal = true; } }
-      else if (vu !== c.maj && !estPrete(c.id)) { neuves[c.id] = "Modifiée"; signal = true; }
-      vues.ids[c.id] = c.maj;
+      var avant = vues.ids[c.id], ph = photo(c);
+      vues.ids[c.id] = ph;
+      if (c.livre) { delete vues.marques[c.id]; return; }
+      if (avant === undefined) {
+        if (vues.pret) { vues.marques[c.id] = { type: "nouvelle", t: maintenant }; nouveaux.push({ type: "nouvelle", id: c.id, t: maintenant, texte: lieu(c) + " · " + contenuPhoto(ph) }); }
+        return;
+      }
+      if (typeof avant !== "object") return;   // mémoire de la V1 (date seule) : rien à comparer
+      var d = differences(avant, ph);
+      if (!d.length) return;                   // payé, emballé, numéro du client : ne concernent pas la cuisine
+      var refaire = estPrete(c.id) && contenuChange(avant, ph);
+      vues.marques[c.id] = { type: "modifiee", t: maintenant, texte: d.join("\n"), refaire: refaire };
+      nouveaux.push({ type: "modifiee", id: c.id, t: maintenant, texte: lieu(c) + " — " + d.join(" · ") + (refaire ? " · était « Prête » : à refaire" : "") });
+      if (refaire) aRefaire.push(c.id);
     });
     Object.keys(vues.ids).forEach(function (id) {
-      if (!vivantes[id]) { delete vues.ids[id]; if (!premiereLecture) toast("Une commande a été retirée par l’équipe."); }
+      if (vivantes[id]) return;
+      var a = vues.ids[id]; delete vues.ids[id]; delete vues.marques[id];
+      if (vues.pret && a && typeof a === "object" && !a.l) {
+        var r = { type: "retiree", id: id, t: maintenant, texte: lieuPhoto(a) + " · " + contenuPhoto(a) };
+        vues.retirees.push(r); nouveaux.push(r);
+      }
     });
-    ecrire(CLE_VUES, JSON.stringify(vues));
-    premiereLecture = false;
-    if (signal) alerter();
+    vues.pret = true; premiereLecture = false;
+    if (nouveaux.length) vues.evts = vues.evts.concat(nouveaux).slice(-40);
+    sauverVues();
+    aRefaire.forEach(function (id) { marquer(id, false, true); });   // crêpes changées après « Prête » : à refaire
+    if (nouveaux.length) alerter(nouveaux);
     rendre();
   }
 
   /* ---------- « Prête » : enregistrée sur GitHub (fusion si le fichier a changé entre-temps) ---------- */
   var envoiEnCours = false;
-  function marquer(id, prete) {
+  function marquer(id, prete, garderMarque) {
     enAttente[id] = { prete: prete, t: Date.now() }; ecrire(CLE_ATTENTE, JSON.stringify(enAttente));
-    delete neuves[id]; rendre(); majEtat(); envoyerAttente().then(majEtat);
+    if (!garderMarque) {   // la commande est traitée : sa marque et ses lignes du bandeau s'effacent
+      delete vues.marques[id];
+      vues.evts = vues.evts.filter(function (e) { return e.id !== id || e.type === "retiree"; });
+      sauverVues();
+    }
+    rendre(); majEtat(); envoyerAttente().then(majEtat);
   }
   function envoyerAttente(essai) {
     var ids = Object.keys(enAttente);
@@ -315,81 +471,249 @@
   }
 
   /* ---------- Affichage ---------- */
+  function carte(c) {
+    var mq = vues.marques[c.id];
+    var crepes = el("div", { class: "c-crepes" });
+    if (c.nature) crepes.append(el("span", { text: c.nature + " Nature" }));
+    if (c.nutella) crepes.append(el("span", { text: c.nutella + " Nutella" }));
+    var min = Math.max(0, Math.round((Date.now() - c.t) / 60000));
+    var chg = null;
+    if (mq && mq.type === "modifiee") {
+      chg = el("div", { class: "changement" }, el("b", { text: (mq.refaire ? "Modifiée après « Prête » à " : "Modifiée à ") + heure(mq.t) }));
+      mq.texte.split("\n").forEach(function (t) { chg.append(el("div", { text: t })); });
+    }
+    return el("article", { class: "carte" + (c.site === "S" ? " sud" : "") + (mq ? " neuve" + (mq.type === "modifiee" ? " modifiee" : "") : ""), "data-carte": c.id },
+      el("div", { class: "c-tete" }, el("span", null, el("span", { class: "site", text: SITES[c.site] || c.site }), mq ? el("span", { class: "badge", text: mq.type === "modifiee" ? "Modifiée" : "Nouvelle" }) : null),
+        el("span", { class: "c-heure", text: heure(c.t) + " · " + (min < 1 ? "à l’instant" : "il y a " + min + " min") })),
+      el("div", { class: "c-ch" }, "Rés. " + c.res, el("span", { class: "sep", text: "·" }), "Ch. " + c.chambre),
+      crepes,
+      el("div", { class: "c-pack", text: c.pack || "" }),
+      chg,
+      el("button", { type: "button", class: "prete", "data-id": c.id, "aria-label": "Prête : " + (SITES[c.site] || "") + " résidence " + c.res + " chambre " + c.chambre, text: "Prête" }));
+  }
+  function titreGroupe(g, liste) {
+    var q = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0 };
+    liste.forEach(function (c) { var x = quantites(c); for (var k in q) q[k] += x[k]; });
+    var unites = [q.nature ? q.nature + " Nature" : "", q.nutella ? q.nutella + " Nutella" : ""].filter(Boolean).join(" + ");
+    var gauche = g.nom, droite = plur(liste.length, "commande", "commandes");
+    if (g.k === "unite") gauche = g.nom + " : " + (unites || "0");
+    else if (g.k !== "plusieurs") { gauche = g.nom + " × " + q[g.k]; if (unites) droite += " · + " + unites + " à l’unité"; }
+    return el("div", { class: "groupe-titre" }, el("span", { text: gauche }), el("small", { text: droite }));
+  }
+  function rendreBandeau() {
+    var evts = vues.evts, z = $("bandeau");
+    z.hidden = !evts.length;
+    document.title = evts.length ? "(" + evts.length + ") Cuisine" : "Cuisine";
+    if (!evts.length) return;
+    var n = { nouvelle: 0, modifiee: 0, retiree: 0 }; evts.forEach(function (e) { n[e.type]++; });
+    $("bandeauTitre").textContent = [n.nouvelle ? plur(n.nouvelle, "nouvelle commande", "nouvelles commandes") : "",
+      n.modifiee ? plur(n.modifiee, "commande modifiée", "commandes modifiées") : "",
+      n.retiree ? plur(n.retiree, "commande retirée", "commandes retirées") : ""].filter(Boolean).join(" · ");
+    var liste = $("bandeauListe"); liste.replaceChildren();
+    var NOM = { nouvelle: "Nouvelle", modifiee: "Modifiée", retiree: "Retirée" };
+    evts.slice(-3).reverse().forEach(function (e) {
+      liste.append(el("button", { type: "button", class: "ev", "data-aller": e.id || "", "data-type": e.type },
+        el("span", { class: "tag " + e.type, text: NOM[e.type] }), el("span", { text: e.texte })));
+    });
+    if (evts.length > 3) liste.append(el("div", { class: "ev-plus", text: "et " + plur(evts.length - 3, "autre", "autres") + " (sur les cartes)" }));
+  }
   function rendre() {
     var actives = commandes.filter(function (c) { return !c.livre; }).sort(function (a, b) { return a.t - b.t; });   // la plus ancienne d'abord
     var aFaire = actives.filter(function (c) { return !estPrete(c.id); });
     var faites = actives.filter(function (c) { return estPrete(c.id); });
+    var filtre = reglages.filtre, duFiltre = function (c) { return filtre === "tous" || c.site === filtre; };
     var n = { tous: aFaire.length, C: 0, S: 0 }; aFaire.forEach(function (c) { n[c.site] = (n[c.site] || 0) + 1; });
     document.querySelectorAll("#filtres button").forEach(function (b) {
       var f = b.dataset.f; b.setAttribute("aria-pressed", String(f === filtre)); b.textContent = (f === "tous" ? "Tous" : SITES[f]) + " (" + (n[f] || 0) + ")";
     });
-    var visibles = aFaire.filter(function (c) { return filtre === "tous" || c.site === filtre; });
-    var na = 0, nu = 0; visibles.forEach(function (c) { na += c.nature || 0; nu += c.nutella || 0; });
+    document.querySelectorAll("#vues button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.v === reglages.vue)); });
+    var visibles = aFaire.filter(duFiltre);
+    var na = 0, nu = 0, q = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0 };
+    visibles.forEach(function (c) { na += c.nature || 0; nu += c.nutella || 0; var x = quantites(c); for (var k in q) q[k] += x[k]; });
     $("tCommandes").textContent = visibles.length; $("tNature").textContent = na; $("tNutella").textContent = nu;
+    var chips = $("chips"); chips.replaceChildren();
+    PACKS.forEach(function (p) { if (q[p.k]) chips.append(el("span", { text: p.nom + " × " + q[p.k] })); });
+    if (q.nature) chips.append(el("span", { text: q.nature + " Nature à l’unité" }));
+    if (q.nutella) chips.append(el("span", { text: q.nutella + " Nutella à l’unité" }));
+    var duSoir = commandes.filter(duFiltre), livrees = duSoir.filter(function (c) { return c.livre; }).length;
+    var nbFaites = faites.filter(duFiltre).length;
+    $("progression").hidden = !duSoir.length;
+    $("barre").style.width = duSoir.length ? Math.round(100 * (nbFaites + livrees) / duSoir.length) + "%" : "0";
+    $("avancement").textContent = duSoir.length ? (filtre === "tous" ? "Soirée" : SITES[filtre]) + " : " + plur(duSoir.length, "commande", "commandes") + " · " + visibles.length + " à préparer · " + faites.filter(duFiltre).length + " prêtes · " + livrees + " livrées" : "";
 
     var zone = $("aFaire"); zone.replaceChildren();
     if (!visibles.length) zone.append(el("div", { class: "vide" }, el("b", { text: "Rien à préparer pour l’instant" }), "Les nouvelles commandes apparaissent ici toutes seules."));
-    visibles.forEach(function (c) {
-      var crepes = el("div", { class: "c-crepes" });
-      if (c.nature) crepes.append(el("span", { text: c.nature + " Nature" }));
-      if (c.nutella) crepes.append(el("span", { text: c.nutella + " Nutella" }));
-      var min = Math.max(0, Math.round((Date.now() - c.t) / 60000));
-      zone.append(el("article", { class: "carte" + (c.site === "S" ? " sud" : "") + (neuves[c.id] ? " neuve" : "") },
-        el("div", { class: "c-tete" }, el("span", null, el("span", { class: "site", text: SITES[c.site] || c.site }), neuves[c.id] ? el("span", { class: "badge", text: neuves[c.id] }) : null),
-          el("span", { class: "c-heure", text: heure(c.t) + " · " + (min < 1 ? "à l’instant" : "il y a " + min + " min") })),
-        el("div", { class: "c-ch" }, "Rés. " + c.res, el("span", { class: "sep", text: "·" }), "Ch. " + c.chambre),
-        crepes,
-        el("div", { class: "c-pack", text: c.pack || "" }),
-        el("button", { type: "button", class: "prete", "data-id": c.id, "aria-label": "Prête : " + (SITES[c.site] || "") + " résidence " + c.res + " chambre " + c.chambre, text: "Prête" })));
+    else if (reglages.vue === "heure") visibles.forEach(function (c) { zone.append(carte(c)); });
+    else (filtre === "tous" ? ["C", "S"] : [filtre]).forEach(function (site) {   // par site, puis par pack
+      var duSite = visibles.filter(function (c) { return c.site === site; });
+      if (!duSite.length) return;
+      if (filtre === "tous") zone.append(el("div", { class: "site-titre" + (site === "S" ? " sud" : "") }, SITES[site], " ", el("small", { text: plur(duSite.length, "commande", "commandes") })));
+      GROUPES.forEach(function (g) {
+        var liste = duSite.filter(function (c) { return groupe(c) === g.k; });
+        if (!liste.length) return;
+        zone.append(titreGroupe(g, liste));
+        liste.forEach(function (c) { zone.append(carte(c)); });
+      });
     });
 
     $("titrePretes").hidden = !faites.length;
     var zp = $("pretes"); zp.replaceChildren();
     faites.slice().reverse().forEach(function (c) {
-      var p = enAttente[c.id] || pretes[c.id] || {};
-      zp.append(el("div", { class: "ligne-prete" },
-        el("div", null, el("b", { text: (SITES[c.site] || c.site) + " · " + c.res + " · ch. " + c.chambre }), el("small", { text: [c.nature ? c.nature + " Nature" : "", c.nutella ? c.nutella + " Nutella" : ""].filter(Boolean).join(" · ") + (p.t ? " · prête à " + heure(p.t) : "") + (enAttente[c.id] ? " · envoi en attente" : "") + (c.emb ? " · emballée" : "") })),
+      var p = enAttente[c.id] || pretes[c.id] || {}, mq = vues.marques[c.id];
+      zp.append(el("div", { class: "ligne-prete", "data-carte": c.id },
+        el("div", null, el("b", { text: (SITES[c.site] || c.site) + " · " + c.res + " · ch. " + c.chambre }),
+          el("small", { text: [c.nature ? c.nature + " Nature" : "", c.nutella ? c.nutella + " Nutella" : ""].filter(Boolean).join(" · ") + (p.t ? " · prête à " + heure(p.t) : "") + (enAttente[c.id] ? " · envoi en attente" : "") + (c.emb ? " · emballée" : "") }),
+          mq && mq.type === "modifiee" ? el("small", { class: "chg", text: "Modifiée à " + heure(mq.t) + " : " + mq.texte.replace(/\n/g, " · ") }) : null),
         el("button", { type: "button", "data-annuler": c.id, text: "Annuler" })));
     });
+
+    $("titreRetirees").hidden = !vues.retirees.length;
+    var zr = $("retirees"); zr.replaceChildren();
+    vues.retirees.slice().reverse().forEach(function (r) {
+      zr.append(el("div", { class: "ligne-retiree", "data-retiree": r.id }, "Retirée à " + heure(r.t) + " : ne pas préparer", el("small", { text: r.texte })));
+    });
+    rendreBandeau();
     $("date").textContent = nomJour(jour);
   }
   $("aFaire").addEventListener("click", function (e) { var b = e.target.closest("button[data-id]"); if (b) marquer(b.dataset.id, true); });
   $("pretes").addEventListener("click", function (e) { var b = e.target.closest("button[data-annuler]"); if (b) marquer(b.dataset.annuler, false); });
-  $("filtres").addEventListener("click", function (e) { var b = e.target.closest("button[data-f]"); if (b) { filtre = b.dataset.f; rendre(); } });
-  $("aFaire").addEventListener("pointerdown", function (e) { var c = e.target.closest(".carte.neuve"); if (c) { var b = c.querySelector("button[data-id]"); if (b) delete neuves[b.dataset.id]; } });
+  $("filtres").addEventListener("click", function (e) { var b = e.target.closest("button[data-f]"); if (b) { reglages.filtre = b.dataset.f; sauverReglages(); rendre(); } });
+  $("vues").addEventListener("click", function (e) { var b = e.target.closest("button[data-v]"); if (b) { reglages.vue = b.dataset.v; sauverReglages(); rendre(); } });
+  $("btnVu").addEventListener("click", function () {   // le bandeau se ferme ; les « Modifiée » restent sur les cartes (avec le détail) jusqu'à « Prête »
+    vues.evts = [];
+    Object.keys(vues.marques).forEach(function (id) { if (vues.marques[id].type === "nouvelle") delete vues.marques[id]; });
+    sauverVues(); rendre();
+  });
+  $("bandeauListe").addEventListener("click", function (e) {   // toucher une ligne : aller à la carte (ou à la liste des retirées)
+    var b = e.target.closest("button.ev"); if (!b) return;
+    var cible = b.dataset.type === "retiree" ? document.querySelector('[data-retiree="' + b.dataset.aller + '"]') : document.querySelector('[data-carte="' + b.dataset.aller + '"]');
+    if (!cible && reglages.filtre !== "tous") { reglages.filtre = "tous"; sauverReglages(); rendre(); cible = document.querySelector('[data-carte="' + b.dataset.aller + '"]'); }
+    if (cible) cible.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
-  /* ---------- Son, vibration, écran allumé ---------- */
-  var audio = null, verrou = null, actif = false;
-  function bip(f, debut, duree) {
-    var o = audio.createOscillator(), g = audio.createGain();
-    o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(audio.destination);
-    g.gain.setValueAtTime(0.0001, audio.currentTime + debut);
-    g.gain.exponentialRampToValueAtTime(0.35, audio.currentTime + debut + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + debut + duree);
-    o.start(audio.currentTime + debut); o.stop(audio.currentTime + debut + duree + 0.05);
+  /* ---------- Son, vibration, écran allumé : interrupteurs ---------- */
+  var audio = null, verrou = null, demandeEcran = false, ecranRefuse = false, dernierType = "nouvelle", rappels = 0;
+  /* Son FORT (cuisine, ~7 m) : ondes carrées entre 1,2 et 2,7 kHz (là où un haut-parleur de téléphone porte le plus loin),
+     volume maximal, compresseur pour monter le niveau sans saturer ; chaque motif est joué deux fois.
+     La page ne peut pas monter le volume du téléphone : il doit être au maximum (bouton « Essayer le son »). */
+  var sortie = null;
+  function chaine() {
+    if (!sortie) {
+      var comp = audio.createDynamicsCompressor(), g = audio.createGain();
+      comp.threshold.value = -18; comp.knee.value = 0; comp.ratio.value = 12; comp.attack.value = 0.002; comp.release.value = 0.08;
+      g.gain.value = 1; comp.connect(g); g.connect(audio.destination); sortie = comp;
+    }
+    return sortie;
   }
-  function alerter() {
-    try { if (navigator.vibrate) navigator.vibrate([220, 120, 220]); } catch (e) {}
-    if (audio) { try { bip(880, 0, 0.22); bip(1320, 0.26, 0.3); } catch (e) {} }
+  function bip(f, debut, duree) {
+    var t = audio.currentTime + debut, o = audio.createOscillator(), g = audio.createGain();
+    o.type = "square"; o.frequency.value = f; o.connect(g); g.connect(chaine());
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.9, t + 0.012);
+    g.gain.setValueAtTime(0.9, t + duree * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duree);
+    o.start(t); o.stop(t + duree + 0.05);
+  }
+  var MOTIFS = {   // [fréquence, début, durée] ; trois sons bien différents
+    nouvelle: [[1760, 0, 0.18], [2349, 0.22, 0.28]],                       // monte : « ding-dong » aigu
+    modifiee: [[2093, 0, 0.12], [2093, 0.17, 0.12], [2637, 0.34, 0.26]],   // trois notes rapides
+    retiree: [[2637, 0, 0.2], [1760, 0.25, 0.2], [1175, 0.5, 0.36]]        // descend
+  };
+  function sonner(type) {
+    if (!reglages.son || !audio || audio.state !== "running") return false;
+    try {
+      var m = MOTIFS[type] || MOTIFS.nouvelle;
+      [0, 1].forEach(function (rep) { m.forEach(function (n) { bip(n[0], n[1] + rep * 1.0, n[2]); }); });
+      return true;
+    } catch (e) { return false; }
+  }
+  function vibrer(motif) { try { if (navigator.vibrate) navigator.vibrate(motif); } catch (e) {} }
+  function alerter(nouveaux) {
+    dernierType = nouveaux.some(function (e) { return e.type === "retiree"; }) ? "retiree" : nouveaux.some(function (e) { return e.type === "modifiee"; }) ? "modifiee" : "nouvelle";
+    rappels = 0;
+    vibrer(dernierType === "retiree" ? [400, 150, 400, 150, 400] : [220, 120, 220]);
+    sonner(dernierType);
+  }
+  setInterval(function () {   // rappel tant que le bandeau n'est pas vu
+    if (!vues.evts.length || rappels >= RAPPELS_MAX || document.hidden) return;
+    rappels++; sonner(dernierType); vibrer(200);
+  }, RAPPEL);
+
+  function majReglages() {
+    var sonPret = !!(audio && audio.state === "running");
+    $("swSon").setAttribute("aria-checked", String(reglages.son));
+    $("etatSon").textContent = !reglages.son ? "coupé" : sonPret ? "activé" : "touchez l’écran pour l’activer";
+    $("etatSon").className = reglages.son && !sonPret ? "attention" : "";
+    var possible = "wakeLock" in navigator;
+    $("swEcran").setAttribute("aria-checked", String(reglages.ecran));
+    $("etatEcran").textContent = !reglages.ecran ? "mise en veille normale" : !possible ? "impossible ici : réglez la veille du téléphone" : verrou ? "reste allumé" : ecranRefuse ? "refusé : touchez l’écran" : "en attente";
+    $("etatEcran").className = reglages.ecran && !verrou ? "attention" : "";
+  }
+  function debloquerSon(test) {   // un téléphone n'autorise le son qu'après un toucher
+    try {
+      // iPhone (Safari 16.4+) : sans cela, le son d'une page est muet quand l'interrupteur latéral est sur « silencieux »
+      if (navigator.audioSession && navigator.audioSession.type !== "playback") navigator.audioSession.type = "playback";
+    } catch (e) {}
+    try {
+      if (!audio) { audio = new (window.AudioContext || window.webkitAudioContext)(); audio.onstatechange = majReglages; }
+      var vide = audio.createBufferSource(); vide.buffer = audio.createBuffer(1, 1, 22050); vide.connect(audio.destination); vide.start(0);   // iPhone : un son vide joué pendant le toucher déverrouille le son
+      var fin = function () { majReglages(); if (test) sonner(test === true ? "nouvelle" : test); };
+      if (audio.state !== "running") audio.resume().then(fin, majReglages); else fin();
+    } catch (e) {}
+    majReglages();
   }
   function garderEcran() {
-    if (!actif || !("wakeLock" in navigator) || document.hidden) return;
-    navigator.wakeLock.request("screen").then(function (v) { verrou = v; }).catch(function () {});
+    if (!reglages.ecran) { if (verrou) { var v = verrou; verrou = null; v.release().catch(function () {}); } majReglages(); return; }
+    if (!("wakeLock" in navigator) || document.hidden || verrou || demandeEcran) { majReglages(); return; }
+    demandeEcran = true;   // une seule demande à la fois (un toucher déclenche plusieurs événements)
+    navigator.wakeLock.request("screen").then(function (v) {
+      demandeEcran = false;
+      if (!reglages.ecran || verrou) { v.release().catch(function () {}); majReglages(); return; }   // décoché pendant la demande
+      verrou = v; ecranRefuse = false; majReglages();
+      v.addEventListener("release", function () {   // libéré par le téléphone (écran caché, économie d'énergie) : on le reprend dès que possible
+        if (verrou === v) verrou = null; majReglages();
+        if (reglages.ecran && !document.hidden) setTimeout(garderEcran, 3000);
+      });
+    }, function () { demandeEcran = false; ecranRefuse = true; majReglages(); });
   }
-  $("btnActiver").addEventListener("click", function () {
-    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); bip(880, 0, 0.15); } catch (e) {}
-    actif = true; garderEcran();
-    $("btnActiver").hidden = true;
-    toast("wakeLock" in navigator ? "Son activé, écran gardé allumé." : "Son activé. Empêchez la mise en veille dans les réglages du téléphone.");
+  $("swSon").addEventListener("click", function () {
+    reglages.son = !reglages.son; sauverReglages();
+    if (reglages.son) debloquerSon(true); else majReglages();
   });
+  $("swEcran").addEventListener("click", function () { reglages.ecran = !reglages.ecran; sauverReglages(); ecranRefuse = false; garderEcran(); });
+  $("btnEssai").addEventListener("click", function () {
+    if (!reglages.son) { toast("Le son est coupé : touchez « Son » pour l’activer."); return; }
+    debloquerSon("nouvelle");
+    toast("Son d’une nouvelle commande. Trop faible ? Montez le volume du téléphone au maximum.");
+  });
+  /* Premier toucher après l'ouverture ou une mise à jour : on réactive ce qui est coché. Android accepte le début du toucher ;
+     l'iPhone n'autorise le son qu'à la fin du toucher (touchend, click) : on écoute les trois. */
+  ["pointerdown", "touchend", "click"].forEach(function (evt) {
+    document.addEventListener(evt, function () {
+      if (reglages.son && (!audio || audio.state !== "running")) debloquerSon(false);
+      if (reglages.ecran && !verrou) garderEcran();
+    }, true);
+  });
+
+  /* ---------- Mise à jour de l'écran ---------- */
+  function verifierVersion() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    fetch("sw.js", { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t) {
+      var v = /VERSION = "([^"]+)"/.exec(t || "");
+      if (v && v[1] !== VERSION_PAGE) $("alerteMaj").hidden = false;
+    }).catch(function () {});
+  }
+  $("btnMaj").addEventListener("click", function () { location.reload(); });   // réglages, « Prête » en attente et nouveautés sont gardés dans le téléphone
+  setInterval(verifierVersion, VERIF_VERSION);
 
   /* ---------- Boucle d'actualisation ---------- */
   var boucle = null;
   function demarrer() {
-    rendre(); lireTout();
+    rendre(); majReglages(); garderEcran(); lireTout();
     clearInterval(boucle); boucle = setInterval(lireTout, INTERVALLE);   // aussi en arrière-plan : le téléphone ralentit lui-même la cadence
+    setTimeout(verifierVersion, 5000);
   }
-  document.addEventListener("visibilitychange", function () { if (!document.hidden && gh) { lireTout(); garderEcran(); } });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && gh) { lireTout(); garderEcran(); verifierVersion(); } });
   window.addEventListener("online", function () { if (gh) lireTout(); });
 
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
