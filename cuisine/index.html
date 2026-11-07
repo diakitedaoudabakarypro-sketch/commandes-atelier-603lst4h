@@ -8,14 +8,14 @@
 <meta name="color-scheme" content="light dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Cuisine">
+<meta name="apple-mobile-web-app-title" content="Cuisine de Rouhi">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 <link rel="icon" type="image/png" href="../icons/icon-192.png">
-<title>Cuisine</title>
+<title>Cuisine de Rouhi</title>
 <!--
-  AUT-11 V2.0 · Écran cuisine de L'Atelier des Crêpes (D-082, D-095)
+  AUT-11 V2.1 · Écran cuisine de L'Atelier des Crêpes, « Cuisine de Rouhi » (D-082, D-095, D-096)
   Rôle : sur le téléphone de la personne qui prépare, afficher en grand les commandes acceptées dans l'application
   « Commandes du soir », et lui permettre de toucher « Prête ». Android et iPhone (navigateur ou écran d'accueil).
   Données : dépôt GitHub privé « atelier-cuisine » ; lit soirees/AAAA-MM-JJ.json (écrit par l'application, sans numéro de
@@ -30,12 +30,16 @@
     son et vibration différents, rappel toutes les 30 s (4 fois au plus). « Modifiée » seulement si la chambre ou les crêpes
     changent (Payé, Emballée, numéro : ignorés). Crêpes changées après « Prête » : la commande revient « à refaire ».
     Liste « Retirées par l'équipe » de la soirée.
-  - Son FORT pour une cuisine (~7 m) : ondes carrées 1,2–2,7 kHz, volume maximal + compresseur, motif joué deux fois ; bouton « Essayer le son ».
+  - Son FORT pour une cuisine (~7 m) : ondes carrées 1,2–2,7 kHz, volume maximal + compresseur, motif joué deux fois (cocher « Son » joue un son d'essai).
     iPhone (la cuisine utilise un iPhone 13) : audioSession « playback » (le son passe même interrupteur latéral sur silencieux, Safari 16.4+),
     déverrouillage à la fin du toucher (touchend / click), son vide joué pendant le toucher. Le volume du téléphone doit être au maximum.
   - Résumé de la soirée en une carte (à préparer, Nature, Nutella, packs, barre d'avancement) ; sélecteurs en un bloc.
   - Mise à jour : l'écran vérifie toutes les 10 min (et au retour sur l'écran) si une nouvelle version est publiée → bouton « Actualiser ».
     VERSION_PAGE ci-dessous doit être identique à VERSION de cuisine/sw.js.
+  V2.1 (D-096, demande de l'équipe) : titre « Cuisine de Rouhi » ; bouton « Essayer le son » retiré (son essayé sur l'iPhone) ;
+    STOCK BAS, seulement quand l'équipe le décide : « Il reste peu de crêpes » → Nature / Nutella encore à vendre → « Annoncer à l'équipe »
+    (fichier stock/AAAA-MM-JJ.json du dépôt cuisine) ; l'application le montre à la saisie. Reste à vendre = annoncé − crêpes des
+    commandes arrivées après l'annonce. « Retirer » l'enlève.
 -->
 <style>
   :root { --fond:#F7EFE3; --carte:#FFFFFF; --carte2:#FBF5EC; --encre:#1C120C; --doux:#6B5A4A; --bord:rgba(60,40,20,.14);
@@ -82,8 +86,7 @@
   main { max-width:760px; margin:0 auto; padding:14px 16px calc(40px + env(safe-area-inset-bottom)); }
   /* Interrupteurs Son / Écran allumé */
   .reglages { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 14px; }
-  .essai { grid-column:1 / -1; min-height:42px; border-radius:12px; border:1.5px solid var(--or); background:var(--carte2); font-size:14.5px; font-weight:700; }
-  .essai:active, .seg button:active, .prete:active { transform:scale(.985); }
+  .seg button:active, .prete:active, .stock-btn:active { transform:scale(.985); }
   .inter { display:flex; align-items:center; gap:10px; min-height:58px; padding:8px 12px; border-radius:14px; border:1px solid var(--bord); background:var(--carte); text-align:left; box-shadow:var(--ombre); }
   .inter .piste { flex:none; position:relative; width:46px; height:28px; border-radius:999px; background:#B8AC9C; transition:background .15s; }
   .inter .piste::after { content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:transform .15s; }
@@ -96,6 +99,21 @@
   @media (prefers-reduced-motion: reduce) { .inter .piste, .inter .piste::after { transition:none; } }
   /* Résumé de la soirée : une seule carte (totaux, packs, avancement) */
   .resume { background:var(--carte); border:1px solid var(--bord); border-radius:var(--rayon); box-shadow:var(--ombre); padding:14px 12px 12px; margin:0 0 14px; }
+  /* Stock bas (seulement quand l'équipe l'annonce) */
+  .stock-btn { width:100%; min-height:46px; margin:0 0 14px; border-radius:14px; border:1.5px dashed var(--or); background:transparent; color:var(--encre); font-size:15px; font-weight:700; }
+  .stock { margin:0 0 14px; padding:12px; border-radius:var(--rayon); background:#FFF4CC; color:#1C120C; box-shadow:0 0 0 2px #FBBF24; }
+  .stock b.titre { display:block; font-size:15px; }
+  .stock .reste { font-size:22px; font-weight:800; margin:4px 0 2px; font-variant-numeric:tabular-nums; }
+  .stock .reste.bas { color:#9A3412; }
+  .stock small { display:block; font-size:13px; font-weight:600; color:#6B5A4A; }
+  .stock .rang { display:flex; gap:8px; margin-top:10px; }
+  .stock .rang button { flex:1; min-height:46px; border-radius:12px; border:1.5px solid rgba(28,18,12,.25); background:#fff; color:#1C120C; font-weight:800; }
+  .stock .rang button.fort { background:#1C120C; color:#F6EBDC; border-color:#1C120C; }
+  .pas-stock { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+  .pas-stock label { display:block; font-size:14px; font-weight:800; margin-bottom:4px; }
+  .pas-stock .ctrl { display:grid; grid-template-columns:48px 1fr 48px; gap:6px; }
+  .pas-stock .ctrl button { min-height:48px; border-radius:12px; border:1.5px solid rgba(28,18,12,.25); background:#fff; color:#1C120C; font-size:24px; font-weight:800; line-height:1; }
+  .pas-stock input { width:100%; min-height:48px; border-radius:12px; border:1.5px solid rgba(28,18,12,.25); background:#fff; color:#1C120C; text-align:center; font:inherit; font-size:22px; font-weight:800; }
   .totaux { display:grid; grid-template-columns:repeat(3, 1fr); margin-bottom:10px; }
   .total { text-align:center; padding:0 6px; }
   .total + .total { border-left:1px solid var(--bord); }
@@ -168,7 +186,7 @@
 <header class="haut">
   <div class="haut-in">
     <div class="rond" aria-hidden="true">AC</div>
-    <div><h1>Cuisine</h1><div class="sous" id="date">L’Atelier des Crêpes</div></div>
+    <div><h1>Cuisine de Rouhi</h1><div class="sous" id="date">L’Atelier des Crêpes</div></div>
     <div class="etat" id="etat" role="status" aria-live="polite"><span id="etatTexte">Connexion…</span><span class="point" aria-hidden="true"></span></div>
   </div>
   <div class="maj" id="alerteMaj" hidden><span>Nouvelle version de l’écran cuisine.</span><button type="button" id="btnMaj">Actualiser</button></div>
@@ -193,7 +211,24 @@
     <div class="reglages">
       <button type="button" class="inter" id="swSon" role="switch" aria-checked="false"><span class="piste" aria-hidden="true"></span><span class="txt"><b>Son</b><small id="etatSon"></small></span></button>
       <button type="button" class="inter" id="swEcran" role="switch" aria-checked="false"><span class="piste" aria-hidden="true"></span><span class="txt"><b>Écran allumé</b><small id="etatEcran"></small></span></button>
-      <button type="button" class="essai" id="btnEssai">Essayer le son</button>
+    </div>
+    <button type="button" class="stock-btn" id="btnStock">Il reste peu de crêpes</button>
+    <div class="stock" id="zoneStock" hidden>
+      <div id="stockAffiche">
+        <b class="titre" id="stockTitre"></b>
+        <div class="reste" id="stockReste"></div>
+        <small id="stockPossible"></small>
+        <div class="rang"><button type="button" id="btnStockModifier">Modifier</button><button type="button" id="btnStockRetirer">Retirer</button></div>
+      </div>
+      <div id="stockSaisie" hidden>
+        <b class="titre">Ce que l’on peut encore vendre</b>
+        <small>En plus des commandes déjà reçues.</small>
+        <div class="pas-stock">
+          <div><label for="stockNature">Nature</label><div class="ctrl"><button type="button" data-stock="nature" data-pas="-1" aria-label="Une Nature de moins">−</button><input type="number" id="stockNature" inputmode="numeric" min="0" max="500" value="0"><button type="button" data-stock="nature" data-pas="1" aria-label="Une Nature de plus">+</button></div></div>
+          <div><label for="stockNutella">Nutella</label><div class="ctrl"><button type="button" data-stock="nutella" data-pas="-1" aria-label="Une Nutella de moins">−</button><input type="number" id="stockNutella" inputmode="numeric" min="0" max="500" value="0"><button type="button" data-stock="nutella" data-pas="1" aria-label="Une Nutella de plus">+</button></div></div>
+        </div>
+        <div class="rang"><button type="button" id="btnStockFermer">Fermer</button><button type="button" class="fort" id="btnStockAnnoncer">Annoncer à l’équipe</button></div>
+      </div>
     </div>
     <p class="message ko" id="alerte" hidden></p>
     <section class="resume" aria-label="Résumé de la soirée">
@@ -230,7 +265,7 @@
 <script>
 (function () {
   "use strict";
-  var VERSION_PAGE = "atelier-cuisine-v2-0";   // = VERSION de cuisine/sw.js ; si sw.js en ligne a une autre valeur, une mise à jour est publiée
+  var VERSION_PAGE = "atelier-cuisine-v2-1";   // = VERSION de cuisine/sw.js ; si sw.js en ligne a une autre valeur, une mise à jour est publiée
   var PROPRIETAIRE = "diakitedaoudabakarypro-sketch", DEPOT = "atelier-cuisine";
   var CLE_STOCKAGE = "atelier_cuisine_cle_v1", CLE_VUES = "atelier_cuisine_vues_v1", CLE_ATTENTE = "atelier_cuisine_attente_v1", CLE_REGLAGES = "atelier_cuisine_reglages_v1";
   var DECALAGE_H = 4, INTERVALLE = 4000, RAPPEL = 30000, RAPPELS_MAX = 4, VERIF_VERSION = 10 * 60000;
@@ -359,7 +394,7 @@
   }
 
   /* ---------- Données de la soirée ---------- */
-  var jour = soiree(), commandes = [], pretes = {}, etags = {}, shaPretes = null;
+  var jour = soiree(), commandes = [], pretes = {}, etags = {}, shaPretes = null, stock = null, shaStock = null, saisieStock = false;
   function nouvellesVues(j) { return { jour: j, ids: {}, pret: false, evts: [], marques: {}, retirees: [] }; }
   /* vues : ce que cet écran a déjà vu (photo de chaque commande), les nouveautés pas encore vues (evts, bandeau),
      les marques des cartes (Nouvelle / Modifiée + détail) et les commandes retirées. Gardé dans le téléphone pour la soirée. */
@@ -373,6 +408,7 @@
 
   function cheminSoiree() { return "soirees/" + jour + ".json"; }
   function cheminPretes() { return "pretes/" + jour + ".json"; }
+  function cheminStock() { return "stock/" + jour + ".json"; }
   function estPrete(id) { var a = enAttente[id], p = a || pretes[id]; return !!(p && p.prete); }
 
   var lectureEnCours = false;
@@ -380,15 +416,17 @@
     if (!gh || lectureEnCours) return Promise.resolve();   // une seule lecture à la fois
     lectureEnCours = true;
     var j = soiree();
-    if (j !== jour) { jour = j; commandes = []; pretes = {}; etags = {}; shaPretes = null; vues = nouvellesVues(jour); sauverVues(); premiereLecture = true; }
-    return Promise.all([gh.lire(cheminSoiree(), etags.s), gh.lire(cheminPretes(), etags.p)]).then(function (r) {
-      var s = r[0], p = r[1];
+    if (j !== jour) { jour = j; commandes = []; pretes = {}; etags = {}; shaPretes = null; stock = null; shaStock = null; vues = nouvellesVues(jour); sauverVues(); premiereLecture = true; }
+    return Promise.all([gh.lire(cheminSoiree(), etags.s), gh.lire(cheminPretes(), etags.p), gh.lire(cheminStock(), etags.k)]).then(function (r) {
+      var s = r[0], p = r[1], k = r[2];
+      if (k.statut === 200) { etags.k = k.etag; shaStock = k.sha; try { var ks = JSON.parse(k.texte); stock = ks && ks.actif ? ks : null; } catch (e) { stock = null; } }
+      if (k.statut === 404) { etags.k = null; shaStock = null; stock = null; }
       if (s.statut === 200) { etags.s = s.etag; try { var o = JSON.parse(s.texte); commandes = Array.isArray(o.commandes) ? o.commandes : []; } catch (e) { commandes = []; } }
       if (s.statut === 404) { etags.s = null; commandes = []; }
       if (p.statut === 200) { etags.p = p.etag; shaPretes = p.sha; try { pretes = (JSON.parse(p.texte).pretes) || {}; } catch (e) { pretes = {}; } }
       if (p.statut === 404) { etags.p = null; shaPretes = null; pretes = {}; }
       derniereReussite = Date.now(); derniereErreur = null;
-      if (s.statut !== 304 || p.statut !== 304 || premiereLecture) analyser();
+      if (s.statut !== 304 || p.statut !== 304 || k.statut !== 304 || premiereLecture) analyser();
       return envoyerAttente();
     }).catch(function (e) {
       derniereErreur = e;
@@ -500,10 +538,65 @@
     else if (g.k !== "plusieurs") { gauche = g.nom + " × " + q[g.k]; if (unites) droite += " · + " + unites + " à l’unité"; }
     return el("div", { class: "groupe-titre" }, el("span", { text: gauche }), el("small", { text: droite }));
   }
+  /* ---------- Stock bas : annoncé par l'équipe quand il reste peu ---------- */
+  function resteStock() {   // annoncé − crêpes des commandes arrivées après l'annonce (les commandes retirées ne comptent plus)
+    if (!stock) return null;
+    var na = stock.nature || 0, nu = stock.nutella || 0;
+    commandes.forEach(function (c) { if (c.t > stock.t) { na -= c.nature || 0; nu -= c.nutella || 0; } });
+    return { nature: na, nutella: nu };
+  }
+  function packsPossibles(r) {
+    return [{ nom: "MINI", a: 3, b: 1 }, { nom: "MAXI", a: 2, b: 3 }, { nom: "MÉGA", a: 4, b: 6 }].map(function (p) {
+      return p.nom + " × " + Math.max(0, Math.min(Math.floor(r.nature / p.a), Math.floor(r.nutella / p.b)));
+    }).join(" · ");
+  }
+  function rendreStock() {
+    var r = resteStock();
+    $("btnStock").hidden = !!stock || saisieStock;
+    $("zoneStock").hidden = !stock && !saisieStock;
+    $("stockSaisie").hidden = !saisieStock; $("stockAffiche").hidden = saisieStock || !stock;
+    if (!r) return;
+    $("stockTitre").textContent = "Stock annoncé à " + heure(stock.t) + " : reste à vendre";
+    $("stockReste").textContent = Math.max(0, r.nature) + " Nature · " + Math.max(0, r.nutella) + " Nutella";
+    $("stockReste").className = "reste" + (r.nature <= 0 || r.nutella <= 0 ? " bas" : "");
+    $("stockPossible").textContent = (r.nature < 0 || r.nutella < 0 ? "Dépassé : " + [r.nature < 0 ? -r.nature + " Nature" : "", r.nutella < 0 ? -r.nutella + " Nutella" : ""].filter(Boolean).join(" et ") + " de trop. " : "") + "Encore possible : " + packsPossibles(r);
+  }
+  function ouvrirSaisieStock() {
+    var r = resteStock();
+    $("stockNature").value = r ? Math.max(0, r.nature) : 0; $("stockNutella").value = r ? Math.max(0, r.nutella) : 0;
+    saisieStock = true; rendreStock();
+  }
+  var stockEnCours = false;
+  function ecrireStock(s, essai) {
+    if (!gh || (stockEnCours && !essai)) return Promise.resolve();
+    stockEnCours = true;
+    var obj = { application: "ATELIER-CUISINE-STOCK", version: 1, jour: jour, actif: s.actif, nature: s.nature, nutella: s.nutella, t: s.t };
+    return gh.ecrire(cheminStock(), JSON.stringify(obj, null, 1), shaStock, "Cuisine : stock " + (s.actif ? "annoncé" : "retiré") + " (" + jour + ")").then(function (r) {
+      stockEnCours = false; shaStock = r.sha; etags.k = null; stock = s.actif ? obj : null; saisieStock = false; rendreStock();
+      toast(s.actif ? "Stock annoncé à l’équipe." : "Stock retiré.");
+    }, function (e) {
+      if (e.code === "conflit" && !essai) return gh.lire(cheminStock()).then(function (p) { shaStock = p.statut === 200 ? p.sha : null; return ecrireStock(s, true); });
+      stockEnCours = false; toast("Stock non envoyé : " + e.message);
+    });
+  }
+  $("btnStock").addEventListener("click", ouvrirSaisieStock);
+  $("btnStockModifier").addEventListener("click", ouvrirSaisieStock);
+  $("btnStockFermer").addEventListener("click", function () { saisieStock = false; rendreStock(); });
+  $("zoneStock").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-stock]"); if (!b) return;
+    var champ = $(b.dataset.stock === "nature" ? "stockNature" : "stockNutella");
+    champ.value = Math.max(0, Math.min(500, (parseInt(champ.value, 10) || 0) + parseInt(b.dataset.pas, 10)));
+  });
+  $("btnStockAnnoncer").addEventListener("click", function () {
+    var na = Math.max(0, Math.min(500, parseInt($("stockNature").value, 10) || 0)), nu = Math.max(0, Math.min(500, parseInt($("stockNutella").value, 10) || 0));
+    ecrireStock({ actif: true, nature: na, nutella: nu, t: Date.now() });
+  });
+  $("btnStockRetirer").addEventListener("click", function () { ecrireStock({ actif: false, nature: 0, nutella: 0, t: Date.now() }); });
+
   function rendreBandeau() {
     var evts = vues.evts, z = $("bandeau");
     z.hidden = !evts.length;
-    document.title = evts.length ? "(" + evts.length + ") Cuisine" : "Cuisine";
+    document.title = evts.length ? "(" + evts.length + ") Cuisine de Rouhi" : "Cuisine de Rouhi";
     if (!evts.length) return;
     var n = { nouvelle: 0, modifiee: 0, retiree: 0 }; evts.forEach(function (e) { n[e.type]++; });
     $("bandeauTitre").textContent = [n.nouvelle ? plur(n.nouvelle, "nouvelle commande", "nouvelles commandes") : "",
@@ -572,7 +665,7 @@
     vues.retirees.slice().reverse().forEach(function (r) {
       zr.append(el("div", { class: "ligne-retiree", "data-retiree": r.id }, "Retirée à " + heure(r.t) + " : ne pas préparer", el("small", { text: r.texte })));
     });
-    rendreBandeau();
+    rendreBandeau(); rendreStock();
     $("date").textContent = nomJour(jour);
   }
   $("aFaire").addEventListener("click", function (e) { var b = e.target.closest("button[data-id]"); if (b) marquer(b.dataset.id, true); });
@@ -595,7 +688,7 @@
   var audio = null, verrou = null, demandeEcran = false, ecranRefuse = false, dernierType = "nouvelle", rappels = 0;
   /* Son FORT (cuisine, ~7 m) : ondes carrées entre 1,2 et 2,7 kHz (là où un haut-parleur de téléphone porte le plus loin),
      volume maximal, compresseur pour monter le niveau sans saturer ; chaque motif est joué deux fois.
-     La page ne peut pas monter le volume du téléphone : il doit être au maximum (bouton « Essayer le son »). */
+     La page ne peut pas monter le volume du téléphone : le son dépend du volume de l'iPhone, à mettre au maximum. */
   var sortie = null;
   function chaine() {
     if (!sortie) {
@@ -681,11 +774,6 @@
     if (reglages.son) debloquerSon(true); else majReglages();
   });
   $("swEcran").addEventListener("click", function () { reglages.ecran = !reglages.ecran; sauverReglages(); ecranRefuse = false; garderEcran(); });
-  $("btnEssai").addEventListener("click", function () {
-    if (!reglages.son) { toast("Le son est coupé : touchez « Son » pour l’activer."); return; }
-    debloquerSon("nouvelle");
-    toast("Son d’une nouvelle commande. Trop faible ? Montez le volume du téléphone au maximum.");
-  });
   /* Premier toucher après l'ouverture ou une mise à jour : on réactive ce qui est coché. Android accepte le début du toucher ;
      l'iPhone n'autorise le son qu'à la fin du toucher (touchend, click) : on écoute les trois. */
   ["pointerdown", "touchend", "click"].forEach(function (evt) {

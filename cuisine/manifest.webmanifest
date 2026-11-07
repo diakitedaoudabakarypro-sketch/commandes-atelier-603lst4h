@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Cuisine · L’Atelier des Crêpes",
-  "short_name": "Cuisine",
+  "name": "Cuisine de Rouhi · L’Atelier des Crêpes",
+  "short_name": "Cuisine Rouhi",
   "description": "Écran cuisine : les commandes acceptées à préparer, en direct.",
   "lang": "fr",
   "start_url": "./index.html",

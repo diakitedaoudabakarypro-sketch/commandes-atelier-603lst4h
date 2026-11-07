@@ -1,10 +1,10 @@
-/* AUT-11 V2.0 · service worker de l'écran cuisine
+/* AUT-11 V2.1 · service worker de l'écran cuisine
    Rôle : rendre l'écran installable (Android) et l'ouvrir vite. La page est toujours demandée au serveur d'abord
    (réseau d'abord, copie gardée en secours). Les appels à GitHub (api.github.com, autre site) ne sont jamais interceptés :
    les commandes affichées viennent toujours de GitHub, jamais de ce cache.
    Pour publier une mise à jour : changer VERSION ci-dessous ET VERSION_PAGE dans cuisine/index.html (même valeur) :
    l'écran ouvert compare les deux et propose « Actualiser ». */
-var VERSION = "atelier-cuisine-v2-0";
+var VERSION = "atelier-cuisine-v2-1";
 var FICHIERS = ["./", "index.html", "manifest.webmanifest", "../relais-github.js", "../icons/icon-192.png", "../icons/icon-512.png", "../icons/icon-maskable-512.png"];
 
 self.addEventListener("install", function (e) {

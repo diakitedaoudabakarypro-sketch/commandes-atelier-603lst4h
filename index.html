@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.10 · 2026-11-07 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.11 · 2026-11-07 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -49,6 +49,11 @@
   options en vrais boutons (Copier, Modifier, Nouveau message, Toutes les affiches, Envoyer / Annuler / Modifier d'un contact).
   V6.10 (D-095) : la cuisine reçoit aussi les quantités par pack (q : mini, maxi, mega, nature, nutella) pour classer par pack ; écran cuisine V2.0 ;
   « Prête » relue toutes les 5 s au lieu de 15 s (une seule lecture à la fois ; réponse « inchangé » 304 gratuite pour la limite GitHub).
+  V6.11 (D-096) : PAIEMENT plus pratique : à la saisie, choix « Non payé / Payé » en deux grands boutons ; sur chaque carte, le MONTANT à encaisser
+  (packs + livraison, une seule livraison par chambre, comptée sur sa première commande, offerte si la chambre a le pack qui l'offre) à côté d'un grand bouton
+  « Payé / Non payé » ; total « à encaisser » de la liste. LISTE classée par résidence (tournée) ou PAR PACK (MINI, MAXI, MÉGA, plusieurs, à l'unité).
+  Message / Modifier / Supprimer en vrais boutons. STOCK BAS annoncé par la cuisine (stock/AAAA-MM-JJ.json, relu toutes les 5 s) : la saisie montre
+  ce qui reste à vendre, les packs encore possibles, et prévient si la commande dépasse (sans bloquer).
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -444,6 +449,31 @@
   .ligne .liens { gap:4px; }
   .ligne .liens .pay, .ligne .liens .ecrire { margin-right:0; padding:0 12px; }
   .ligne { row-gap:6px; }
+  /* ===== V6.11 : paiement, liste par pack, boutons, stock bas ===== */
+  .paie-choix { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; background:var(--carte2); border:1px solid var(--bord); border-radius:16px; }
+  .paie-choix button { min-height:50px; background:transparent; color:var(--doux); font-size:16px; border-radius:12px; }
+  .paie-choix button[data-paye="0"][aria-pressed="true"] { background:rgba(154,52,18,.1); color:var(--alerte); box-shadow:inset 0 0 0 2px var(--alerte); }
+  .paie-choix button[data-paye="1"][aria-pressed="true"] { background:var(--ok); color:var(--livre-texte); }
+  .case-cachee { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+  .l-paie { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding:8px 8px 8px 12px; border-radius:14px; background:var(--carte2); border:1.5px solid var(--bord); }
+  .l-paie.du { border-color:var(--alerte); background:rgba(154,52,18,.07); }
+  .l-paie .montant { min-width:0; }
+  .l-paie .montant b { display:block; font-size:20px; line-height:1.15; font-variant-numeric:tabular-nums; }
+  .l-paie .montant small { display:block; font-size:12.5px; color:var(--doux); font-weight:600; }
+  .l-paie button.pay { flex:none; min-height:50px; min-width:118px; padding:0 16px; font-size:16px; margin:0; border-radius:12px; }
+  .l-paie button.pay.du { background:var(--carte); }
+  .ligne.v3 .liens.v611 { display:flex; gap:6px; margin:8px 0 0; }
+  .liens.v611 button { flex:1 1 0; min-height:44px; padding:0 8px; font-size:14px; font-weight:700; border-radius:12px; background:var(--carte2); border:1.5px solid var(--bord); color:var(--encre); text-decoration:none; }
+  .liens.v611 button.ecrire { border-color:var(--or); }
+  .liens.v611 button.danger { color:var(--alerte); }
+  .classement { margin:0 0 10px; }
+  .classement button { min-height:42px; font-size:15px; }
+  .pack-tete b { font-size:18px; }
+  .rang-livree .montant-livree { font-weight:800; color:var(--alerte); margin-right:4px; white-space:nowrap; }
+  .stock-bas { margin:0 0 14px; padding:10px 12px; border-radius:14px; background:#FFF4CC; color:#1C120C; box-shadow:0 0 0 2px #FBBF24; }
+  .stock-bas b { display:block; font-size:16px; }
+  .stock-bas small { display:block; font-size:13px; font-weight:600; color:#6B5A4A; }
+  .stock-bas .depasse { display:block; margin-top:4px; color:#9A3412; font-weight:800; }
 </style>
 </head>
 <body data-vue="saisir">
@@ -471,6 +501,7 @@
     <h2 id="titreSaisie"><span id="titreSaisieTexte">Nouvelle commande</span><button type="button" class="savoir" data-info="saisie">En savoir plus</button></h2>
     <div class="bandeau-edition" id="bandeauEdition" hidden><span>Modification d’une commande</span><button type="button" class="lien" id="btnAnnulerEdition">Annuler</button></div>
 
+    <div class="stock-bas" id="stockBas" role="status" hidden></div>
     <p class="jour-saisie" id="jourSaisie"></p>
     <div class="passe" id="avertJourPasse" hidden><span id="texteJourPasse"></span> <button type="button" class="lien" id="btnRetourAuj">Revenir à aujourd’hui</button></div>
 
@@ -493,7 +524,12 @@
     <input type="text" id="telClient" inputmode="tel" autocomplete="off" placeholder="ex. 07 12 34 56 78">
     <p class="aide" id="aideTel"></p>
 
-    <label class="case" style="margin-top:12px"><input type="checkbox" id="dejaPaye"> <span>Déjà payé</span></label>
+    <span class="etiquette" id="etPaye">Paiement</span>
+    <div class="paie-choix" role="group" aria-labelledby="etPaye" id="choixPaye">
+      <button type="button" data-paye="0" aria-pressed="true">Non payé</button>
+      <button type="button" data-paye="1" aria-pressed="false">Payé</button>
+    </div>
+    <input type="checkbox" id="dejaPaye" class="case-cachee" tabindex="-1" aria-hidden="true">
 
     <div class="barre-saisie">
       <p class="attention" id="doublon" hidden></p>
@@ -513,6 +549,10 @@
         <button type="button" data-f="C" aria-pressed="false">Centre</button>
         <button type="button" data-f="S" aria-pressed="false">Sud</button>
       </div>
+    </div>
+    <div class="segmente classement" role="group" aria-label="Classer la liste" id="classementListe">
+      <button type="button" data-classe="tournee" aria-pressed="true">Par résidence</button>
+      <button type="button" data-classe="pack" aria-pressed="false">Par pack</button>
     </div>
     <div class="totaux" id="totaux" aria-live="polite"></div>
     <div id="liste"></div>
@@ -819,6 +859,7 @@
   ];
 
   var PRIX = { mini: 500, maxi: 800, mega: 1500, nature: 150, nutella: 200 };   // prix de vente (D-022), sans les frais de livraison
+  var REGLE_LIVRAISON = { C: { frais: 100, offerteAvec: ["maxi", "mega"] }, S: { frais: 200, offerteAvec: ["mega"] } };   // D-021, D-064 : une livraison par chambre
   var DECALAGE_H = 4;   // une soirée finit à 4 h du matin : une commande passée à 0 h 30 compte pour la soirée de la veille
   var JOURS_FR = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
   var MOIS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -902,7 +943,7 @@
     return e || migrerV1() || vide();
   }
   var etat = charger();
-  var ui = { filtre: "tous", vue: "saisir", livreesOuvert: true, partenaire: "", livreur: "m", dernierMsg: "m1", avecNumeros: false, waveSite: "C" };
+  var ui = { filtre: "tous", classe: "tournee", vue: "saisir", livreesOuvert: true, partenaire: "", livreur: "m", dernierMsg: "m1", avecNumeros: false, waveSite: "C" };
   try { var u = JSON.parse(lire(CLE_UI) || "{}"); for (var cle in u) if (cle in ui) ui[cle] = u[cle]; } catch (e) {}
   function sauverUi() { ecrire(CLE_UI, JSON.stringify(ui)); }
 
@@ -1009,6 +1050,18 @@
     return compte(q);
   }
   function lieu(c) { return SITES[c.site].nom + " · Résidence " + c.res + " · ch. " + c.chambre; }
+  function cleChambreLivraison(c) { return c.site + "|" + c.res + "|" + String(c.chambre).trim().toUpperCase().replace(/^0+(?=\d)/, ""); }
+  function montantCommande(c, liste) {   // V6.11 : prix + livraison ; une livraison par chambre (sur sa plus ancienne commande), offerte si la chambre a le bon pack
+    var regle = REGLE_LIVRAISON[c.site], cle = cleChambreLivraison(c);
+    var chambre = (liste || etat.commandes).filter(function (x) { return cleChambreLivraison(x) === cle; });
+    if (!chambre.some(function (x) { return x.id === c.id; })) chambre.push(c);
+    var offerte = chambre.some(function (x) { return regle.offerteAvec.some(function (p) { return (x.q[p] || 0) > 0; }); });
+    var premiere = chambre.slice().sort(function (a, b) { return (a.t - b.t) || (a.id < b.id ? -1 : 1); })[0];
+    var base = 0; PACKS.forEach(function (p) { base += (c.q[p.id] || 0) * PRIX[p.id]; });
+    var livraison = !offerte && premiere.id === c.id ? regle.frais : 0;
+    return { base: base, livraison: livraison, total: base + livraison, offerte: offerte };
+  }
+  function prixF(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " F"; }
 
   /* ---------- Numéro du client (facultatif) ---------- */
   function joliTel(tel) {
@@ -1210,7 +1263,16 @@
     PACKS.forEach(function (p) { $("q_" + p.id).textContent = String(saisieQ[p.id]); $("pas_" + p.id).classList.toggle("actif", saisieQ[p.id] > 0); });
     var chambre = $("chambre").value.trim();
     var n = compte(saisieQ);
-    $("recap").replaceChildren(n.total ? el("span", null, el("strong", { text: libelle(saisieQ) }), "  =  " + composition(n) + " (" + plur(n.total, "crêpe", "crêpes") + ")") : "Aucun pack choisi pour l’instant.");
+    document.querySelectorAll("#choixPaye button").forEach(function (b) { b.setAttribute("aria-pressed", String((b.dataset.paye === "1") === $("dejaPaye").checked)); });
+    var aPayer = "";
+    if (n.total && site && res && chambre) {   // montant de cette commande, livraison de la chambre comprise
+      var orig = edition ? etat.commandes.find(function (x) { return x.id === edition; }) : null;
+      var virtuelle = { id: edition || "__saisie", site: site, res: res, chambre: chambre.toUpperCase(), q: saisieQ, t: orig ? orig.t : Date.now() };
+      var m = montantCommande(virtuelle, etat.commandes.filter(function (x) { return x.id !== edition; }).concat([virtuelle]));
+      aPayer = " · " + prixF(m.total) + (m.livraison ? " (livraison " + prixF(m.livraison) + ")" : "");
+    }
+    $("recap").replaceChildren(n.total ? el("span", null, el("strong", { text: libelle(saisieQ) }), "  =  " + composition(n) + " (" + plur(n.total, "crêpe", "crêpes") + ")" + aPayer) : "Aucun pack choisi pour l’instant.");
+    majStockBas(n);
     var manque = [];
     if (!site) manque.push("le site"); else if (!res) manque.push("la résidence");
     if (!chambre) manque.push("la chambre");
@@ -1271,6 +1333,29 @@
   }
 
   /* ---------- Liste ---------- */
+  var GROUPES_PACK = [{ k: "mini", nom: "MINI" }, { k: "maxi", nom: "MAXI" }, { k: "mega", nom: "MÉGA" }, { k: "plusieurs", nom: "Plusieurs packs" }, { k: "unite", nom: "À l’unité" }];
+  function groupePack(c) { var s = ["mini", "maxi", "mega"].filter(function (k) { return (c.q[k] || 0) > 0; }); return s.length === 1 ? s[0] : s.length ? "plusieurs" : "unite"; }
+  function carteListe(c) {   // V6.11 : carte d'une commande à livrer (montant + paiement bien visibles, options en boutons)
+    var cc = compte(c.q), avecPack = (c.q.mini || c.q.maxi || c.q.mega) > 0, m = montantCommande(c);
+    return el("div", { class: "ligne v3" + (c.emb ? " emballee" : "") },
+      el("div", { class: "l-tete" },
+        el("div", { class: "l-lieu" }, "Rés. " + c.res, el("span", { class: "l-sep", text: "·" }), "Ch. " + c.chambre),
+        el("span", { class: "heure", text: heureDe(c.t) })),
+      el("div", { class: "l-compo" }, el("b", { text: libelle(c.q) }), " · " + (avecPack ? composition(cc) + " · " : "") + plur(cc.total, "crêpe", "crêpes")),
+      c.tel ? el("div", { class: "l-tel", text: "Tél. " + joliTel(c.tel) }) : null,
+      cuisinePrete(c.id) ? el("span", { class: "prete-badge", text: "Prête en cuisine" }) : null,
+      el("div", { class: "l-paie" + (c.paye ? "" : " du") },
+        el("div", { class: "montant" }, el("b", { text: prixF(m.total) }),
+          el("small", { text: c.paye ? "payé" + (c.tp ? " à " + heureDe(c.tp) : "") : "à encaisser" + (m.livraison ? " · livraison " + prixF(m.livraison) + " comprise" : m.offerte ? " · livraison offerte" : "") })),
+        el("button", { type: "button", class: "pay" + (c.paye ? "" : " du"), "data-act": "payer", "data-id": c.id, "aria-pressed": String(!!c.paye), "aria-label": "Paiement : " + lieu(c), text: c.paye ? "Payé" : "Non payé" })),
+      el("div", { class: "l-actions" },
+        el("button", { type: "button", class: "emb", "data-act": "emballer", "data-id": c.id, "aria-pressed": String(!!c.emb), "aria-label": (c.emb ? "Emballée : " : "Marquer emballée : ") + lieu(c), text: c.emb ? "Emballée" : "Emballer" }),
+        el("button", { type: "button", class: "livre", "data-act": "livrer", "data-id": c.id, "aria-label": "Marquer livrée : " + lieu(c), text: "Livré" })),
+      el("div", { class: "liens v611" },
+        el("button", { type: "button", class: "ecrire", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "Message" }),
+        el("button", { type: "button", "data-act": "modifier", "data-id": c.id, text: "Modifier" }),
+        el("button", { type: "button", class: "danger", "data-act": "supprimer", "data-id": c.id, text: "Supprimer" })));
+  }
   function rendreListe() {
     var tout = enAttente();
     var comptes = { tous: tout.length, C: 0, S: 0 }; tout.forEach(function (c) { comptes[c.site]++; });
@@ -1279,17 +1364,36 @@
       b.textContent = (f === "tous" ? "Tous" : SITES[f].nom) + " (" + comptes[f] + ")";
     });
     var visibles = tout.filter(function (c) { return ui.filtre === "tous" || c.site === ui.filtre; });
-    var s = somme(visibles);
+    document.querySelectorAll("#classementListe button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.classe === (ui.classe === "pack" ? "pack" : "tournee"))); });
+    var s = somme(visibles), du = 0;
+    visibles.forEach(function (c) { if (!c.paye) du += montantCommande(c).total; });
     $("totaux").replaceChildren(visibles.length
       ? el("span", null, el("b", { text: plur(visibles.length, "commande", "commandes") }), " à livrer — à préparer : ", el("b", { text: s.nature + " Nature" }), " · ", el("b", { text: s.nutella + " Nutella" }), " (" + plur(s.total, "crêpe", "crêpes") + ")",
-          visibles.some(function (c) { return !c.emb; }) ? el("span", { class: "reste-emb" }, " · reste à emballer : ", el("b", { text: String(visibles.filter(function (c) { return !c.emb; }).length) })) : " · tout est emballé")
+          visibles.some(function (c) { return !c.emb; }) ? el("span", { class: "reste-emb" }, " · reste à emballer : ", el("b", { text: String(visibles.filter(function (c) { return !c.emb; }).length) })) : " · tout est emballé",
+          du ? el("span", null, " · à encaisser : ", el("b", { text: prixF(du) })) : " · tout est payé")
       : "Rien à préparer pour l’instant.");
     var zone = $("liste"); zone.replaceChildren();
     if (!visibles.length) {
       zone.append(el("div", { class: "vide" }, el("b", { text: "Aucune commande en attente" }), "Saisis la première dans l’onglet « Saisir »."));
     }
     var siteCourant = null, cleGroupe = null, carte = null;
-    visibles.forEach(function (c) {
+    if (ui.classe === "pack") ORDRE_SITES.forEach(function (site) {   // V6.11 : par site, puis par pack
+      var duSite = visibles.filter(function (x) { return x.site === site; });
+      if (!duSite.length) return;
+      zone.append(el("div", { class: "site-titre", text: SITES[site].nom + " · tournée " + SITES[site].heure + " · " + plur(duSite.length, "commande", "commandes") }));
+      GROUPES_PACK.forEach(function (g) {
+        var membres = duSite.filter(function (x) { return groupePack(x) === g.k; });
+        if (!membres.length) return;
+        var sq = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0 }; membres.forEach(function (x) { for (var k in sq) sq[k] += x.q[k] || 0; });
+        var titre = g.k === "unite" ? g.nom + " : " + [sq.nature ? sq.nature + " Nature" : "", sq.nutella ? sq.nutella + " Nutella" : ""].filter(Boolean).join(" + ")
+                  : g.k === "plusieurs" ? g.nom : g.nom + " × " + sq[g.k];
+        var gp = el("div", { class: "groupe " + SITES[site].classe },
+          el("div", { class: "groupe-tete pack-tete" }, el("div", null, el("b", { text: titre }), el("small", { text: plur(membres.length, "commande", "commandes") }))));
+        membres.forEach(function (x) { gp.append(carteListe(x)); });
+        zone.append(gp);
+      });
+    });
+    else visibles.forEach(function (c) {
       if (c.site !== siteCourant) {
         siteCourant = c.site; cleGroupe = null;
         var n = visibles.filter(function (x) { return x.site === c.site; }).length;
@@ -1306,22 +1410,7 @@
             el("div", null, el("b", { text: "Résidence " + c.res }), el("small", { text: plur(membres.length, "commande", "commandes") + " · " + sg.nature + " Nature + " + sg.nutella + " Nutella" })),
             membres.length > 1 ? btnTout : null)));
       }
-      var cc = compte(c.q), avecPack = (c.q.mini || c.q.maxi || c.q.mega) > 0;
-      carte.append(el("div", { class: "ligne v3" + (c.emb ? " emballee" : "") },
-        el("div", { class: "l-tete" },
-          el("div", { class: "l-lieu" }, "Rés. " + c.res, el("span", { class: "l-sep", text: "·" }), "Ch. " + c.chambre),
-          el("span", { class: "heure", text: heureDe(c.t) })),
-        el("div", { class: "l-compo" }, el("b", { text: libelle(c.q) }), " · " + (avecPack ? composition(cc) + " · " : "") + plur(cc.total, "crêpe", "crêpes")),
-        c.tel ? el("div", { class: "l-tel", text: "Tél. " + joliTel(c.tel) }) : null,
-        cuisinePrete(c.id) ? el("span", { class: "prete-badge", text: "Prête en cuisine" }) : null,
-        el("div", { class: "l-actions" },
-          el("button", { type: "button", class: "emb", "data-act": "emballer", "data-id": c.id, "aria-pressed": String(!!c.emb), "aria-label": (c.emb ? "Emballée : " : "Marquer emballée : ") + lieu(c), text: c.emb ? "Emballée" : "Emballer" }),
-          el("button", { type: "button", class: "livre", "data-act": "livrer", "data-id": c.id, "aria-label": "Marquer livrée : " + lieu(c), text: "Livré" })),
-        el("div", { class: "liens" },
-          el("button", { type: "button", class: "pay", "data-act": "payer", "data-id": c.id, "aria-pressed": String(!!c.paye), "aria-label": "Paiement : " + lieu(c), text: c.paye ? "Payé" : "Non payé" }),
-          el("button", { type: "button", class: "lien ecrire", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "Message" }),
-          el("button", { type: "button", class: "lien", "data-act": "modifier", "data-id": c.id, text: "Modifier" }),
-          el("button", { type: "button", class: "lien", "data-act": "supprimer", "data-id": c.id, text: "Supprimer" }))));
+      carte.append(carteListe(c));
     });
     // Livrées (en bas)
     var fait = livrees();
@@ -1337,6 +1426,7 @@
       zl.append(el("div", { class: "ligne-livree" },
         el("div", null, el("b", { text: SITES[c.site].nom + " · " + c.res + " · ch. " + c.chambre }), " — " + libelle(c.q), el("small", { text: "livrée à " + heureDe(c.tl || c.maj) })),
         el("div", { class: "rang-livree" },
+          c.paye ? null : el("span", { class: "montant-livree", text: prixF(montantCommande(c).total) }),
           el("button", { type: "button", class: "pay" + (c.paye ? "" : " du"), "data-act": "payer", "data-id": c.id, "aria-pressed": String(!!c.paye), "aria-label": "Paiement : " + lieu(c), text: c.paye ? "Payé" : "Non payé" }),
           el("button", { type: "button", "data-act": "ecrire", "data-id": c.id, "aria-label": "Écrire au client : " + lieu(c), text: "Message" }),
           el("button", { type: "button", "data-act": "remettre", "data-id": c.id, "aria-label": "Remettre en attente : " + lieu(c), text: "Remettre en attente" }))));
@@ -1512,6 +1602,7 @@
   $("btnAnnulerEdition").addEventListener("click", function () { viderSaisie(); majForm(); });
   $("filtres").addEventListener("click", function (e) { var b = e.target.closest("button[data-f]"); if (!b) return; ui.filtre = b.dataset.f; sauverUi(); rendreListe(); });
   $("btnLivrees").addEventListener("click", function () { ui.livreesOuvert = !ui.livreesOuvert; sauverUi(); rendreListe(); });
+  $("classementListe").addEventListener("click", function (e) { var b = e.target.closest("button[data-classe]"); if (!b) return; ui.classe = b.dataset.classe; sauverUi(); rendreListe(); });
 
   /* ---------- Vues (téléphone) ---------- */
   function choisirVue(v) {
@@ -1537,6 +1628,10 @@
   $("btnEnregistrer").addEventListener("click", enregistrer);
   $("telClient").addEventListener("input", majForm);
   $("dejaPaye").addEventListener("change", majForm);
+  $("choixPaye").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-paye]"); if (!b) return;
+    $("dejaPaye").checked = b.dataset.paye === "1"; $("dejaPaye").dispatchEvent(new Event("change")); vibrer(8);
+  });
 
   /* ---------- Outils : texte, partage, code, clôture ---------- */
   function texteListe() {   // mis en forme pour WhatsApp : *gras*
@@ -1855,6 +1950,38 @@
       else if (e && e.code !== "cle" && e.code !== "depot") cuisineProgrammer(e.code === "limite" ? 120000 : 15000);   // nouvel essai automatique
     });
   }
+  /* V6.11 : stock bas annoncé par la cuisine (stock/AAAA-MM-JJ.json) ; reste à vendre = annoncé − crêpes des commandes saisies après l'annonce */
+  function cuisineLireStock() {
+    if (!cuisineBranchee() || document.hidden || cuisineEtat.lectureStock) return Promise.resolve();
+    var jour = soireeCourante();
+    if (cuisineEtat.jourStock !== jour) { cuisineEtat.jourStock = jour; cuisineEtat.stock = null; cuisineEtat.etagStock = null; }
+    cuisineEtat.lectureStock = true;
+    return cuisineClient().lire("stock/" + jour + ".json", cuisineEtat.etagStock).finally(function () { cuisineEtat.lectureStock = false; }).then(function (r) {
+      if (r.statut === 304) return;
+      cuisineEtat.etagStock = r.etag || null;
+      var s = null; if (r.statut === 200) { try { s = JSON.parse(r.texte); } catch (e) { s = null; } }
+      cuisineEtat.stock = s && s.actif ? s : null;
+      majForm();
+    }).catch(function () {});
+  }
+  function resteStock(sauf) {
+    if (typeof cuisineEtat === "undefined" || !cuisineEtat || !cuisine) return null;   // appel pendant le chargement, avant le module cuisine
+    var s = cuisine.cle && cuisine.actif ? cuisineEtat.stock : null;
+    if (!s || s.jour !== soireeCourante() || etat.jourVu !== s.jour) return null;
+    var na = s.nature || 0, nu = s.nutella || 0;
+    (etat.jours[s.jour] ? etat.jours[s.jour].commandes : []).forEach(function (c) { if (c.t > s.t && c.id !== sauf) { var n = compte(c.q); na -= n.nature; nu -= n.nutella; } });
+    return { nature: na, nutella: nu, t: s.t };
+  }
+  function majStockBas(n) {
+    var r = resteStock(edition), z = $("stockBas");
+    z.hidden = !r; if (!r) return;
+    var possibles = PACKS.filter(function (p) { return !p.unite; }).map(function (p) { return p.nom + " × " + Math.max(0, Math.min(Math.floor(r.nature / p.nature), Math.floor(r.nutella / p.nutella))); }).join(" · ");
+    var manque = n && n.total ? [n.nature > r.nature ? (n.nature - Math.max(0, r.nature)) + " Nature" : "", n.nutella > r.nutella ? (n.nutella - Math.max(0, r.nutella)) + " Nutella" : ""].filter(Boolean) : [];
+    z.replaceChildren();   // jamais de null dans replaceChildren : il s'écrirait « null »
+    z.append(el("b", { text: "Il reste peu : " + Math.max(0, r.nature) + " Nature · " + Math.max(0, r.nutella) + " Nutella à vendre" }),
+      el("small", { text: "Annoncé par la cuisine à " + heureDe(r.t) + " · encore possible : " + possibles }));
+    if (manque.length) z.append(el("span", { class: "depasse", text: "Cette commande dépasse le stock : il manque " + manque.join(" et ") + "." }));
+  }
   function cuisinePrete(id) { var p = cuisineEtat.pretes[id]; return !!(cuisine.cle && cuisine.actif && p && p.prete); }
   function cuisineLirePretes() {
     if (!cuisineBranchee() || document.hidden || cuisineEtat.lecture) return Promise.resolve();   // V6.10 : une seule lecture à la fois
@@ -1919,13 +2046,13 @@
         var e = cuisineEtat.erreur;
         if (e) retourCuisine("Clé reconnue, mais l’envoi a échoué : " + e.message, "erreur");
         else retourCuisine("Clé acceptée : envoi vérifié sur GitHub à " + heureDe(cuisineEtat.ok) + ". Envoie maintenant le lien à ta partenaire.", "ok");
-        cuisineLirePretes();
+        cuisineLirePretes(); cuisineLireStock();
       });
     }).catch(function (e) { retourCuisine((e && e.message) || "Test impossible.", "erreur"); });
   });
   $("btnPauseCuisine").addEventListener("click", function () {
     cuisine.actif = !cuisine.actif; cuisineSauverReglage(); cuisineEtat.erreur = null;
-    if (cuisine.actif) { cuisineEtat.envoye = ""; cuisineProgrammer(0); cuisineLirePretes(); retourCuisine("Envoi vers la cuisine repris.", "ok"); }
+    if (cuisine.actif) { cuisineEtat.envoye = ""; cuisineProgrammer(0); cuisineLirePretes(); cuisineLireStock(); retourCuisine("Envoi vers la cuisine repris.", "ok"); }
     else { majEtatCuisine(); retourCuisine("Envoi arrêté : la cuisine ne reçoit plus les nouvelles commandes.", "ok"); }
     rendreListe();
   });
@@ -1937,12 +2064,12 @@
   function cuisineDemarrer() {
     $("cleCuisine").value = cuisine.cle;
     majEtatCuisine();
-    if (cuisineBranchee()) { cuisineProgrammer(0); cuisineLirePretes(); }
-    setInterval(function () { cuisineLirePretes(); majEtatCuisine(); }, 5000);   // V6.10 : 5 s (15 s avant) ; « inchangé » (304) ne compte pas dans la limite GitHub
+    if (cuisineBranchee()) { cuisineProgrammer(0); cuisineLirePretes(); cuisineLireStock(); }
+    setInterval(function () { cuisineLirePretes(); cuisineLireStock(); majEtatCuisine(); }, 5000);   // V6.10 : 5 s (15 s avant) ; « inchangé » (304) ne compte pas dans la limite GitHub
     document.addEventListener("visibilitychange", function () {
       if (!cuisineBranchee()) return;
       if (document.hidden) { clearTimeout(cuisineEtat.minuterie); cuisineEnvoyer(false, true); }   // départ vers WhatsApp : l'envoi part tout de suite et se termine en arrière-plan
-      else { cuisineProgrammer(0); cuisineLirePretes(); }
+      else { cuisineProgrammer(0); cuisineLirePretes(); cuisineLireStock(); }
     });
     window.addEventListener("pagehide", function () { if (cuisineBranchee()) cuisineEnvoyer(false, true); });
     window.addEventListener("online", function () { if (cuisineBranchee()) cuisineProgrammer(0); });
@@ -1955,8 +2082,8 @@
      Contrôles : MINI Centre 606 F, MAXI Centre 808 F, MÉGA Centre ou Sud 1 515 F (exemples de l'équipe). */
   var WAVE_LIEN = "https://pay.wave.com/m/M_ci_TgNW4yinaHdk/c/ci/?amount=";
   var WAVE_FRAIS_POUR_CENT = 1;
-  var LIVRAISON = { C: { frais: 100, offerteAvec: ["maxi", "mega"], texte: "Centre : livraison 100 F, offerte dès qu’il y a un MAXI ou un MÉGA." },
-                    S: { frais: 200, offerteAvec: ["mega"], texte: "Sud : livraison 200 F, offerte avec un MÉGA." } };
+  var LIVRAISON = { C: { frais: REGLE_LIVRAISON.C.frais, offerteAvec: REGLE_LIVRAISON.C.offerteAvec, texte: "Centre : livraison 100 F, offerte dès qu’il y a un MAXI ou un MÉGA." },
+                    S: { frais: REGLE_LIVRAISON.S.frais, offerteAvec: REGLE_LIVRAISON.S.offerteAvec, texte: "Sud : livraison 200 F, offerte avec un MÉGA." } };
   var PACKS_WAVE = ["mini", "maxi", "mega"];
   var waveSite = ui.waveSite === "S" ? "S" : "C", waveAutre = { mini: 0, maxi: 0, mega: 0 };
   function montantWave(q, site) {
