@@ -11,14 +11,14 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.11 · 2026-11-07 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.12 · 2026-11-07 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
   écriture à chaque action à trois endroits du téléphone (localStorage, copie précédente, IndexedDB) + brouillon du formulaire ;
   UN SEUL fichier JSON par jour (bouton « fichier du jour », ou envoi du bilan) ; UN SEUL bouton de remise à zéro (zone rouge, sauvegarde avant, restauration 30 jours).
   V3 : NUMÉRO DU CLIENT (facultatif) sur chaque commande, saisi à la commande ou plus tard ; bouton « Écrire au client » : 10 messages prédéfinis du livreur
-  (MSG-LIV-01 V2, première ligne « Bonsoir, je suis le livreur de l'Atelier des Crêpes. ») qui ouvrent la conversation WhatsApp du client (lien wa.me) sans
+  (MSG-LIV-01 V2, première ligne « Coucou, je suis le livreur de l'Atelier des Crêpes. » depuis D-096) qui ouvrent la conversation WhatsApp du client (lien wa.me) sans
   enregistrer son contact. Les numéros sont des données clients : jamais dans le bilan ; absents de la liste envoyée à la partenaire sauf case cochée ;
   présents dans le fichier JSON du jour (à ne pas partager).
   V4 : APPLICATION INSTALLABLE sur Android (PWA) : manifeste, icônes, service worker (marche sans internet après la première ouverture), bouton « Installer l'application »,
@@ -54,6 +54,10 @@
   « Payé / Non payé » ; total « à encaisser » de la liste. LISTE classée par résidence (tournée) ou PAR PACK (MINI, MAXI, MÉGA, plusieurs, à l'unité).
   Message / Modifier / Supprimer en vrais boutons. STOCK BAS annoncé par la cuisine (stock/AAAA-MM-JJ.json, relu toutes les 5 s) : la saisie montre
   ce qui reste à vendre, les packs encore possibles, et prévient si la commande dépasse (sans bloquer).
+  V6.12 (D-098) : onglet MESSAGES (barre du bas) : jours de la semaine (aujourd'hui choisi), message du jour (contacts / groupe, idée 1 / idée 2,
+  celle de la semaine signalée) et LÉGENDE DE LA VIDÉO du jour, « Copier » et « Envoyer » (ouvre Envois sur ce message) ; « Soirée et après » ;
+  ENVOYÉS PAR JOUR (14 derniers jours : message, nombre de contacts, de quelle heure à quelle heure, groupe et heure). Envois : rubrique « Vidéos ».
+  Salutation « Coucou » (D-096) : message du livreur « Coucou, je suis le livreur… ».
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -241,15 +245,18 @@
   @media (prefers-reduced-motion: reduce) { * { transition:none !important; } button:active { transform:none; } }
 
   /* ===== V2 : jours, bilan, sauvegardes, zone dangereuse ===== */
-  .navbas { grid-template-columns:repeat(5, 1fr); gap:4px; }
+  .navbas { grid-template-columns:repeat(6, 1fr); gap:2px; }
   .navbas button { font-size:12px; padding:0 4px; }
   @media (max-width:899px) {
     body:not([data-vue="wave"]) #vueWave { display:none; }
     body[data-vue="wave"] #vueSaisir, body[data-vue="wave"] #vueListe, body[data-vue="wave"] #vueBilan { display:none; }
     body:not([data-vue="envois"]) #vueEnvois { display:none; }
     body[data-vue="envois"] #vueSaisir, body[data-vue="envois"] #vueListe, body[data-vue="envois"] #vueBilan, body[data-vue="envois"] #vueWave { display:none; }
+    body:not([data-vue="messages"]) #vueMessages { display:none; }
+    body[data-vue="messages"] #vueSaisir, body[data-vue="messages"] #vueListe, body[data-vue="messages"] #vueBilan, body[data-vue="messages"] #vueWave, body[data-vue="messages"] #vueEnvois { display:none; }
+    body[data-vue="envois"] #vueMessages, body[data-vue="wave"] #vueMessages { display:none; }
   }
-  @media (min-width:900px) { #vueWave, #vueEnvois { grid-column:2; } }
+  @media (min-width:900px) { #vueWave, #vueEnvois, #vueMessages { grid-column:2; } }
   /* cartes V6.3 : résidence et chambre d'abord */
   .ligne.v3 { display:block; padding:12px; }
   .ligne.v3 .l-tete { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
@@ -474,6 +481,33 @@
   .stock-bas b { display:block; font-size:16px; }
   .stock-bas small { display:block; font-size:13px; font-weight:600; color:#6B5A4A; }
   .stock-bas .depasse { display:block; margin-top:4px; color:#9A3412; font-weight:800; }
+  /* ===== V6.12 : onglet Messages ===== */
+  .navbas button { font-size:11.5px; padding:0 2px; }
+  .jours-msg { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin:4px 0 14px; }
+  .jours-msg button { min-height:44px; padding:0 4px; font-size:14px; font-weight:700; border-radius:12px; background:var(--carte2); border:1.5px solid var(--bord); color:var(--doux); }
+  .jours-msg button.auj { border-color:var(--or); color:var(--encre); }
+  .jours-msg button[aria-pressed="true"] { background:var(--encre); border-color:var(--encre); color:var(--fond); }
+  .msg-carte { border:1px solid var(--bord); border-radius:16px; background:var(--carte); margin:0 0 12px; overflow:hidden; }
+  .msg-carte .mc-tete { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:10px 12px; background:var(--carte2); border-bottom:1px solid var(--bord); }
+  .msg-carte .mc-tete b { font-size:15.5px; }
+  .msg-carte .mc-tete small { font-size:12.5px; color:var(--doux); font-weight:700; white-space:nowrap; }
+  .msg-carte .mc-tete small.semaine { color:var(--ok); }
+  .msg-carte .mc-cible { display:flex; gap:6px; padding:10px 12px 0; }
+  .msg-carte .mc-cible button { flex:1; min-height:38px; font-size:13.5px; border-radius:10px; background:transparent; border:1.5px solid var(--bord); color:var(--doux); }
+  .msg-carte .mc-cible button[aria-pressed="true"] { border-color:var(--or); color:var(--encre); background:var(--carte2); }
+  .msg-carte .mc-texte { white-space:pre-wrap; font-size:14px; line-height:1.45; padding:10px 12px; max-height:8.6em; overflow:hidden; position:relative; cursor:pointer; }
+  .msg-carte .mc-texte.tout { max-height:none; }
+  .msg-carte .mc-texte:not(.tout)::after { content:""; position:absolute; left:0; right:0; bottom:0; height:2.2em; background:linear-gradient(rgba(0,0,0,0), var(--carte)); pointer-events:none; }
+  .msg-carte .mc-actions { display:flex; gap:8px; padding:0 12px 12px; }
+  .msg-carte .mc-actions button { flex:1; min-height:44px; font-size:14px; padding:0 10px; background:var(--carte2); border:1.5px solid var(--bord); color:var(--encre); }
+  .msg-carte .mc-actions button.fort { border-color:var(--or); }
+  .msg-carte .mc-envoye { padding:0 12px 10px; font-size:13px; color:var(--ok); font-weight:700; }
+  .histo-jour { border:1px solid var(--bord); border-radius:14px; background:var(--carte); margin:0 0 10px; padding:10px 12px; }
+  .histo-jour > b { display:block; font-size:15px; margin-bottom:4px; }
+  .histo-jour .hl { font-size:13.5px; padding:5px 0; border-top:1px solid var(--bord); }
+  .histo-jour .hl:first-of-type { border-top:0; }
+  .histo-jour .hl small { display:block; color:var(--doux); font-weight:600; }
+  .histo-vide { color:var(--doux); font-size:14px; }
 </style>
 </head>
 <body data-vue="saisir">
@@ -655,6 +689,15 @@
   </section>
 
   <!-- ===================== ENVOIS ===================== -->
+  <!-- ===================== MESSAGES (V6.12) ===================== -->
+  <section class="bloc" id="vueMessages" aria-labelledby="titreMessages">
+    <h2 id="titreMessages">Messages<button type="button" class="savoir" data-info="messages">En savoir plus</button></h2>
+    <div class="jours-msg" id="joursMsg" role="group" aria-label="Jour"></div>
+    <div id="zoneMsgJour"></div>
+    <h2 id="titreEnvoyes">Envoyés par jour</h2>
+    <div id="histoEnvois"></div>
+  </section>
+
   <section class="bloc" id="vueEnvois" aria-labelledby="titreEnvois">
     <h2 id="titreEnvois">Envois<button type="button" class="savoir" data-info="envois">En savoir plus</button></h2>
     <label class="etiquette" for="choixMsg" style="margin-top:0">Message</label>
@@ -715,6 +758,7 @@
   <button type="button" data-vue="bilan" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Bilan</button>
   <button type="button" data-vue="wave" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v11H3zM3 10.5h18M7 14.5h4"/></svg>Wave</button>
   <button type="button" data-vue="envois" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7 2.5 2.5 7L21 3zM10 13l5-5"/></svg>Envois</button>
+  <button type="button" data-vue="messages" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4zM8 9h8M8 12.5h5"/></svg>Messages</button>
 </nav>
 
 <div class="voile" id="voileEcrire" hidden>
@@ -829,6 +873,7 @@
 <template id="info-transfert" data-titre="Transférer vers un autre appareil"><p>Sur l’autre appareil, colle le code et touche « Importer » : les commandes sont <b>ajoutées ou mises à jour</b>, sans rien effacer.</p><p><b>Confidentiel</b> : le code contient les numéros des clients. Ne le partage qu’avec ta partenaire.</p></template>
 <template id="info-zero" data-titre="Remise à zéro"><ul><li>Il n’y a pas de « clôture » : chaque soirée a son propre enregistrement et le jour suivant démarre tout seul.</li><li>Ce bouton efface seulement les commandes du jour affiché, après avoir créé un fichier de sauvegarde.</li><li>Les commandes effacées restent <b>récupérables pendant 30 jours</b>.</li></ul></template>
 <template id="info-donnees" data-titre="Sauvegarde GitHub"><ul><li>En fin de soirée, le bouton <b>« La vente est finie »</b> (onglet Bilan) enregistre toutes les commandes du jour, numéros et paiements compris, avec le bilan, dans ton dépôt privé <b>atelier-donnees</b>.</li><li>« Sur GitHub » ne s’affiche qu’après vérification : GitHub renvoie l’empreinte du fichier, l’application la compare.</li><li>Sans réseau, l’envoi reste en attente et repart tout seul.</li><li>Les contacts de l’onglet Envois et l’historique des envois sont aussi gardés dans ce dépôt.</li><li>Cette clé ne va <b>que sur ton téléphone</b>, jamais sur celui de la cuisine.</li></ul></template>
+<template id="info-messages" data-titre="Messages"><ul><li>Touche un jour pour voir <b>son message</b> (pour les contacts ou pour le groupe) et <b>la légende de sa vidéo</b>. Aujourd’hui est choisi tout seul.</li><li>Le lundi, le mardi et le mercredi ont deux idées, qui alternent chaque semaine : celle de la semaine est signalée.</li><li><b>Copier</b> met le texte dans le presse-papiers ; <b>Envoyer</b> ouvre l’onglet Envois sur ce message (contacts un par un, ou le groupe).</li><li>Toucher le texte l’ouvre en entier.</li><li><b>Envoyés par jour</b> : ce qui est parti chaque jour (14 derniers jours) : le message, combien de contacts et à quelles heures, le groupe et l’heure. C’est l’historique des envois faits depuis l’onglet Envois.</li></ul></template>
 <template id="info-envois" data-titre="Envois"><ul><li>Le message du jour est choisi tout seul ; tu peux en prendre un autre dans la liste.</li><li><b>Modifier</b> : change ou remplace tout le texte. « Revenir au texte d’origine » annule. <b>Nouveau message</b> : il se range dans « Mes messages ». Tes textes sont gardés dans le téléphone et dans ton dépôt privé.</li><li><b>Affiches</b> : celles du message choisi sont sous le texte. Touche-en une, puis <b>Partager</b> : choisis WhatsApp, puis le groupe, un contact ou ton statut. Une affiche « groupe » part avec le message en légende. « Toutes les affiches » montre aussi celles de fin de soirée et des autres jours.</li><li>Toucher un contact permet de le <b>renommer</b>, de <b>changer son numéro</b>, de lui donner sa <b>chambre</b> ou de le supprimer. Depuis « Clients d’hier », il s’ajoute au carnet avec sa chambre.</li><li>Les contacts sont <b>rangés</b> : d’abord ceux qui ont un nom (A → Z), puis ceux qui ont une chambre (Centre A → R, puis Sud 1 → 17), enfin ceux sans nom. « Envoyer au suivant » suit cet ordre. Recherche possible par chambre : « A17 », « 6 15 ».</li><li>Tous les envois ouvrent <b>WhatsApp Business</b>.</li><li><b>Contacts</b> : « Envoyer au suivant » ouvre WhatsApp sur le prochain contact, message déjà écrit, et le coche.</li><li><b>Clients d’hier</b> : les clients de la veille qui ont laissé leur numéro, pour la relance (merci et avis).</li><li><b>Groupe</b> : le message est copié et le groupe s’ouvre ; colle-le.</li><li>Les envois du jour sont gardés dans le téléphone et dans le dépôt privé (historique).</li></ul></template>
 <template id="info-bilan" data-titre="Bilan"><ul><li>Montants estimés avec les prix des packs (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F), <b>sans les frais de livraison</b>.</li><li>Les paiements sont ceux que tu as marqués « Payé ».</li></ul></template>
 <template id="info-wave" data-titre="Paiement Wave"><ul><li><b>QR Wave</b> : plein écran, même sans internet. Le client scanne avec son application Wave et saisit le montant.</li><li><b>Liens</b> : choisis le site, puis touche ce que la chambre a commandé. Le message de paiement est copié, montant compris : packs + livraison + 1 % Wave.</li><li>Une seule livraison par chambre. <b>Centre</b> : 100 F, offerte dès qu’il y a un MAXI ou un MÉGA. <b>Sud</b> : 200 F, offerte avec un MÉGA.</li><li>Crêpes à l’unité : crée le lien dans l’application Wave.</li></ul></template>
@@ -1102,7 +1147,7 @@
     { id: "m9", groupe: "Client absent", titre: "Je repasse", texte: "Je n’ai pas pu vous remettre votre commande à la chambre {chambre}. Je repasse à la fin de ma tournée : merci de me confirmer que vous serez là." },
     { id: "m10", groupe: "Après la livraison", titre: "Commande livrée", texte: "Votre commande est livrée 🥞 Bon appétit ! Dites-nous ce que vous en avez pensé : votre avis nous aide à progresser. Merci de votre confiance." }
   ];
-  function premiereLigne() { return "Bonsoir, je suis " + (ui.livreur === "f" ? "la livreuse" : "le livreur") + " de l’Atelier des Crêpes."; }
+  function premiereLigne() { return "Coucou, je suis " + (ui.livreur === "f" ? "la livreuse" : "le livreur") + " de l’Atelier des Crêpes."; }   /* « Coucou » : D-096 */
   function messagesPour(c) { return MESSAGES.filter(function (m) { return !m.site || m.site === c.site; }); }
   function messageParId(id) { return MESSAGES.filter(function (m) { return m.id === id; })[0]; }
   function texteDuMessage(m, c, minutes) {
@@ -1607,6 +1652,7 @@
   /* ---------- Vues (téléphone) ---------- */
   function choisirVue(v) {
     ui.vue = v; document.body.dataset.vue = v; sauverUi();
+    if (v === "messages" && typeof rendreMessages === "function") { try { rendreMessages(); } catch (e) {} }
     document.querySelectorAll(".navbas button").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.vue === v)); });
     window.scrollTo({ top: 0 });
   }
@@ -2312,13 +2358,14 @@
   function construireChoixMsg() {
     var s = $("choixMsg"); s.replaceChildren();
     var j = soireeCourante(), auj = dateDe(j).getDay(), duJour = baseDuJour();
-    var groupes = [["Aujourd’hui", []], ["Pendant la soirée", []], ["Après la soirée", []], ["Autres jours", []], ["Mes messages", []]];
+    var groupes = [["Aujourd’hui", []], ["Pendant la soirée", []], ["Après la soirée", []], ["Autres jours", []], ["Mes messages", []], ["Légendes des vidéos", []]];
     bases().forEach(function (b) {
       var m = variante(b, "contacts"), lib = m.titre + (m.modifie || variante(b, "groupe").modifie ? " · modifié" : "");
       if (m.perso) groupes[4][1].push([b, lib]);
       else if (b === duJour) groupes[0][1].push([b, lib]);
       else if (m.rubrique === "soiree") groupes[1][1].push([b, lib]);
       else if (m.rubrique === "apres") groupes[2][1].push([b, lib]);
+      else if (m.rubrique === "video") groupes[5][1].push([b, lib]);
       else groupes[3][1].push([b, JOURS_FR[m.semaine].replace(/^./, function (c) { return c.toUpperCase(); }) + " · " + lib, ((m.semaine - auj + 7) % 7) || 7]);
     });
     groupes[3][1].sort(function (a, b) { return a[2] - b[2]; });
@@ -2332,6 +2379,89 @@
     s.value = sel.base;
   }
   function envoisDuJour() { var j = soireeCourante(); return envois.jours[j] || (envois.jours[j] = {}); }
+
+  /* ---------- Onglet Messages (V6.12, D-098) : messages de chaque jour, légende de la vidéo, envoyés par jour ---------- */
+  var vueMsg = { jour: null, cibles: {}, ouverts: {} };
+  var JOURS_COURTS = ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."];
+  function titreCourt(t) { return String(t || "").replace(/\s*\((vers|dès)[^)]*\)\s*$/, ""); }
+  function carteMessage(b, etiquette, marque) {
+    var p = MSGS.find(function (m) { return m.id === b + "p"; }), g = MSGS.find(function (m) { return m.id === b + "g"; });
+    var cible = vueMsg.cibles[b] || (p ? "contacts" : "groupe"), m = cible === "groupe" ? (g || p) : (p || g);
+    var dj = envois.jours[soireeCourante()] || {}, nb = 0, grp = [];
+    [b + "p", b + "g"].forEach(function (id) { Object.keys(dj[id] || {}).forEach(function (k) { if (k.indexOf("groupe:") === 0) grp.push(k.slice(7)); else nb++; }); });
+    var c = el("div", { class: "msg-carte" },
+      el("div", { class: "mc-tete" }, el("b", { text: etiquette || titreCourt(m.titre) }), marque ? el("small", { class: marque.classe || "", text: marque.texte }) : null));
+    if (p && g) c.append(el("div", { class: "mc-cible", role: "group", "aria-label": "Pour qui" },
+      el("button", { type: "button", "data-mc-cible": "contacts", "data-mc": b, "aria-pressed": String(cible === "contacts"), text: "Contacts (privé)" }),
+      el("button", { type: "button", "data-mc-cible": "groupe", "data-mc": b, "aria-pressed": String(cible === "groupe"), text: "Groupe" })));
+    c.append(el("div", { class: "mc-texte" + (vueMsg.ouverts[b] ? " tout" : ""), "data-mc-ouvrir": b, text: m.texte }));
+    if (nb || grp.length) c.append(el("div", { class: "mc-envoye", text: "Envoyé aujourd’hui : " + [nb ? plur(nb, "contact", "contacts") : "", grp.length ? "groupe" : ""].filter(Boolean).join(" · ") }));
+    c.append(el("div", { class: "mc-actions" },
+      el("button", { type: "button", class: "fort", "data-mc-copier": m.id, text: "Copier" }),
+      el("button", { type: "button", "data-mc-envoyer": b, "data-mc-c": cible, text: "Envoyer" })));
+    return c;
+  }
+  function rendreMessages() {
+    if (!$("vueMessages")) return;
+    var j = soireeCourante(), auj = dateDe(j).getDay();
+    if (vueMsg.jour === null) vueMsg.jour = auj;
+    var zj = $("joursMsg"); zj.replaceChildren();
+    [1, 2, 3, 4, 5, 6, 0, "soir"].forEach(function (d) {
+      zj.append(el("button", { type: "button", class: d === auj ? "auj" : "", "data-mc-jour": String(d), "aria-pressed": String(d === vueMsg.jour),
+        text: d === "soir" ? "Soirée" : (d === auj ? "Auj." : JOURS_COURTS[d]) }));
+    });
+    var z = $("zoneMsgJour"); z.replaceChildren();
+    var vus = {};
+    if (vueMsg.jour === "soir") {
+      MSGS.forEach(function (m) { var b = baseDe(m.id); if (vus[b] || (m.rubrique !== "soiree" && m.rubrique !== "apres")) return; vus[b] = 1; z.append(carteMessage(b)); });
+      var perm = MSGS.find(function (m) { return m.rubrique === "video" && m.jour === "p"; });
+      if (perm) z.append(carteMessage(baseDe(perm.id), "Légende de la vidéo permanente", { texte: "Groupe · statut" }));
+    } else {
+      var d = vueMsg.jour, iso = addJours(j, (d - auj + 7) % 7), v = varianteDuJour(d, iso);
+      var duJour = MSGS.filter(function (m) { return m.semaine === d && m.rubrique !== "video"; });
+      var variantes = []; duJour.forEach(function (m) { if (variantes.indexOf(m.variante || 1) < 0) variantes.push(m.variante || 1); }); variantes.sort();
+      variantes.forEach(function (va) {
+        var m = duJour.find(function (x) { return (x.variante || 1) === va; });
+        z.append(carteMessage(baseDe(m.id), titreCourt(m.titre), variantes.length > 1 ? (va === v ? { texte: d === auj ? "Idée " + va + " · aujourd’hui" : "Idée " + va + " · cette semaine", classe: "semaine" } : { texte: "Idée " + va + " · l’autre semaine" }) : (d === auj ? { texte: "Aujourd’hui", classe: "semaine" } : null)));
+      });
+      var vid = MSGS.find(function (m) { return m.rubrique === "video" && m.jour === d; });
+      if (vid) z.append(carteMessage(baseDe(vid.id), "Légende de la vidéo · " + JOURS_FR[d], { texte: "Groupe · statut" }));
+      if (!z.children.length) z.append(el("p", { class: "histo-vide", text: "Aucun message pour ce jour." }));
+    }
+    // Envoyés par jour (historique de l'onglet Envois, 14 derniers jours)
+    var h = $("histoEnvois"); h.replaceChildren();
+    var jours = Object.keys(envois.jours).filter(function (x) { return Object.keys(envois.jours[x] || {}).length; }).sort().reverse();
+    if (!jours.length) h.append(el("p", { class: "histo-vide", text: "Aucun envoi noté pour l’instant. Les envois faits depuis l’onglet Envois apparaissent ici, jour par jour." }));
+    jours.forEach(function (x) {
+      var bloc = el("div", { class: "histo-jour" }, el("b", { text: nomJour(x).replace(/^./, function (c) { return c.toUpperCase(); }) + (x === j ? " (aujourd’hui)" : "") }));
+      Object.keys(envois.jours[x]).forEach(function (id) {
+        var cibles = envois.jours[x][id] || {}, heures = [], groupes = [];
+        Object.keys(cibles).forEach(function (k) { if (k.indexOf("groupe:") === 0) groupes.push(k.slice(7) + " à " + heureDe(cibles[k])); else heures.push(cibles[k]); });
+        heures.sort(function (a, b2) { return a - b2; });
+        var m = MSGS.find(function (y) { return y.id === id; }), parts = [];
+        if (heures.length) parts.push(plur(heures.length, "contact", "contacts") + " (" + heureDe(heures[0]) + (heures.length > 1 ? " → " + heureDe(heures[heures.length - 1]) : "") + ")");
+        if (groupes.length) parts.push("groupe " + groupes.join(", "));
+        bloc.append(el("div", { class: "hl" }, el("span", { text: m ? titreCourt(m.titre) : "Message retiré (" + id + ")" }), el("small", { text: parts.join(" · ") })));
+      });
+      h.append(bloc);
+    });
+  }
+  $("vueMessages").addEventListener("click", function (e) {
+    var b = e.target.closest("button, [data-mc-ouvrir]"); if (!b) return;
+    if (b.dataset.mcJour !== undefined) { vueMsg.jour = b.dataset.mcJour === "soir" ? "soir" : parseInt(b.dataset.mcJour, 10); rendreMessages(); return; }
+    if (b.dataset.mcCible) { vueMsg.cibles[b.dataset.mc] = b.dataset.mcCible; rendreMessages(); return; }
+    if (b.dataset.mcOuvrir) { if (String(window.getSelection ? window.getSelection() : "").length) return; vueMsg.ouverts[b.dataset.mcOuvrir] = !vueMsg.ouverts[b.dataset.mcOuvrir]; rendreMessages(); return; }
+    if (b.dataset.mcCopier) {
+      var m = MSGS.find(function (x) { return x.id === b.dataset.mcCopier; });
+      copier(m.texte).then(function (ok) { if (ok) { toast("Message copié. Colle-le dans WhatsApp.", null, true); vibrer(15); } else toast("Copie automatique impossible : appuie longuement sur le texte pour le sélectionner."); });
+      return;
+    }
+    if (b.dataset.mcEnvoyer) {
+      sel.base = b.dataset.mcEnvoyer; sel.cible = b.dataset.mcC === "groupe" ? "groupe" : "contacts";
+      choisirVue("envois"); construireChoixMsg(); rendreEnvois();
+    }
+  });
+  if (ui.vue === "messages") rendreMessages();   // application rouverte sur l'onglet Messages
   function cleEnvoi() { var m = variante(sel.base, sel.cible); return m ? m.id : ""; }
   function clientsHier() {
     var hier = addJours(soireeCourante(), -1), vus = {}, r = [];
@@ -2922,7 +3052,7 @@
   $("avecNumeros").checked = !!ui.avecNumeros;
   construireSite(); construirePacks();
   restaurerBrouillon();
-  document.body.dataset.vue = ["saisir", "liste", "bilan", "wave", "envois"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
+  document.body.dataset.vue = ["saisir", "liste", "bilan", "wave", "envois", "messages"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
   document.querySelectorAll(".navbas button").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.vue === document.body.dataset.vue)); });
   sauver(); rendre(); majAppli(); cuisineDemarrer(); rendreWave(); envoisDemarrer();
   avertissements.forEach(function (m) { toast(m); });
