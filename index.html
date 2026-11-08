@@ -11,7 +11,7 @@
 <title>Commandes du soir</title>
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <!--
-  AUT-05 · V6.12 · 2026-11-07 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
+  AUT-05 · V6.13 · 2026-11-08 · INTERNE · CONFIDENTIEL dès qu'un numéro de client est saisi
   Suivi des commandes : saisie (site, résidence, chambre, pack, numéro du client), liste rangée dans l'ordre de livraison, « Livré », totaux à préparer,
   envoi de la liste à la partenaire sur WhatsApp, BILAN (jour par jour et total), sauvegardes.
   V2 : une soirée = un enregistrement daté (la date change toute seule, une soirée finit à 4 h du matin) ; plus de « clôture » ;
@@ -58,6 +58,9 @@
   celle de la semaine signalée) et LÉGENDE DE LA VIDÉO du jour, « Copier » et « Envoyer » (ouvre Envois sur ce message) ; « Soirée et après » ;
   ENVOYÉS PAR JOUR (14 derniers jours : message, nombre de contacts, de quelle heure à quelle heure, groupe et heure). Envois : rubrique « Vidéos ».
   Salutation « Coucou » (D-096) : message du livreur « Coucou, je suis le livreur… ».
+  V6.13 (D-099, équipe : « Envois ne doit pas être une copie de Messages ») : rôles séparés. MESSAGES = choisir et préparer (jours, Lire, Copier,
+  Modifier, Nouveau message, « Perso » = mes messages, légendes des vidéos, envoyés par jour) ; ENVOIS = envoyer (en haut seulement le message choisi :
+  titre, deux lignes, « Changer » qui ouvre Messages sur son jour ; puis Contacts / Groupe, affiches, contacts). La liste déroulante reste cachée (état interne).
   Chaque commande porte un identifiant (id), une date de modification (maj), si renseigné un numéro (tel : chiffres avec l'indicatif 225) et un état de paiement (paye, tp).
 -->
 <style>
@@ -508,6 +511,17 @@
   .histo-jour .hl:first-of-type { border-top:0; }
   .histo-jour .hl small { display:block; color:var(--doux); font-weight:600; }
   .histo-vide { color:var(--doux); font-size:14px; }
+  /* ===== V6.13 : Envois compact ===== */
+  .msg-choisi { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--bord); border-radius:14px; background:var(--carte2); }
+  .msg-choisi .mcs-txt { flex:1; min-width:0; }
+  .msg-choisi .mcs-lib { display:block; font-size:12px; font-weight:700; color:var(--doux); text-transform:uppercase; letter-spacing:.05em; }
+  .msg-choisi b { display:block; font-size:15.5px; line-height:1.25; }
+  .msg-choisi .apercu { white-space:normal; font-size:13px; line-height:1.35; color:var(--doux); padding:2px 0 0; max-height:2.7em; overflow:hidden; cursor:default; }
+  .msg-choisi .apercu::after { display:none; }
+  .msg-choisi button { flex:none; min-height:44px; }
+  #choixMsg.case-cachee { width:1px !important; height:1px !important; min-height:0 !important; padding:0 !important; border:0 !important; margin:0 !important; overflow:hidden; clip-path:inset(50%); }
+  .nouveau-msg { width:100%; margin:2px 0 10px; }
+  .jours-msg { grid-template-columns:repeat(5, 1fr); }
 </style>
 </head>
 <body data-vue="saisir">
@@ -692,6 +706,7 @@
   <!-- ===================== MESSAGES (V6.12) ===================== -->
   <section class="bloc" id="vueMessages" aria-labelledby="titreMessages">
     <h2 id="titreMessages">Messages<button type="button" class="savoir" data-info="messages">En savoir plus</button></h2>
+    <button type="button" class="sec fort nouveau-msg" id="btnNouveauMsg">Nouveau message</button>
     <div class="jours-msg" id="joursMsg" role="group" aria-label="Jour"></div>
     <div id="zoneMsgJour"></div>
     <h2 id="titreEnvoyes">Envoyés par jour</h2>
@@ -700,20 +715,14 @@
 
   <section class="bloc" id="vueEnvois" aria-labelledby="titreEnvois">
     <h2 id="titreEnvois">Envois<button type="button" class="savoir" data-info="envois">En savoir plus</button></h2>
-    <label class="etiquette" for="choixMsg" style="margin-top:0">Message</label>
-    <select id="choixMsg"></select>
+    <div class="msg-choisi">
+      <div class="mcs-txt"><span class="mcs-lib">Message à envoyer</span><b id="titreMsgChoisi"></b><div class="apercu" id="apercuEnvoi"></div></div>
+      <button type="button" class="sec fort" id="btnChangerMsg">Changer</button>
+    </div>
+    <select id="choixMsg" class="case-cachee" tabindex="-1" aria-hidden="true"></select>
     <div class="segmente" role="group" aria-label="Destinataires" id="cibleEnvoi" style="margin-top:10px">
       <button type="button" data-cible="contacts" aria-pressed="true">Contacts</button>
       <button type="button" data-cible="groupe" aria-pressed="false">Groupe</button>
-    </div>
-    <div class="apercu-boite" id="boiteApercu">
-      <div class="apercu" id="apercuEnvoi" aria-label="Texte du message : toucher pour l'ouvrir ou le refermer"></div>
-      <button type="button" class="replier" id="btnApercuTout" aria-controls="apercuEnvoi" aria-expanded="false">Tout lire ▾</button>
-    </div>
-    <div class="actions-msg">
-      <button type="button" class="sec fort" id="btnCopierEnvoi">Copier le texte</button>
-      <button type="button" class="sec" id="btnModifMsg">Modifier</button>
-      <button type="button" class="sec" id="btnNouveauMsg">Nouveau message</button>
     </div>
     <div class="aff-tete"><span class="etiquette">Affiches</span><button type="button" class="sec" id="btnToutesAffiches">Toutes les affiches</button></div>
     <div class="aff-rang" id="affichesMsg"></div>
@@ -2384,9 +2393,17 @@
   var vueMsg = { jour: null, cibles: {}, ouverts: {} };
   var JOURS_COURTS = ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."];
   function titreCourt(t) { return String(t || "").replace(/\s*\((vers|dès)[^)]*\)\s*$/, ""); }
+  function jourDuMessage(b) {
+    var m = MSGS.find(function (x) { return baseDe(x.id) === b; });
+    if (!m) return dateDe(soireeCourante()).getDay();
+    if (m.perso) return "perso";
+    if (m.rubrique === "video") return m.jour === "p" ? "soir" : m.jour;
+    if (m.rubrique === "soiree" || m.rubrique === "apres") return "soir";
+    return m.semaine;
+  }
   function carteMessage(b, etiquette, marque) {
     var p = MSGS.find(function (m) { return m.id === b + "p"; }), g = MSGS.find(function (m) { return m.id === b + "g"; });
-    var cible = vueMsg.cibles[b] || (p ? "contacts" : "groupe"), m = cible === "groupe" ? (g || p) : (p || g);
+    var cible = vueMsg.cibles[b] || (b === sel.base ? sel.cible : (p ? "contacts" : "groupe")), m = cible === "groupe" ? (g || p) : (p || g);
     var dj = envois.jours[soireeCourante()] || {}, nb = 0, grp = [];
     [b + "p", b + "g"].forEach(function (id) { Object.keys(dj[id] || {}).forEach(function (k) { if (k.indexOf("groupe:") === 0) grp.push(k.slice(7)); else nb++; }); });
     var c = el("div", { class: "msg-carte" },
@@ -2398,6 +2415,7 @@
     if (nb || grp.length) c.append(el("div", { class: "mc-envoye", text: "Envoyé aujourd’hui : " + [nb ? plur(nb, "contact", "contacts") : "", grp.length ? "groupe" : ""].filter(Boolean).join(" · ") }));
     c.append(el("div", { class: "mc-actions" },
       el("button", { type: "button", class: "fort", "data-mc-copier": m.id, text: "Copier" }),
+      el("button", { type: "button", "data-mc-modifier": b, "data-mc-c": cible, text: "Modifier" }),
       el("button", { type: "button", "data-mc-envoyer": b, "data-mc-c": cible, text: "Envoyer" })));
     return c;
   }
@@ -2406,13 +2424,16 @@
     var j = soireeCourante(), auj = dateDe(j).getDay();
     if (vueMsg.jour === null) vueMsg.jour = auj;
     var zj = $("joursMsg"); zj.replaceChildren();
-    [1, 2, 3, 4, 5, 6, 0, "soir"].forEach(function (d) {
+    [1, 2, 3, 4, 5, 6, 0, "soir", "perso"].forEach(function (d) {
       zj.append(el("button", { type: "button", class: d === auj ? "auj" : "", "data-mc-jour": String(d), "aria-pressed": String(d === vueMsg.jour),
-        text: d === "soir" ? "Soirée" : (d === auj ? "Auj." : JOURS_COURTS[d]) }));
+        text: d === "soir" ? "Soirée" : d === "perso" ? "Perso" : (d === auj ? "Auj." : JOURS_COURTS[d]) }));
     });
     var z = $("zoneMsgJour"); z.replaceChildren();
     var vus = {};
-    if (vueMsg.jour === "soir") {
+    if (vueMsg.jour === "perso") {   // V6.13 : mes messages
+      MSGS.forEach(function (m) { if (m.perso) z.append(carteMessage(baseDe(m.id))); });
+      if (!z.children.length) z.append(el("p", { class: "histo-vide", text: "Aucun message à toi pour l’instant : touche « Nouveau message »." }));
+    } else if (vueMsg.jour === "soir") {
       MSGS.forEach(function (m) { var b = baseDe(m.id); if (vus[b] || (m.rubrique !== "soiree" && m.rubrique !== "apres")) return; vus[b] = 1; z.append(carteMessage(b)); });
       var perm = MSGS.find(function (m) { return m.rubrique === "video" && m.jour === "p"; });
       if (perm) z.append(carteMessage(baseDe(perm.id), "Légende de la vidéo permanente", { texte: "Groupe · statut" }));
@@ -2448,7 +2469,8 @@
   }
   $("vueMessages").addEventListener("click", function (e) {
     var b = e.target.closest("button, [data-mc-ouvrir]"); if (!b) return;
-    if (b.dataset.mcJour !== undefined) { vueMsg.jour = b.dataset.mcJour === "soir" ? "soir" : parseInt(b.dataset.mcJour, 10); rendreMessages(); return; }
+    if (b.dataset.mcJour !== undefined) { vueMsg.jour = /^(soir|perso)$/.test(b.dataset.mcJour) ? b.dataset.mcJour : parseInt(b.dataset.mcJour, 10); rendreMessages(); return; }
+    if (b.dataset.mcModifier) { sel.base = b.dataset.mcModifier; sel.cible = b.dataset.mcC === "groupe" ? "groupe" : "contacts"; ouvrirMsg(false); return; }
     if (b.dataset.mcCible) { vueMsg.cibles[b.dataset.mc] = b.dataset.mcCible; rendreMessages(); return; }
     if (b.dataset.mcOuvrir) { if (String(window.getSelection ? window.getSelection() : "").length) return; vueMsg.ouverts[b.dataset.mcOuvrir] = !vueMsg.ouverts[b.dataset.mcOuvrir]; rendreMessages(); return; }
     if (b.dataset.mcCopier) {
@@ -2548,16 +2570,12 @@
   }
   function rendreEnvois() {
     if (!$("vueEnvois")) return;
+    if (document.body.dataset.vue === "messages" && typeof rendreMessages === "function") setTimeout(rendreMessages, 0);   // V6.13 : Messages suit les modifications
     construireChoixMsg();
     document.querySelectorAll("#cibleEnvoi button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.cible === sel.cible)); });
     var m = variante(sel.base, sel.cible);
-    $("apercuEnvoi").textContent = m ? m.texte : "Aucun message.";
-    $("apercuEnvoi").classList.toggle("tout", sel.apercuTout);
-    $("btnApercuTout").textContent = sel.apercuTout ? "Réduire ▴" : "Tout lire ▾";
-    $("btnApercuTout").setAttribute("aria-expanded", String(sel.apercuTout));
-    var ap = $("apercuEnvoi");   // message court, déjà lisible en entier : pas de bouton (mesure seulement si l'onglet est affiché)
-    $("btnApercuTout").hidden = !sel.apercuTout && !!ap.offsetParent && ap.scrollHeight <= ap.clientHeight + 2;
-    ap.classList.toggle("court", $("btnApercuTout").hidden);
+    $("apercuEnvoi").textContent = m ? m.texte : "Aucun message.";   // V6.13 : deux lignes seulement (lecture complète dans Messages)
+    $("titreMsgChoisi").textContent = m ? titreCourt(m.titre) : "Aucun message choisi";
     $("affichesMsg").replaceChildren.apply($("affichesMsg"), affichesDe(sel.base).map(function (a) { return vignette(a, false); }));
     $("zoneGroupe").hidden = sel.cible !== "groupe"; $("zoneContacts").hidden = sel.cible === "groupe";
     var faits = envoisDuJour()[cleEnvoi()] || {};
@@ -2624,25 +2642,7 @@
   }
   $("choixMsg").addEventListener("change", function () { sel.base = this.value; sel.apercuTout = false; rendreEnvois(); });
   $("cibleEnvoi").addEventListener("click", function (e) { var b = e.target.closest("button[data-cible]"); if (b) { sel.cible = b.dataset.cible; rendreEnvois(); } });
-  function basculerApercu() {
-    var refermer = sel.apercuTout; sel.apercuTout = !sel.apercuTout; rendreEnvois();
-    if (refermer) {   // on revient au début du message si on l'avait lu plus bas
-      var haut = $("boiteApercu").getBoundingClientRect().top, barre = document.querySelector(".appbar").offsetHeight;
-      if (haut < barre) window.scrollBy(0, haut - barre - 12);
-    }
-  }
-  $("btnApercuTout").addEventListener("click", basculerApercu);
-  $("apercuEnvoi").addEventListener("click", function () {   // toucher le texte l'ouvre ou le referme (pas pendant une sélection)
-    if (String(window.getSelection ? window.getSelection() : "").length || $("btnApercuTout").hidden) return;
-    basculerApercu();
-  });
-  $("btnCopierEnvoi").addEventListener("click", function () {
-    var m = variante(sel.base, sel.cible); if (!m) return;
-    copier(m.texte).then(function (ok) {
-      if (ok) { toast("Message copié. Colle-le dans WhatsApp.", null, true); vibrer(15); }
-      else toast("Copie automatique impossible : appuie longuement sur le texte pour le sélectionner.");
-    });
-  });
+  /* V6.13 : lecture, copie et modification des messages : onglet Messages */
   $("listesEnvoi").addEventListener("click", function (e) {
     var b = e.target.closest("button[data-liste]"); if (!b) return;
     sel.liste = b.dataset.liste;
@@ -2767,7 +2767,7 @@
     if (!texte.trim()) { $("manqueMsg").textContent = "Le texte est vide."; $("msgTexte").focus(); return; }
     if (msgEdite.nouveau || msgEdite.perso) {
       if (!titre) titre = texte.split("\n")[0].replace(/[*_~]/g, "").slice(0, 40).trim() || "Mon message";
-      if (msgEdite.nouveau) { var id = "u" + t.toString(36); perso.ajoutes.push({ id: id, titre: titre, texte: texte, t: t }); sel.base = id; }
+      if (msgEdite.nouveau) { var id = "u" + t.toString(36); perso.ajoutes.push({ id: id, titre: titre, texte: texte, t: t }); sel.base = id; vueMsg.jour = "perso"; }
       else { var a = perso.ajoutes.find(function (x) { return x.id === msgEdite.base; }); if (a) { a.titre = titre; a.texte = texte; a.t = t; } }
     } else {
       var orig = MSGS_ORIGINE.find(function (x) { return x.id === msgEdite.id; });
@@ -2788,8 +2788,8 @@
     var retire = perso.ajoutes.splice(i, 1)[0]; fermerMsg(); sel.base = null; modifierPerso();
     toast("Message supprimé : " + retire.titre, function () { perso.ajoutes.splice(i, 0, retire); sel.base = retire.id; modifierPerso(); });
   }
-  $("btnModifMsg").addEventListener("click", function () { ouvrirMsg(false); });
   $("btnNouveauMsg").addEventListener("click", function () { ouvrirMsg(true); });
+  $("btnChangerMsg").addEventListener("click", function () { vueMsg.jour = jourDuMessage(sel.base); choisirVue("messages"); });
   $("btnEnregMsg").addEventListener("click", enregistrerMsg);
   $("btnOrigineMsg").addEventListener("click", origineMsg);
   $("btnSupprMsg").addEventListener("click", supprimerMsg);
