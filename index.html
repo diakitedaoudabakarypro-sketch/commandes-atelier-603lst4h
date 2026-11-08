@@ -858,6 +858,7 @@
         <div><label for="objFin">Fin (objectifs atteints le)</label><input type="date" id="objFin"><small class="err-champ" id="err-objFin"></small></div>
       </div>
       <label for="objDepart">Épargne au départ (F)</label><input type="text" id="objDepart" inputmode="numeric" autocomplete="off"><small class="err-champ" id="err-objDepart"></small>
+      <label for="objSoirMin">Objectif de vente minimum par soir (F)</label><input type="text" id="objSoirMin" inputmode="numeric" autocomplete="off" placeholder="0 = calculé"><small class="err-champ" id="err-objSoirMin"></small>
       <label for="objEpargne">Épargne visée (F)</label><input type="text" id="objEpargne" inputmode="numeric" autocomplete="off"><small class="err-champ" id="err-objEpargne"></small>
       <div class="grille2">
         <div><label for="objConges">Cagnotte congés (F)</label><input type="text" id="objConges" inputmode="numeric" autocomplete="off"><small class="err-champ" id="err-objConges"></small></div>
@@ -997,7 +998,7 @@
 <template id="info-donnees" data-titre="Sauvegarde GitHub"><ul><li>En fin de soirée, le bouton <b>« La vente est finie »</b> (onglet Bilan) enregistre toutes les commandes du jour, numéros et paiements compris, avec le bilan, dans ton dépôt privé <b>atelier-donnees</b>.</li><li>« Sur GitHub » ne s’affiche qu’après vérification : GitHub renvoie l’empreinte du fichier, l’application la compare.</li><li>Sans réseau, l’envoi reste en attente et repart tout seul.</li><li>Les contacts de l’onglet Envois et l’historique des envois sont aussi gardés dans ce dépôt.</li><li>Cette clé ne va <b>que sur ton téléphone</b>, jamais sur celui de la cuisine.</li></ul></template>
 <template id="info-messages" data-titre="Messages"><ul><li>Touche un jour pour voir <b>son message</b> (pour les contacts ou pour le groupe) et <b>la légende de sa vidéo</b>. Aujourd’hui est choisi tout seul.</li><li>Le lundi, le mardi et le mercredi ont deux idées, qui alternent chaque semaine : celle de la semaine est signalée.</li><li><b>Copier</b> met le texte dans le presse-papiers ; <b>Envoyer</b> ouvre l’onglet Envois sur ce message (contacts un par un, ou le groupe).</li><li>Toucher le texte l’ouvre en entier.</li><li><b>Envoyés par jour</b> : ce qui est parti chaque jour (14 derniers jours) : le message, combien de contacts et à quelles heures, le groupe et l’heure. C’est l’historique des envois faits depuis l’onglet Envois.</li></ul></template>
 <template id="info-envois" data-titre="Envois"><ul><li>Ici, on <b>envoie</b>. Le message du jour est choisi tout seul ; <b>« Changer »</b> ouvre l’onglet Messages pour en prendre un autre.</li><li>Lire en entier, <b>copier</b>, <b>modifier</b> ou créer un <b>nouveau message</b> : onglet <b>Messages</b> (tes messages sont dans « Perso »). Tes textes sont gardés dans le téléphone et dans ton dépôt privé.</li><li><b>Affiches</b> : celles du message choisi sont sous le texte. Touche-en une, puis <b>Partager</b> : choisis WhatsApp, puis le groupe, un contact ou ton statut. Une affiche « groupe » part avec le message en légende. « Toutes les affiches » montre aussi celles de fin de soirée et des autres jours.</li><li>Toucher un contact permet de le <b>renommer</b>, de <b>changer son numéro</b>, de lui donner sa <b>chambre</b> ou de le supprimer. Depuis « Clients d’hier », il s’ajoute au carnet avec sa chambre.</li><li>Les contacts sont <b>rangés</b> : d’abord ceux qui ont un nom (A → Z), puis ceux qui ont une chambre (Centre A → R, puis Sud 1 → 17), enfin ceux sans nom. « Envoyer au suivant » suit cet ordre. Recherche possible par chambre : « A17 », « 6 15 ».</li><li>Tous les envois ouvrent <b>WhatsApp Business</b>.</li><li><b>Contacts</b> : « Envoyer au suivant » ouvre WhatsApp sur le prochain contact, message déjà écrit, et le coche.</li><li><b>Clients d’hier</b> : les clients de la veille qui ont laissé leur numéro, pour la relance (merci et avis).</li><li><b>Groupe</b> : le message est copié et le groupe s’ouvre ; colle-le.</li><li>Les envois du jour sont gardés dans le téléphone et dans le dépôt privé (historique).</li></ul></template>
-<template id="info-objectifs" data-titre="Objectifs"><ul><li><b>Ce soir, pour tenir la cible</b> : ce qu’il faut vendre ce soir pour atteindre tous les objectifs à la date de fin, en tenant compte de l’avance ou du retard. « Reste » se met à jour à chaque commande.</li><li>Les ventes de chaque soir sont celles du <b>Bilan</b> (ventes estimées, sans la livraison) : rien à saisir deux fois. Touche un soir pour mettre le <b>montant réel</b> encaissé.</li><li>Chaque soir coûte le <b>stock</b> (soirs de vente) ; les <b>dépenses de vie</b> comptent tous les jours, même sans vente.</li><li>L’argent mis de côté remplit les trois cagnottes <b>en même temps</b>, chacune selon sa part (épargne, congés, internet).</li><li><b>J’ai compté mon épargne</b> : le vrai montant remplace le calcul jusqu’à ce soir.</li><li>🔒 Jusqu’à la date de fin, les objectifs et les charges peuvent rester ou augmenter, <b>jamais baisser</b> ; début, fin et épargne de départ sont fixes. Après, tout se modifie et « Nouveaux objectifs » commence un autre cycle.</li><li>Les montants sont gardés dans le téléphone et dans ton dépôt privé. L’écran cuisine reçoit seulement les pourcentages, les cagnottes congés et internet et les soirs atteints, jamais les ventes ni les charges ; un point doré montre les soirs cochés en cuisine.</li></ul></template>
+<template id="info-objectifs" data-titre="Objectifs"><ul><li><b>Ce soir, pour tenir la cible</b> : ce qu’il faut vendre ce soir pour atteindre tous les objectifs à la date de fin, en tenant compte de l’avance ou du retard. « Reste » se met à jour à chaque commande.</li><li>Les ventes de chaque soir sont celles du <b>Bilan</b> (ventes estimées, sans la livraison) : rien à saisir deux fois. Touche un soir pour mettre le <b>montant réel</b> encaissé.</li><li>Chaque soir coûte le <b>stock</b> (soirs de vente) ; les <b>dépenses de vie</b> comptent tous les jours, même sans vente.</li><li><b>Objectif de vente minimum par soir</b> : l’objectif du soir ne descend jamais en dessous (par exemple 15 000 F), même si le calcul demande moins ; ce qui dépasse les objectifs est affiché « au-delà des objectifs ».</li><li>L’argent mis de côté remplit les trois cagnottes <b>en même temps</b>, chacune selon sa part (épargne, congés, internet).</li><li><b>J’ai compté mon épargne</b> : le vrai montant remplace le calcul jusqu’à ce soir.</li><li>🔒 Jusqu’à la date de fin, les objectifs et les charges peuvent rester ou augmenter, <b>jamais baisser</b> ; début, fin et épargne de départ sont fixes. Après, tout se modifie et « Nouveaux objectifs » commence un autre cycle.</li><li>Les montants sont gardés dans le téléphone et dans ton dépôt privé. L’écran cuisine reçoit seulement les pourcentages, les cagnottes congés et internet et les soirs atteints, jamais les ventes ni les charges ; un point doré montre les soirs cochés en cuisine.</li></ul></template>
 <template id="info-bilan" data-titre="Bilan"><ul><li>Montants estimés avec les prix des packs (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F), <b>sans les frais de livraison</b>.</li><li>Les paiements sont ceux que tu as marqués « Payé ».</li></ul></template>
 <template id="info-wave" data-titre="Paiement Wave"><ul><li><b>QR Wave</b> : plein écran, même sans internet. Le client scanne avec son application Wave et saisit le montant.</li><li><b>Liens</b> : choisis le site, puis touche ce que la chambre a commandé. Le message de paiement est copié, montant compris : packs + livraison + 1 % Wave.</li><li>Une seule livraison par chambre. <b>Centre</b> : 100 F, offerte dès qu’il y a un MAXI ou un MÉGA. <b>Sud</b> : 200 F, offerte avec un MÉGA.</li><li>Crêpes à l’unité : crée le lien dans l’application Wave.</li></ul></template>
 <template id="info-ecrire" data-titre="Écrire au client"><p>WhatsApp s’ouvre sur la conversation du client, message déjà écrit : il reste à appuyer sur « Envoyer ». Le contact n’est pas enregistré dans ton téléphone.</p><p>C’est toujours <b>WhatsApp Business</b> qui s’ouvre.</p></template>
@@ -3234,7 +3235,7 @@
     var charge = function (j) { return cy.charges.vie + (vend(j) ? cy.charges.stock : 0); };
     var besoin = besoinObj(cy), nbVente = jours.filter(vend).length;
     var totalCharges = jours.reduce(function (a, j) { return a + charge(j); }, 0);
-    var objSoir = nbVente ? arrondi50((besoin + totalCharges) / nbVente) : 0;   // ventes à faire chaque soir de vente, fixé par les objectifs
+    var objSoir = nbVente ? Math.max(arrondi50((besoin + totalCharges) / nbVente), cy.objSoirMin || 0) : 0;   // ventes à faire chaque soir de vente ; jamais sous l'objectif minimum choisi (V6.15)
     var c = obj.constat && obj.constat.date >= cy.debut && obj.constat.date <= cy.fin && obj.constat.date <= auj ? obj.constat : null;
     var finFermee = c && c.date >= auj ? c.date : isoPlus(auj, -1);   // soirs terminés (le comptage d'aujourd'hui clôt la soirée)
     var acquis = c ? c.montant - cy.epargneDepart : 0, plan = 0, planFin = 0, ventesPassees = 0, soirsPasses = 0;
@@ -3255,7 +3256,7 @@
     var soirsRestants = restants.filter(vend).length, chargesRestantes = restants.reduce(function (a, j) { return a + charge(j); }, 0);
     var ceSoirVend = restants[0] === auj && vend(auj), ventesAuj = restants.indexOf(auj) >= 0 ? ventesSoir(auj) : 0;
     var manque = besoin - acquis + chargesRestantes;
-    var ceSoir = soirsRestants ? Math.max(0, arrondi50(manque / soirsRestants)) : 0;   // pour finir pile à l'objectif, à partir de ce soir
+    var ceSoir = soirsRestants ? Math.max(0, arrondi50(manque / soirsRestants), cy.objSoirMin || 0) : 0;   // pour finir à l'objectif à partir de ce soir, jamais sous le minimum
     var moyenne = soirsPasses ? Math.round(ventesPassees / soirsPasses) : null, projection = null, dateAtteinte = null;
     if (moyenne != null) {
       projection = acquis;
@@ -3357,8 +3358,9 @@
       else soir.append(el("small", {}, el("b", { text: "Objectif du soir atteint ✓" }), " " + fcfa(r.ventesAuj) + " vendus."));
       if (r.ceSoir !== r.objSoir) soir.append(el("small", { text: "Objectif de base : " + fcfa(r.objSoir) + " par soir de vente." }));
       if (!r.ventesAuj && r.soirsRestants > 1) {   // tenté de ne pas vendre ce soir ? ce que ça coûte aux soirs suivants (le stock n'est pas acheté, la vie continue)
-        var sans = arrondi50((r.besoin - r.acquis + r.chargesRestantes - cy.charges.stock) / (r.soirsRestants - 1));
-        soir.append(el("small", { class: "sauter" }, "Sauter ce soir : ", el("b", { text: "+" + fcfa(Math.max(0, sans - r.ceSoir)) }), " à vendre chacun des " + plur(r.soirsRestants - 1, "soir restant", "soirs restants") + " (" + fcfa(sans) + " par soir)."));
+        var sans = Math.max(arrondi50((r.besoin - r.acquis + r.chargesRestantes - cy.charges.stock) / (r.soirsRestants - 1)), cy.objSoirMin || 0);
+        if (sans <= r.ceSoir) soir.append(el("small", { class: "sauter" }, "Sauter ce soir : ", el("b", { text: fcfa(Math.max(0, r.ceSoir - cy.charges.stock)) }), " de moins mis de côté (ventes perdues, stock non acheté)."));
+        else soir.append(el("small", { class: "sauter" }, "Sauter ce soir : ", el("b", { text: "+" + fcfa(Math.max(0, sans - r.ceSoir)) }), " à vendre chacun des " + plur(r.soirsRestants - 1, "soir restant", "soirs restants") + " (" + fcfa(sans) + " par soir)."));
       }
     }
     var jb = r.finFermee >= auj || r.ceSoirVend ? auj : r.finFermee, cc = objCui.coches[jb];
@@ -3378,7 +3380,7 @@
     z.append(el("div", { class: "obj-global" },
       el("div", { class: "l" }, el("b", { text: "Vers les objectifs : " + r.pourcent + " %" }), el("span", { text: r.termine ? "terminé" : plur(r.soirsRestants, "soir de vente restant", "soirs de vente restants") })),
       barreObj(r.pourcent / 100),
-      el("p", { class: "aide", text: fcfa(Math.max(0, r.acquis)) + " mis de côté sur " + fcfa(r.besoin) + (r.constat ? " (épargne comptée le " + frDate(r.constat.date) + ")" : "") + "." })));
+      el("p", { class: "aide", text: fcfa(Math.max(0, r.acquis)) + " mis de côté sur " + fcfa(r.besoin) + (r.acquis > r.besoin ? " · +" + fcfa(r.acquis - r.besoin) + " au-delà des objectifs" : "") + (r.constat ? " (épargne comptée le " + frDate(r.constat.date) + ")" : "") + "." })));
     z.append(potObj("Épargne", r.pots.epargne, cy.cibles.epargne, cy.epargneDepart), potObj("Congés", r.pots.conges, cy.cibles.conges), potObj("Internet", r.pots.internet, cy.cibles.internet));
     // 4. Trajectoire
     z.append(el("h3", { class: "st", text: "Trajectoire" }), grapheObj(cy, r));
@@ -3438,14 +3440,14 @@
     }
   });
   /* Formulaire des objectifs (verrou jusqu'à la fin du cycle) */
-  var CHAMPS_OBJ = [["objDepart", "epargneDepart"], ["objEpargne", "epargne", "cibles"], ["objConges", "conges", "cibles"], ["objInternet", "internet", "cibles"], ["objStock", "stock", "charges"], ["objVie", "vie", "charges"]];
+  var CHAMPS_OBJ = [["objDepart", "epargneDepart"], ["objSoirMin", "objSoirMin"], ["objEpargne", "epargne", "cibles"], ["objConges", "conges", "cibles"], ["objInternet", "internet", "cibles"], ["objStock", "stock", "charges"], ["objVie", "vie", "charges"]];
   function valeurCycle(cy, ch) { return ch[2] ? cy[ch[2]][ch[1]] : cy[ch[1]]; }
   function remplirFormObj() {
     if ($("formObj").open && objSel.semaine) return;   // formulaire en cours de saisie : on ne l'écrase pas
     var cy = obj.cycle, nouveau = cy && !verrouObj(cy), verrou = verrouObj(cy);
     $("objDebut").value = cy ? (nouveau ? isoPlus(cy.fin, 1) : cy.debut) : soireeCourante();
     $("objFin").value = cy && !nouveau ? cy.fin : "";
-    CHAMPS_OBJ.forEach(function (ch) { $(ch[0]).value = cy ? String(ch[1] === "epargneDepart" && nouveau ? cy.cibles.epargne : valeurCycle(cy, ch)) : ""; });
+    CHAMPS_OBJ.forEach(function (ch) { $(ch[0]).value = cy ? String(ch[1] === "epargneDepart" && nouveau ? cy.cibles.epargne : (valeurCycle(cy, ch) || 0)) : ""; });
     ["objDebut", "objFin", "objDepart"].forEach(function (id) { $(id).readOnly = verrou; });
     objSel.semaine = cy ? cy.joursVente.slice() : [0, 1, 2, 3, 4, 5, 6];
     majSemaineObj();
@@ -3488,7 +3490,7 @@
     var a = obj.cycle;
     var n = { debut: $("objDebut").value, fin: $("objFin").value, epargneDepart: montantSaisi($("objDepart").value),
       cibles: { epargne: montantSaisi($("objEpargne").value), conges: montantSaisi($("objConges").value), internet: montantSaisi($("objInternet").value) },
-      charges: { stock: montantSaisi($("objStock").value), vie: montantSaisi($("objVie").value) },
+      charges: { stock: montantSaisi($("objStock").value), vie: montantSaisi($("objVie").value) }, objSoirMin: montantSaisi($("objSoirMin").value || "0"),
       joursVente: objSel.semaine.slice().sort(), creeLe: a && verrouObj(a) ? a.creeLe : new Date().toISOString() };
     var err = validerObj(n, a);
     document.querySelectorAll("#formObj .err-champ").forEach(function (x) { x.textContent = err[x.id.slice(4)] || ""; });

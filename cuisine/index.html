@@ -45,6 +45,7 @@
     puis deux touches « 🎉 Objectif atteint ! » / « 💪 Pas encore, on rattrape » (objectifs/coches.json, relu par l'application).
     Après la réponse : phrase du soir vers nos congés, ou citation connue sur la persévérance. Cagnotte (pourcentage, congés, internet,
     épargne en %), calendrier des soirs (touchez un soir pour le cocher), citation du jour (../citations.js). Jamais de charges ici.
+  V2.3 (D-101) : mise à jour toute seule (au retour sur l'écran ou hors service), plus besoin de toucher « Actualiser ».
 -->
 <style>
   :root { --fond:#F7EFE3; --carte:#FFFFFF; --carte2:#FBF5EC; --encre:#1C120C; --doux:#6B5A4A; --bord:rgba(60,40,20,.14);
@@ -370,7 +371,7 @@
 <script>
 (function () {
   "use strict";
-  var VERSION_PAGE = "atelier-cuisine-v2-2";   // = VERSION de cuisine/sw.js ; si sw.js en ligne a une autre valeur, une mise à jour est publiée
+  var VERSION_PAGE = "atelier-cuisine-v2-3";   // = VERSION de cuisine/sw.js ; si sw.js en ligne a une autre valeur, une mise à jour est publiée
   var PROPRIETAIRE = "diakitedaoudabakarypro-sketch", DEPOT = "atelier-cuisine";
   var CLE_STOCKAGE = "atelier_cuisine_cle_v1", CLE_VUES = "atelier_cuisine_vues_v1", CLE_ATTENTE = "atelier_cuisine_attente_v1", CLE_REGLAGES = "atelier_cuisine_reglages_v1";
   var DECALAGE_H = 4, INTERVALLE = 4000, RAPPEL = 30000, RAPPELS_MAX = 4, VERIF_VERSION = 10 * 60000;
@@ -1101,15 +1102,26 @@
   });
 
   /* ---------- Mise à jour de l'écran ---------- */
-  function verifierVersion() {
+  /* V2.3 (D-101, demande de l'équipe : « aucune tâche technique pour la cuisine ») : la nouvelle version s'installe TOUTE SEULE,
+     au retour sur l'écran ou hors service (4 h – 16 h), jamais pendant qu'un bandeau attend « J'ai vu » ni avec un « Prête » pas encore envoyé.
+     (Après un rechargement, l'iPhone redemande un toucher pour le son : c'est pourquoi on ne recharge pas en plein service.) « Actualiser » reste en secours. */
+  var majDispo = false;
+  function appliquerMaj(auRetour) {
+    if (!majDispo || !/^https?:$/.test(location.protocol)) return false;
+    var h = new Date().getHours(), horsService = h >= 4 && h < 16;
+    if (vues.evts.length || Object.keys(enAttente).length || !(auRetour || horsService)) return false;
+    try { var d = +sessionStorage.getItem("atelier_cuisine_maj") || 0; if (Date.now() - d < 10 * 60000) return false; sessionStorage.setItem("atelier_cuisine_maj", String(Date.now())); } catch (e) { return false; }
+    location.reload(); return true;
+  }
+  function verifierVersion(auRetour) {
     if (!/^https?:$/.test(location.protocol)) return;
     fetch("sw.js", { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t) {
       var v = /VERSION = "([^"]+)"/.exec(t || "");
-      if (v && v[1] !== VERSION_PAGE) $("alerteMaj").hidden = false;
+      if (v && v[1] !== VERSION_PAGE) { majDispo = true; $("alerteMaj").hidden = false; appliquerMaj(auRetour === true); }
     }).catch(function () {});
   }
   $("btnMaj").addEventListener("click", function () { location.reload(); });   // réglages, « Prête » en attente et nouveautés sont gardés dans le téléphone
-  setInterval(verifierVersion, VERIF_VERSION);
+  setInterval(function () { verifierVersion(false); }, VERIF_VERSION);
 
   /* ---------- Boucle d'actualisation ---------- */
   var boucle = null, boucleConges = null;
@@ -1119,7 +1131,7 @@
     rendreConges(); lireConges(); clearInterval(boucleConges); boucleConges = setInterval(lireConges, 15000);   // V2.2 : bilan, suivi et coches
     setTimeout(verifierVersion, 5000);
   }
-  document.addEventListener("visibilitychange", function () { if (!document.hidden && gh) { lireTout(); lireConges(); garderEcran(); verifierVersion(); } });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && gh) { lireTout(); lireConges(); garderEcran(); verifierVersion(true); } });
   window.addEventListener("online", function () { if (gh) lireTout(); });
 
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
