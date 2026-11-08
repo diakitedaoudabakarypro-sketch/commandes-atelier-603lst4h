@@ -348,6 +348,15 @@
   button.wave-btn.copie { border-color:var(--ok); background:var(--carte); }
   button.wave-btn.copie .w-mt small { color:var(--ok); }
   #autreWave .pas { margin-top:8px; }
+  /* V6.16 : Autre quantité sans limite */
+  .pas-ctrl input.pas-val { width:64px; min-height:46px; padding:0 4px; text-align:center; font-size:20px; font-weight:800; color:var(--encre); background:var(--carte2); border:1.5px solid var(--bord); border-radius:12px; font-variant-numeric:tabular-nums; }
+  #qw_plus { width:100%; font-size:16px; color:var(--encre); background:var(--carte2); border:1.5px solid var(--bord); border-radius:12px; padding:10px 12px; min-height:48px; }
+  #livWave button { font-size:14px; min-height:44px; padding:0 6px; }
+  .detail-wave { margin-top:12px; padding:10px 12px; border-radius:12px; background:var(--carte2); border:1px solid var(--bord); }
+  .detail-wave:empty { display:none; }
+  .dw-l { display:flex; justify-content:space-between; gap:10px; font-size:14px; padding:3px 0; }
+  .dw-l span { color:var(--doux); } .dw-l b { font-variant-numeric:tabular-nums; }
+  .dw-l.fort { border-top:1px solid var(--bord); margin-top:4px; padding-top:6px; font-size:16px; } .dw-l.fort span { color:var(--encre); font-weight:700; }
   button.savoir { background:none; border:0; box-shadow:none; padding:0 4px; min-height:36px; margin-left:auto; font-size:13px; font-weight:600; color:var(--doux);
                   text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; border-radius:8px; white-space:nowrap; }
   .avec-info { display:flex; align-items:center; gap:10px; }
@@ -1000,7 +1009,7 @@
 <template id="info-envois" data-titre="Envois"><ul><li>Ici, on <b>envoie</b>. Le message du jour est choisi tout seul ; <b>« Changer »</b> ouvre l’onglet Messages pour en prendre un autre.</li><li>Lire en entier, <b>copier</b>, <b>modifier</b> ou créer un <b>nouveau message</b> : onglet <b>Messages</b> (tes messages sont dans « Perso »). Tes textes sont gardés dans le téléphone et dans ton dépôt privé.</li><li><b>Affiches</b> : celles du message choisi sont sous le texte. Touche-en une, puis <b>Partager</b> : choisis WhatsApp, puis le groupe, un contact ou ton statut. Une affiche « groupe » part avec le message en légende. « Toutes les affiches » montre aussi celles de fin de soirée et des autres jours.</li><li>Toucher un contact permet de le <b>renommer</b>, de <b>changer son numéro</b>, de lui donner sa <b>chambre</b> ou de le supprimer. Depuis « Clients d’hier », il s’ajoute au carnet avec sa chambre.</li><li>Les contacts sont <b>rangés</b> : d’abord ceux qui ont un nom (A → Z), puis ceux qui ont une chambre (Centre A → R, puis Sud 1 → 17), enfin ceux sans nom. « Envoyer au suivant » suit cet ordre. Recherche possible par chambre : « A17 », « 6 15 ».</li><li>Tous les envois ouvrent <b>WhatsApp Business</b>.</li><li><b>Contacts</b> : « Envoyer au suivant » ouvre WhatsApp sur le prochain contact, message déjà écrit, et le coche.</li><li><b>Clients d’hier</b> : les clients de la veille qui ont laissé leur numéro, pour la relance (merci et avis).</li><li><b>Groupe</b> : le message est copié et le groupe s’ouvre ; colle-le.</li><li>Les envois du jour sont gardés dans le téléphone et dans le dépôt privé (historique).</li></ul></template>
 <template id="info-objectifs" data-titre="Objectifs"><ul><li><b>Ce soir, pour tenir la cible</b> : ce qu’il faut vendre ce soir pour atteindre tous les objectifs à la date de fin, en tenant compte de l’avance ou du retard. « Reste » se met à jour à chaque commande.</li><li>Les ventes de chaque soir sont celles du <b>Bilan</b> (ventes estimées, sans la livraison) : rien à saisir deux fois. Touche un soir pour mettre le <b>montant réel</b> encaissé.</li><li>Chaque soir coûte le <b>stock</b> (soirs de vente) ; les <b>dépenses de vie</b> comptent tous les jours, même sans vente.</li><li><b>Objectif de vente minimum par soir</b> : l’objectif du soir ne descend jamais en dessous (par exemple 15 000 F), même si le calcul demande moins ; ce qui dépasse les objectifs est affiché « au-delà des objectifs ».</li><li>L’argent mis de côté remplit les trois cagnottes <b>en même temps</b>, chacune selon sa part (épargne, congés, internet).</li><li><b>J’ai compté mon épargne</b> : le vrai montant remplace le calcul jusqu’à ce soir.</li><li>🔒 Jusqu’à la date de fin, les objectifs et les charges peuvent rester ou augmenter, <b>jamais baisser</b> ; début, fin et épargne de départ sont fixes. Après, tout se modifie et « Nouveaux objectifs » commence un autre cycle.</li><li>Les montants sont gardés dans le téléphone et dans ton dépôt privé. L’écran cuisine reçoit seulement les pourcentages, les cagnottes congés et internet et les soirs atteints, jamais les ventes ni les charges ; un point doré montre les soirs cochés en cuisine.</li></ul></template>
 <template id="info-bilan" data-titre="Bilan"><ul><li>Montants estimés avec les prix des packs (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F), <b>sans les frais de livraison</b>.</li><li>Les paiements sont ceux que tu as marqués « Payé ».</li></ul></template>
-<template id="info-wave" data-titre="Paiement Wave"><ul><li><b>QR Wave</b> : plein écran, même sans internet. Le client scanne avec son application Wave et saisit le montant.</li><li><b>Liens</b> : choisis le site, puis touche ce que la chambre a commandé. Le message de paiement est copié, montant compris : packs + livraison + 1 % Wave.</li><li>Une seule livraison par chambre. <b>Centre</b> : 100 F, offerte dès qu’il y a un MAXI ou un MÉGA. <b>Sud</b> : 200 F, offerte avec un MÉGA.</li><li>Crêpes à l’unité : crée le lien dans l’application Wave.</li></ul></template>
+<template id="info-wave" data-titre="Paiement Wave"><ul><li><b>QR Wave</b> : plein écran, même sans internet. Le client scanne avec son application Wave et saisit le montant.</li><li><b>Autre quantité</b> : sans limite. Packs et crêpes à l’unité (touche le nombre pour le taper), livraison <b>selon la règle</b>, <b>offerte</b> ou <b>à payer</b> (autant de livraisons que de chambres), montant en plus si besoin. Le détail s’affiche ; les <b>1 % de Wave</b> sont ajoutés tout seuls.</li><li><b>Liens</b> : choisis le site, puis touche ce que la chambre a commandé. Le message de paiement est copié, montant compris : packs + livraison + 1 % Wave.</li><li>Une seule livraison par chambre. <b>Centre</b> : 100 F, offerte dès qu’il y a un MAXI ou un MÉGA. <b>Sud</b> : 200 F, offerte avec un MÉGA.</li></ul></template>
 <template id="info-ecrire" data-titre="Écrire au client"><p>WhatsApp s’ouvre sur la conversation du client, message déjà écrit : il reste à appuyer sur « Envoyer ». Le contact n’est pas enregistré dans ton téléphone.</p><p>C’est toujours <b>WhatsApp Business</b> qui s’ouvre.</p></template>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span class="t-coche" id="toastCoche" aria-hidden="true" hidden><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span id="toastTexte"></span><button type="button" id="toastAnnuler">Annuler</button><button type="button" id="toastFermer" aria-label="Fermer">✕</button></div>
@@ -1661,8 +1670,8 @@
         if (c.tl && (!b.derniereLivraison || c.tl > b.derniereLivraison)) b.derniereLivraison = c.tl;
       }
       if (c.site === "C") b.centre++; else b.sud++;
-      if (!b.premiere || c.t < b.premiere) b.premiere = c.t;
-      if (!b.derniere || c.t > b.derniere) b.derniere = c.t;
+      if (!c.heureInconnue && (!b.premiere || c.t < b.premiere)) b.premiere = c.t;   // V6.16 : heure inconnue (soirée reconstituée) ignorée
+      if (!c.heureInconnue && (!b.derniere || c.t > b.derniere)) b.derniere = c.t;
       var k = c.site + "|" + c.res; b.parRes[k] = (b.parRes[k] || 0) + 1;
     });
     var s = compte(q);
@@ -1709,7 +1718,7 @@
         el("h3", { class: "st", text: "Ventes estimées" }),
         el("p", { class: "gros-chiffre", text: fcfa(b.caEstime) }),
         el("h3", { class: "st", text: "Horaires" }),
-        el("p", { class: "aide", text: "Première commande à " + heureDe(b.premiere) + " · dernière à " + heureDe(b.derniere) +
+        el("p", { class: "aide", text: !b.premiere ? "Heures non enregistrées (soirée reconstituée à partir de la liste)." : "Première commande à " + heureDe(b.premiere) + " · dernière à " + heureDe(b.derniere) +
           (b.derniereLivraison ? " · dernière livraison à " + heureDe(b.derniereLivraison) : "") +
           (b.delaiMoyen != null ? " · délai moyen entre la commande et la livraison : " + b.delaiMoyen + " min" : "") + "." }));
     }
@@ -2258,21 +2267,30 @@
   var WAVE_FRAIS_POUR_CENT = 1;
   var LIVRAISON = { C: { frais: REGLE_LIVRAISON.C.frais, offerteAvec: REGLE_LIVRAISON.C.offerteAvec, texte: "Centre : livraison 100 F, offerte dès qu’il y a un MAXI ou un MÉGA." },
                     S: { frais: REGLE_LIVRAISON.S.frais, offerteAvec: REGLE_LIVRAISON.S.offerteAvec, texte: "Sud : livraison 200 F, offerte avec un MÉGA." } };
-  var PACKS_WAVE = ["mini", "maxi", "mega"];
-  var waveSite = ui.waveSite === "S" ? "S" : "C", waveAutre = { mini: 0, maxi: 0, mega: 0 };
-  function montantWave(q, site) {
-    var base = 0; PACKS_WAVE.forEach(function (p) { base += (q[p] || 0) * PRIX[p]; });
-    var regle = LIVRAISON[site], offerte = regle.offerteAvec.some(function (p) { return (q[p] || 0) > 0; });
-    var livraison = base && !offerte ? regle.frais : 0, total = base + livraison;
-    return { base: base, livraison: livraison, total: total, wave: Math.ceil(total * (100 + WAVE_FRAIS_POUR_CENT) / 100) };
+  var PACKS_WAVE = ["mini", "maxi", "mega"], ARTICLES_WAVE = ["mini", "maxi", "mega", "nature", "nutella"];
+  /* V6.16 (D-104) : « Autre quantité » sans limite : packs ET crêpes à l'unité, livraison « selon la règle » / « offerte » / « à payer × N »,
+     montant en plus (libre) ; les 1 % de Wave sont toujours ajoutés tout seuls (arrondi au franc supérieur). */
+  var waveSite = ui.waveSite === "S" ? "S" : "C", waveAutre = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0, livraison: "regle", livraisons: 1, plus: 0 };
+  function montantWave(q, site, opt) {
+    opt = opt || {};
+    var articles = 0; ARTICLES_WAVE.forEach(function (p) { articles += (q[p] || 0) * PRIX[p]; });
+    var plus = Math.max(0, opt.plus || 0), base = articles + plus;
+    var regle = LIVRAISON[site], offerte = regle.offerteAvec.some(function (p) { return (q[p] || 0) > 0; }), mode = opt.livraison || "regle";
+    var livraison = !articles ? 0 : mode === "offerte" ? 0 : mode === "payante" ? regle.frais * Math.max(1, opt.livraisons || 1) : (offerte ? 0 : regle.frais);
+    var total = base + livraison, wave = Math.ceil(total * (100 + WAVE_FRAIS_POUR_CENT) / 100);
+    return { articles: articles, plus: plus, base: base, livraison: livraison, offerteRegle: offerte, total: total, frais: wave - total, wave: wave };
   }
   function texteWave(montant) {
     var affiche = String(montant).replace(/\B(?=(\d{3})+(?!\d))/g, ".");   // 1515 -> 1.515, comme le message de Wave
     return "Veuillez Payer Atelier Des Crêpes " + affiche + "F avec Wave en cliquant sur ce lien " + WAVE_LIEN + montant + ". Ajoutez cet expéditeur à vos contacts pour rendre le lien cliquable.";
   }
   function libelleWave(q) {
-    return PACKS_WAVE.filter(function (p) { return q[p]; }).map(function (p) { var nom = PACKS.find(function (x) { return x.id === p; }).nom; return q[p] > 1 ? q[p] + " " + nom : nom; }).join(" + ");
+    return ARTICLES_WAVE.filter(function (p) { return q[p]; }).map(function (p) {
+      var pk = PACKS.find(function (x) { return x.id === p; }), nom = pk.unite ? pk.nom : pk.nom;
+      return pk.unite || q[p] > 1 ? q[p] + " " + nom : nom;
+    }).join(" + ");
   }
+  function nbArticlesWave(q) { return ARTICLES_WAVE.reduce(function (a, p) { return a + (q[p] || 0); }, 0); }
   function combinaisonsWave(n) {   // toutes les combinaisons de n packs, de la moins chère à la plus chère
     var r = [];
     for (var a = n; a >= 0; a--) for (var b = n - a; b >= 0; b--) r.push({ mini: a, maxi: b, mega: n - a - b });
@@ -2287,8 +2305,8 @@
     b.addEventListener("click", function () { copierWave(q, b); });
     return b;
   }
-  function copierWave(q, bouton) {
-    var m = montantWave(q, waveSite), lib = libelleWave(q) + " · " + SITES[waveSite].nom + " · " + fcfa(m.wave);
+  function copierWave(q, bouton, opt) {
+    var m = montantWave(q, waveSite, opt), lib = libelleWave(q) + " · " + SITES[waveSite].nom + " · " + fcfa(m.wave);
     copier(texteWave(m.wave)).then(function (ok) {
       document.querySelectorAll(".wave-btn.copie").forEach(function (x) { x.classList.remove("copie"); var s = x.querySelector(".w-mt small"); if (s) s.textContent = "Copier"; });
       if (ok) {
@@ -2308,10 +2326,26 @@
       combinaisonsWave(n).forEach(function (q) { g.append(boutonWave(q)); });
       zone.append(g);
     });
-    var n = waveAutre.mini + waveAutre.maxi + waveAutre.mega, b = $("btnAutreWave");
+    majAutreWave();
+  }
+  function majAutreWave() {   // V6.16 : détail au franc près, 1 % Wave compris
+    var n = nbArticlesWave(waveAutre), b = $("btnAutreWave"), m = montantWave(waveAutre, waveSite, waveAutre);
     b.disabled = !n;
-    b.textContent = n ? "Copier : " + libelleWave(waveAutre) + " · " + fcfa(montantWave(waveAutre, waveSite).wave) : "Choisis les packs";
-    PACKS_WAVE.forEach(function (p) { $("qw_" + p).textContent = String(waveAutre[p]); });
+    b.textContent = n ? "Copier : " + libelleWave(waveAutre) + " · " + fcfa(m.wave) : "Choisis les packs ou les crêpes";
+    ARTICLES_WAVE.forEach(function (p) { var i = $("qw_" + p); if (i && document.activeElement !== i) i.value = String(waveAutre[p]); });
+    document.querySelectorAll("#livWave button").forEach(function (x) { x.setAttribute("aria-pressed", String(x.dataset.liv === waveAutre.livraison)); });
+    $("nbLivWave").hidden = waveAutre.livraison !== "payante";
+    var regle = LIVRAISON[waveSite];
+    $("aideLivWave").textContent = waveAutre.livraison === "regle" ? (n ? (m.offerteRegle ? "Règle " + SITES[waveSite].nom + " : livraison offerte (pack qui l’offre)." : "Règle " + SITES[waveSite].nom + " : livraison " + fcfa(regle.frais) + ".") : regle.texte)
+      : waveAutre.livraison === "offerte" ? "Livraison offerte, quelle que soit la commande." : fcfa(regle.frais) + " par livraison (" + SITES[waveSite].nom + ").";
+    var d = $("detailAutreWave"); d.replaceChildren();
+    if (!n) return;
+    var ligne = function (a, v, fort) { d.append(el("div", { class: "dw-l" + (fort ? " fort" : "") }, el("span", { text: a }), el("b", { text: v }))); };
+    ligne(libelleWave(waveAutre), fcfa(m.articles));
+    if (m.plus) ligne("Montant en plus", fcfa(m.plus));
+    ligne(waveAutre.livraison === "payante" && waveAutre.livraisons > 1 ? "Livraison × " + waveAutre.livraisons : "Livraison", m.livraison ? fcfa(m.livraison) : "offerte");
+    ligne("Frais Wave (1 %, ajoutés tout seuls)", fcfa(m.frais));
+    ligne("Le client paie", fcfa(m.wave), true);
   }
   /* QR Wave en plein écran : écran gardé allumé ; le bouton « retour » d'Android ferme le QR au lieu de quitter l'application */
   var verrouQr = null;
@@ -2333,16 +2367,39 @@
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") fermerQr(false); });
   (function construireWave() {
     var zone = $("pasWave");
-    PACKS_WAVE.forEach(function (p) {
-      var pk = PACKS.find(function (x) { return x.id === p; });
-      var moins = el("button", { type: "button", "aria-label": "Retirer un " + pk.nom, text: "−" });
-      var plus = el("button", { type: "button", "aria-label": "Ajouter un " + pk.nom, text: "+" });
-      moins.addEventListener("click", function () { waveAutre[p] = Math.max(0, waveAutre[p] - 1); rendreWave(); });
-      plus.addEventListener("click", function () { waveAutre[p] = Math.min(20, waveAutre[p] + 1); rendreWave(); });
-      zone.append(el("div", { class: "pas" }, el("div", { class: "pas-nom" }, el("b", { text: pk.nom }), el("span", { text: fcfa(PRIX[p]) })),
-        el("div", { class: "pas-ctrl" }, moins, el("output", { id: "qw_" + p, text: "0" }), plus)));
+    function entier(v) { var s = String(v == null ? "" : v).replace(/\D/g, ""); return s ? Math.min(999999, parseInt(s, 10)) : 0; }   // aucune limite pratique
+    ARTICLES_WAVE.forEach(function (p) {
+      var pk = PACKS.find(function (x) { return x.id === p; }), nom = pk.unite ? pk.nom + " à l’unité" : pk.nom;
+      var moins = el("button", { type: "button", "aria-label": "Retirer : " + nom, text: "−" });
+      var plus = el("button", { type: "button", "aria-label": "Ajouter : " + nom, text: "+" });
+      var champ = el("input", { type: "text", id: "qw_" + p, class: "pas-val", inputmode: "numeric", autocomplete: "off", "aria-label": "Nombre : " + nom, value: "0" });
+      moins.addEventListener("click", function () { waveAutre[p] = Math.max(0, waveAutre[p] - 1); majAutreWave(); });
+      plus.addEventListener("click", function () { waveAutre[p] = waveAutre[p] + 1; majAutreWave(); });
+      champ.addEventListener("input", function () { waveAutre[p] = entier(champ.value); majAutreWave(); });
+      champ.addEventListener("focus", function () { champ.select(); document.body.classList.add("clavier"); });
+      champ.addEventListener("blur", function () { champ.value = String(waveAutre[p]); document.body.classList.remove("clavier"); });
+      zone.append(el("div", { class: "pas" }, el("div", { class: "pas-nom" }, el("b", { text: nom }), el("span", { text: fcfa(PRIX[p]) })),
+        el("div", { class: "pas-ctrl" }, moins, champ, plus)));
     });
-    $("btnAutreWave").addEventListener("click", function () { if (waveAutre.mini + waveAutre.maxi + waveAutre.mega) copierWave(waveAutre, null); });
+    var seg = el("div", { class: "segmente trois", id: "livWave", role: "group", "aria-label": "Livraison" },
+      el("button", { type: "button", "data-liv": "regle", "aria-pressed": "true", text: "Selon la règle" }),
+      el("button", { type: "button", "data-liv": "offerte", "aria-pressed": "false", text: "Offerte" }),
+      el("button", { type: "button", "data-liv": "payante", "aria-pressed": "false", text: "À payer" }));
+    var nbMoins = el("button", { type: "button", "aria-label": "Une livraison de moins", text: "−" }), nbPlus = el("button", { type: "button", "aria-label": "Une livraison de plus", text: "+" });
+    var nbChamp = el("input", { type: "text", id: "qw_livraisons", class: "pas-val", inputmode: "numeric", autocomplete: "off", "aria-label": "Nombre de livraisons", value: "1" });
+    nbMoins.addEventListener("click", function () { waveAutre.livraisons = Math.max(1, waveAutre.livraisons - 1); nbChamp.value = String(waveAutre.livraisons); majAutreWave(); });
+    nbPlus.addEventListener("click", function () { waveAutre.livraisons++; nbChamp.value = String(waveAutre.livraisons); majAutreWave(); });
+    nbChamp.addEventListener("input", function () { waveAutre.livraisons = Math.max(1, entier(nbChamp.value)); majAutreWave(); });
+    nbChamp.addEventListener("blur", function () { nbChamp.value = String(waveAutre.livraisons); });
+    var plusChamp = el("input", { type: "text", id: "qw_plus", inputmode: "numeric", autocomplete: "off", placeholder: "0" });
+    plusChamp.addEventListener("input", function () { waveAutre.plus = entier(plusChamp.value); majAutreWave(); });
+    zone.append(el("span", { class: "etiquette", text: "Livraison" }), seg, el("p", { class: "aide", id: "aideLivWave" }),
+      el("div", { class: "pas", id: "nbLivWave", hidden: "" }, el("div", { class: "pas-nom" }, el("b", { text: "Nombre de livraisons" }), el("span", { text: "une par chambre" })),
+        el("div", { class: "pas-ctrl" }, nbMoins, nbChamp, nbPlus)),
+      el("label", { class: "etiquette", for: "qw_plus", text: "Montant en plus (F, facultatif)" }), plusChamp,
+      el("div", { class: "detail-wave", id: "detailAutreWave", "aria-live": "polite" }));
+    seg.addEventListener("click", function (e) { var b = e.target.closest("button[data-liv]"); if (!b) return; waveAutre.livraison = b.dataset.liv; majAutreWave(); });
+    $("btnAutreWave").addEventListener("click", function () { if (nbArticlesWave(waveAutre)) copierWave(waveAutre, null, waveAutre); });
     $("siteWave").addEventListener("click", function (e) {
       var b = e.target.closest("button[data-wsite]"); if (!b) return;
       waveSite = b.dataset.wsite; ui.waveSite = waveSite; sauverUi(); $("retourWave").textContent = ""; rendreWave();
@@ -2440,6 +2497,43 @@
     else if (e === "attente") { z.className = "etat-gh attention"; z.textContent = ghEnCours[j] ? "Envoi vers GitHub…" : "En attente d’envoi vers GitHub (nouvel essai au retour du réseau)."; }
     else { z.className = "etat-gh"; z.textContent = commandesDu(j).length ? "Pas encore sur GitHub." : ""; }
   }
+  /* V6.16 (D-103) : soirées présentes dans atelier-donnees mais PAS dans le téléphone (ex. la soirée du 10 octobre 2026, reconstituée
+     par un agent et enregistrée seulement sur GitHub ; ou un téléphone changé) : récupérées toutes seules au démarrage, sans jamais
+     écraser un jour déjà dans le téléphone. Une soirée reconstituée dont le paiement est inconnu (paye = null) mais « terminée » est
+     comptée payée (elle a été servie et encaissée) ; ses heures inconnues ne comptent pas dans les horaires. */
+  var recupEnCours = false;
+  function recupererSoireesGitHub() {
+    if (!donneesBranchees() || recupEnCours) return Promise.resolve(0);
+    recupEnCours = true;
+    var gh = donneesClient(), auj = soireeCourante(), annees = [];
+    for (var a = 2026; a <= Number(auj.slice(0, 4)); a++) annees.push(String(a));
+    return Promise.all(annees.map(function (an) { return gh.lister("commandes/" + an).catch(function () { return []; }); })).then(function (listes) {
+      var manquants = [];
+      listes.forEach(function (noms) { noms.forEach(function (nom) {
+        var j = nom.slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}\.json$/.test(nom) && j < auj && !(etat.jours[j] && etat.jours[j].commandes.length)) manquants.push(j);
+      }); });
+      return manquants.reduce(function (p, j) {
+        return p.then(function (n) {
+          return gh.lire(cheminSoiree(j)).then(function (r) {
+            if (r.statut !== 200) return n;
+            var o = JSON.parse(r.texte), liste = (o.commandes || []).map(function (c) {
+              var x = validerCommande(Object.assign({}, c, c.paye === null && c.livre ? { paye: true, tp: c.t } : {}));
+              if (x && c.heureInconnue) x.heureInconnue = true;
+              return x;
+            }).filter(Boolean);
+            if (!liste.length || (etat.jours[j] && etat.jours[j].commandes.length)) return n;
+            etat.jours[j] = { commandes: liste };
+            ecrireSuiviGh(j, { t: Date.now(), sha: r.sha, commit: null, h: empreinte(JSON.stringify(commandesDu(j))), attente: false, recupere: true });
+            return n + 1;
+          }).catch(function () { return n; });
+        });
+      }, Promise.resolve(0)).then(function (n) {
+        if (n) { sauver(); rendre(); toast(plur(n, "soirée récupérée", "soirées récupérées") + " depuis GitHub : elles sont dans le Bilan.", null, true); }
+        return n;
+      });
+    }).catch(function () { return 0; }).then(function (n) { recupEnCours = false; return n; });
+  }
   function reessayerGh() {
     if (!donneesBranchees()) return;
     Object.keys(etat.sauvegarde.jours || {}).forEach(function (j) { var g = suiviGh(j); if (g && g.attente && !ghEnCours[j]) sauverSoireeGitHub(j, true); });
@@ -2484,7 +2578,7 @@
       if (!r.verifie) throw { message: "GitHub n’a pas confirmé l’écriture." };
       depotDonnees.cle = c; ecrire(CLE_DONNEES, JSON.stringify(depotDonnees)); majInfoDonnees(); majEtatGh();
       retourDonnees("Clé acceptée : écriture vérifiée sur GitHub à " + heureDe(Date.now()) + ".", "ok");
-      chargerContactsGitHub(); chargerPersoGitHub(); reessayerGh();
+      chargerContactsGitHub(); chargerPersoGitHub(); reessayerGh(); recupererSoireesGitHub();
     }).catch(function (e) { retourDonnees((e && e.message) || "Test impossible.", "erreur"); });
   });
 
@@ -3153,7 +3247,7 @@
   }
   function envoisDemarrer() {
     $("cleDonnees").value = depotDonnees.cle; majInfoDonnees(); majEtatGh();
-    standardiserCarnet(); rendreEnvois(); chargerContactsGitHub(); chargerPersoGitHub(); reessayerGh(); setTimeout(prechargerAffiches, 4000);
+    standardiserCarnet(); rendreEnvois(); chargerContactsGitHub(); chargerPersoGitHub(); reessayerGh(); setTimeout(recupererSoireesGitHub, 2500); setTimeout(prechargerAffiches, 4000);
     window.addEventListener("online", function () { reessayerGh(); envoyerCarnetGh(false); envoyerPersoGh(false); });
     document.addEventListener("visibilitychange", function () {
       if (document.hidden) { if (carnet.sale) envoyerCarnetGh(true); if (perso.sale) envoyerPersoGh(true); clearTimeout(minuterieEnvois); envoyerEnvoisGh(true); }
