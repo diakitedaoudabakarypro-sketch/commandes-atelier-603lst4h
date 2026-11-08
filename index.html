@@ -522,6 +522,82 @@
   #choixMsg.case-cachee { width:1px !important; height:1px !important; min-height:0 !important; padding:0 !important; border:0 !important; margin:0 !important; overflow:hidden; clip-path:inset(50%); }
   .nouveau-msg { width:100%; margin:2px 0 10px; }
   .jours-msg { grid-template-columns:repeat(5, 1fr); }
+
+  /* ===== V6.14 : onglet Objectifs (D-100) ===== */
+  .navbas { grid-template-columns:repeat(7, 1fr); gap:1px; }
+  .navbas button { font-size:11px; padding:0 1px; letter-spacing:-.2px; }
+  @media (max-width:899px) {
+    body:not([data-vue="objectifs"]) #vueObjectifs { display:none; }
+    body[data-vue="objectifs"] #vueSaisir, body[data-vue="objectifs"] #vueListe, body[data-vue="objectifs"] #vueBilan,
+    body[data-vue="objectifs"] #vueWave, body[data-vue="objectifs"] #vueEnvois, body[data-vue="objectifs"] #vueMessages { display:none; }
+  }
+  @media (min-width:900px) { #vueObjectifs { grid-column:2; } }
+  .obj-soir { background:linear-gradient(160deg,var(--cacao2),var(--cacao)); color:#F6EBDC; border-radius:14px; padding:14px 16px; margin:0 0 12px; }
+  .obj-soir .lib { display:block; font-size:12px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:#E8C47E; }
+  .obj-soir .chiffre { font-size:34px; font-weight:800; line-height:1.15; font-variant-numeric:tabular-nums; margin:2px 0 4px; }
+  .obj-soir small { display:block; font-size:14px; color:#CDB9A0; margin-top:2px; }
+  .obj-soir small b { color:#F6EBDC; }
+  .obj-ecart { display:inline-block; font-weight:800; font-size:14px; padding:6px 12px; border-radius:999px; margin:0 0 12px; }
+  .obj-ecart.avance { background:rgba(47,107,31,.13); color:var(--ok); }
+  .obj-ecart.retard { background:rgba(154,52,18,.13); color:var(--alerte); }
+  .obj-global .l, .obj-pot .l { display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:14px; }
+  .obj-global .l b { font-size:16px; }
+  .obj-global .l span, .obj-pot .l span { color:var(--doux); font-variant-numeric:tabular-nums; font-size:13px; text-align:right; }
+  .obj-barre { height:12px; border-radius:999px; background:var(--gris); overflow:hidden; margin:6px 0 4px; }
+  .obj-barre i { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#D4A24C,#E8C47E); }
+  .obj-pot { margin:10px 0 0; }
+  .obj-pot .obj-barre { height:8px; }
+  .obj-graphe svg { width:100%; height:auto; display:block; overflow:visible; }
+  .obj-graphe .g-cible { stroke:var(--doux); stroke-width:1; stroke-dasharray:2 3; }
+  .obj-graphe .g-zero { stroke:var(--bord); stroke-width:1; }
+  .obj-graphe .g-prevu { fill:none; stroke:#D4A24C; stroke-width:2; stroke-dasharray:5 4; }
+  .obj-graphe .g-reel { fill:none; stroke:var(--ok); stroke-width:2.6; stroke-linejoin:round; stroke-linecap:round; }
+  .obj-graphe .g-rythme { fill:none; stroke:var(--ok); stroke-width:1.4; stroke-dasharray:1.5 3; opacity:.8; }
+  .obj-graphe .g-txt { font-size:10px; fill:var(--doux); }
+  .g-legende { display:flex; gap:14px; justify-content:center; font-size:12px; color:var(--doux); margin-top:4px; }
+  .g-legende span::before { content:""; display:inline-block; width:16px; height:0; vertical-align:middle; margin-right:5px; border-top:2px dashed #D4A24C; }
+  .g-legende .l-reel::before { border-top:3px solid var(--ok); }
+  .g-legende .l-rythme::before { border-top:2px dotted var(--ok); }
+  .obj-rythme b { color:var(--encre); }
+  .obj-jours { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:4px; }
+  .obj-jours .tete { font-size:11px; text-align:center; color:var(--doux); font-weight:800; }
+  .obj-jours button { position:relative; min-height:46px; padding:2px 0; border-radius:10px; border:1px solid var(--bord); background:var(--carte2); color:var(--encre);
+                      font-size:13px; line-height:1.05; flex-direction:column; gap:0; box-shadow:none; }
+  .obj-jours button i { font-style:normal; font-size:12px; min-height:13px; }
+  .obj-jours button.atteint { background:var(--ok); color:var(--carte); border-color:transparent; }
+  .obj-jours button.manque { background:rgba(154,52,18,.13); color:var(--alerte); }
+  .obj-jours button.repos { opacity:.45; }
+  .obj-jours button.auj { outline:2px solid var(--or); outline-offset:1px; }
+  .obj-jours button.choisi { outline:3px solid var(--encre); outline-offset:1px; }
+  .obj-jours button em { position:absolute; top:3px; right:3px; width:7px; height:7px; border-radius:50%; background:#D4A24C; }
+  .obj-jours button em.c-non { background:transparent; border:1.5px solid #D4A24C; }
+  .obj-detail { margin-top:12px; padding:12px; border-radius:14px; border:1.5px solid var(--or); background:var(--carte2); }
+  .obj-detail .etiquette { margin-top:8px; }
+  .obj-form .grille2 { display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
+  .obj-form label { display:block; font-weight:700; font-size:13px; margin:12px 0 4px; }
+  #vueObjectifs input[type=text], #vueObjectifs input[type=date] { width:100%; font-size:16px; color:var(--encre); background:var(--carte); border:1.5px solid var(--bord);
+                      border-radius:12px; padding:10px 12px; min-height:48px; font-variant-numeric:tabular-nums; }
+  #vueObjectifs input[readonly] { opacity:.6; }
+  #vueObjectifs input[aria-invalid="true"] { border-color:var(--alerte); }
+  .err-champ { display:block; color:var(--alerte); font-size:12.5px; font-weight:700; margin-top:3px; }
+  .err-champ:empty { display:none; }
+  .obj-semaine { display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; }
+  .obj-semaine button { min-height:44px; padding:0; border-radius:12px; background:var(--carte); border:1.5px solid var(--bord); }
+  .obj-semaine button[aria-pressed="true"] { background:var(--encre); color:var(--fond); border-color:var(--encre); }
+  .verrou-obj { font-size:13px; font-weight:700; color:var(--accent); margin:10px 0 0; }
+  #vueObjectifs details.outils .rang { margin:12px 0 14px; }
+  .citation { margin:0 0 14px; padding:14px 16px 12px; border-radius:14px; background:var(--carte2); border-left:4px solid var(--or); }
+  .citation q { display:block; font-family:'Playfair Display', Georgia, serif; font-style:italic; font-size:18px; line-height:1.4; color:var(--encre); quotes:"« " " »"; }
+  .citation cite { display:block; margin-top:6px; font-style:normal; font-size:12.5px; font-weight:700; color:var(--accent); letter-spacing:.2px; }
+  .obj-soir .sauter { margin-top:8px; padding-top:8px; border-top:1px solid rgba(232,196,126,.25); color:#F6EBDC; }
+  .rappel-obj { width:100%; justify-content:space-between; gap:8px; min-height:44px; margin:0 0 12px; padding:0 14px; border-radius:12px;
+                background:linear-gradient(160deg,var(--cacao2),var(--cacao)); color:#F6EBDC; font-size:14px; text-align:left; }
+  .rappel-obj b { color:#E8C47E; }
+  .rappel-obj span:last-child { flex:none; font-variant-numeric:tabular-nums; }
+  .obj-cuisine { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin:0 0 12px; font-size:13.5px; color:var(--doux); }
+  .obj-cuisine b { color:var(--encre); }
+  .obj-cuisine .retour { flex-basis:100%; }
+  .obj-cuisine .retour:empty { display:none; }
 </style>
 </head>
 <body data-vue="saisir">
@@ -547,6 +623,7 @@
   <!-- ===================== SAISIE ===================== -->
   <section class="bloc" id="vueSaisir" aria-labelledby="titreSaisie">
     <h2 id="titreSaisie"><span id="titreSaisieTexte">Nouvelle commande</span><button type="button" class="savoir" data-info="saisie">En savoir plus</button></h2>
+    <button type="button" class="rappel-obj" id="rappelObj" hidden></button>
     <div class="bandeau-edition" id="bandeauEdition" hidden><span>Modification d’une commande</span><button type="button" class="lien" id="btnAnnulerEdition">Annuler</button></div>
 
     <div class="stock-bas" id="stockBas" role="status" hidden></div>
@@ -693,6 +770,7 @@
     </div>
     <div id="detailBilan"></div>
     <div class="rang">
+      <button type="button" class="principal" id="btnBilanCuisine">Envoyer le bilan à la cuisine</button>
       <button type="button" class="principal" id="btnBilanWa">Envoyer le bilan sur WhatsApp</button>
       <button type="button" id="btnBilanCopier">Copier le bilan</button>
       <button type="button" id="btnSauveBilan">Sauvegarder le fichier du jour</button>
@@ -759,6 +837,40 @@
       <div class="rang"><button type="button" class="principal gros" id="btnAutreWave" disabled>Choisis les packs</button></div>
     </details>
   </section>
+
+  <!-- ===================== OBJECTIFS (V6.14) ===================== -->
+  <section class="bloc" id="vueObjectifs" aria-labelledby="titreObjectifs">
+    <h2 id="titreObjectifs">Objectifs<button type="button" class="savoir" data-info="objectifs">En savoir plus</button></h2>
+    <div id="zoneObj" aria-live="polite"></div>
+    <details class="outils" id="constatObj">
+      <summary>J’ai compté mon épargne</summary>
+      <p class="aide" id="infoConstat"></p>
+      <label class="etiquette" for="objConstat">Épargne réelle ce soir, tout compris (F)</label>
+      <input type="text" id="objConstat" inputmode="numeric" autocomplete="off">
+      <small class="err-champ" id="err-objConstat"></small>
+      <div class="rang"><button type="button" class="principal" id="btnConstatObj">Enregistrer</button><button type="button" class="sec" id="btnConstatEffacer">Effacer le comptage</button></div>
+    </details>
+    <details class="outils obj-form" id="formObj">
+      <summary id="titreFormObj">Fixer mes objectifs</summary>
+      <p class="verrou-obj" id="verrouObj" hidden></p>
+      <div class="grille2">
+        <div><label for="objDebut">Début</label><input type="date" id="objDebut"><small class="err-champ" id="err-objDebut"></small></div>
+        <div><label for="objFin">Fin (objectifs atteints le)</label><input type="date" id="objFin"><small class="err-champ" id="err-objFin"></small></div>
+      </div>
+      <label for="objDepart">Épargne au départ (F)</label><input type="text" id="objDepart" inputmode="numeric" autocomplete="off"><small class="err-champ" id="err-objDepart"></small>
+      <label for="objEpargne">Épargne visée (F)</label><input type="text" id="objEpargne" inputmode="numeric" autocomplete="off"><small class="err-champ" id="err-objEpargne"></small>
+      <div class="grille2">
+        <div><label for="objConges">Cagnotte congés (F)</label><input type="text" id="objConges" inputmode="numeric" autocomplete="off"><small class="err-champ" id="err-objConges"></small></div>
+        <div><label for="objInternet">Cagnotte internet (F)</label><input type="text" id="objInternet" inputmode="numeric" autocomplete="off"><small class="err-champ" id="err-objInternet"></small></div>
+        <div><label for="objStock">Stock par soir de vente (F)</label><input type="text" id="objStock" inputmode="numeric" autocomplete="off"><small class="err-champ" id="err-objStock"></small></div>
+        <div><label for="objVie">Dépenses de vie par jour (F)</label><input type="text" id="objVie" inputmode="numeric" autocomplete="off"><small class="err-champ" id="err-objVie"></small></div>
+      </div>
+      <label>Soirs de vente</label>
+      <div class="obj-semaine" id="semaineObj" role="group" aria-label="Soirs de vente"></div><small class="err-champ" id="err-semaineObj"></small>
+      <div class="rang"><button type="button" class="principal gros" id="btnEnregObj">Lancer le suivi</button></div>
+    </details>
+    <p class="aide" id="etatObj"></p>
+  </section>
 </main>
 
 <nav class="navbas" aria-label="Navigation">
@@ -768,6 +880,7 @@
   <button type="button" data-vue="wave" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v11H3zM3 10.5h18M7 14.5h4"/></svg>Wave</button>
   <button type="button" data-vue="envois" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7 2.5 2.5 7L21 3zM10 13l5-5"/></svg>Envois</button>
   <button type="button" data-vue="messages" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4zM8 9h8M8 12.5h5"/></svg>Messages</button>
+  <button type="button" data-vue="objectifs" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12h.01"/></svg>Objectifs</button>
 </nav>
 
 <div class="voile" id="voileEcrire" hidden>
@@ -884,6 +997,7 @@
 <template id="info-donnees" data-titre="Sauvegarde GitHub"><ul><li>En fin de soirée, le bouton <b>« La vente est finie »</b> (onglet Bilan) enregistre toutes les commandes du jour, numéros et paiements compris, avec le bilan, dans ton dépôt privé <b>atelier-donnees</b>.</li><li>« Sur GitHub » ne s’affiche qu’après vérification : GitHub renvoie l’empreinte du fichier, l’application la compare.</li><li>Sans réseau, l’envoi reste en attente et repart tout seul.</li><li>Les contacts de l’onglet Envois et l’historique des envois sont aussi gardés dans ce dépôt.</li><li>Cette clé ne va <b>que sur ton téléphone</b>, jamais sur celui de la cuisine.</li></ul></template>
 <template id="info-messages" data-titre="Messages"><ul><li>Touche un jour pour voir <b>son message</b> (pour les contacts ou pour le groupe) et <b>la légende de sa vidéo</b>. Aujourd’hui est choisi tout seul.</li><li>Le lundi, le mardi et le mercredi ont deux idées, qui alternent chaque semaine : celle de la semaine est signalée.</li><li><b>Copier</b> met le texte dans le presse-papiers ; <b>Envoyer</b> ouvre l’onglet Envois sur ce message (contacts un par un, ou le groupe).</li><li>Toucher le texte l’ouvre en entier.</li><li><b>Envoyés par jour</b> : ce qui est parti chaque jour (14 derniers jours) : le message, combien de contacts et à quelles heures, le groupe et l’heure. C’est l’historique des envois faits depuis l’onglet Envois.</li></ul></template>
 <template id="info-envois" data-titre="Envois"><ul><li>Ici, on <b>envoie</b>. Le message du jour est choisi tout seul ; <b>« Changer »</b> ouvre l’onglet Messages pour en prendre un autre.</li><li>Lire en entier, <b>copier</b>, <b>modifier</b> ou créer un <b>nouveau message</b> : onglet <b>Messages</b> (tes messages sont dans « Perso »). Tes textes sont gardés dans le téléphone et dans ton dépôt privé.</li><li><b>Affiches</b> : celles du message choisi sont sous le texte. Touche-en une, puis <b>Partager</b> : choisis WhatsApp, puis le groupe, un contact ou ton statut. Une affiche « groupe » part avec le message en légende. « Toutes les affiches » montre aussi celles de fin de soirée et des autres jours.</li><li>Toucher un contact permet de le <b>renommer</b>, de <b>changer son numéro</b>, de lui donner sa <b>chambre</b> ou de le supprimer. Depuis « Clients d’hier », il s’ajoute au carnet avec sa chambre.</li><li>Les contacts sont <b>rangés</b> : d’abord ceux qui ont un nom (A → Z), puis ceux qui ont une chambre (Centre A → R, puis Sud 1 → 17), enfin ceux sans nom. « Envoyer au suivant » suit cet ordre. Recherche possible par chambre : « A17 », « 6 15 ».</li><li>Tous les envois ouvrent <b>WhatsApp Business</b>.</li><li><b>Contacts</b> : « Envoyer au suivant » ouvre WhatsApp sur le prochain contact, message déjà écrit, et le coche.</li><li><b>Clients d’hier</b> : les clients de la veille qui ont laissé leur numéro, pour la relance (merci et avis).</li><li><b>Groupe</b> : le message est copié et le groupe s’ouvre ; colle-le.</li><li>Les envois du jour sont gardés dans le téléphone et dans le dépôt privé (historique).</li></ul></template>
+<template id="info-objectifs" data-titre="Objectifs"><ul><li><b>Ce soir, pour tenir la cible</b> : ce qu’il faut vendre ce soir pour atteindre tous les objectifs à la date de fin, en tenant compte de l’avance ou du retard. « Reste » se met à jour à chaque commande.</li><li>Les ventes de chaque soir sont celles du <b>Bilan</b> (ventes estimées, sans la livraison) : rien à saisir deux fois. Touche un soir pour mettre le <b>montant réel</b> encaissé.</li><li>Chaque soir coûte le <b>stock</b> (soirs de vente) ; les <b>dépenses de vie</b> comptent tous les jours, même sans vente.</li><li>L’argent mis de côté remplit les trois cagnottes <b>en même temps</b>, chacune selon sa part (épargne, congés, internet).</li><li><b>J’ai compté mon épargne</b> : le vrai montant remplace le calcul jusqu’à ce soir.</li><li>🔒 Jusqu’à la date de fin, les objectifs et les charges peuvent rester ou augmenter, <b>jamais baisser</b> ; début, fin et épargne de départ sont fixes. Après, tout se modifie et « Nouveaux objectifs » commence un autre cycle.</li><li>Les montants sont gardés dans le téléphone et dans ton dépôt privé. L’écran cuisine reçoit seulement les pourcentages, les cagnottes congés et internet et les soirs atteints, jamais les ventes ni les charges ; un point doré montre les soirs cochés en cuisine.</li></ul></template>
 <template id="info-bilan" data-titre="Bilan"><ul><li>Montants estimés avec les prix des packs (MINI 500 F, MAXI 800 F, MÉGA 1 500 F, Nature 150 F, Nutella 200 F), <b>sans les frais de livraison</b>.</li><li>Les paiements sont ceux que tu as marqués « Payé ».</li></ul></template>
 <template id="info-wave" data-titre="Paiement Wave"><ul><li><b>QR Wave</b> : plein écran, même sans internet. Le client scanne avec son application Wave et saisit le montant.</li><li><b>Liens</b> : choisis le site, puis touche ce que la chambre a commandé. Le message de paiement est copié, montant compris : packs + livraison + 1 % Wave.</li><li>Une seule livraison par chambre. <b>Centre</b> : 100 F, offerte dès qu’il y a un MAXI ou un MÉGA. <b>Sud</b> : 200 F, offerte avec un MÉGA.</li><li>Crêpes à l’unité : crée le lien dans l’application Wave.</li></ul></template>
 <template id="info-ecrire" data-titre="Écrire au client"><p>WhatsApp s’ouvre sur la conversation du client, message déjà écrit : il reste à appuyer sur « Envoyer ». Le contact n’est pas enregistré dans ton téléphone.</p><p>C’est toujours <b>WhatsApp Business</b> qui s’ouvre.</p></template>
@@ -893,6 +1007,7 @@
 <script src="relais-github.js"></script>
 <script src="messages-envois.js"></script>
 <script src="affiches.js"></script>
+<script src="citations.js"></script>
 <script>
 (function () {
   "use strict";
@@ -1037,6 +1152,8 @@
     $("alerteStockage").hidden = stockageOK;
     majEtatSauve();
     cuisineProgrammer();
+    objProgrammer();
+    autoGhProgrammer();
   }
   function secoursIdb() {   // localStorage vide mais copie de secours pleine : on restaure ; ensuite seulement on écrit dans la copie
     var nb = function (x) { return Object.keys(x.jours).reduce(function (a, j) { return a + x.jours[j].commandes.length; }, 0) + x.corbeille.length; };
@@ -1626,7 +1743,7 @@
     if (b.premiere) l.push("Première commande à " + heureDe(b.premiere) + " · dernière à " + heureDe(b.derniere) + (b.delaiMoyen != null ? " · livraison en moyenne " + b.delaiMoyen + " min" : ""));
     return l.join("\n");
   }
-  function rendre() { rendreEntete(); rendreListe(); rendreBilan(); majForm(); majZoneRestaure(); }
+  function rendre() { rendreEntete(); rendreListe(); rendreBilan(); majForm(); majZoneRestaure(); if (typeof objCui !== "undefined" && objCui) rendreObjectifs(); }
 
   /* ---------- Actions sur la liste ---------- */
   $("liste").addEventListener("click", actionListe);
@@ -1662,6 +1779,7 @@
   function choisirVue(v) {
     ui.vue = v; document.body.dataset.vue = v; sauverUi();
     if (v === "messages" && typeof rendreMessages === "function") { try { rendreMessages(); } catch (e) {} }
+    if (v === "objectifs" && typeof rendreObjectifs === "function") { try { rendreObjectifs(); lireCochesCuisine(); } catch (e) {} }
     document.querySelectorAll(".navbas button").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.vue === v)); });
     window.scrollTo({ top: 0 });
   }
@@ -2250,9 +2368,10 @@
     if (ghEnCours[j]) return Promise.resolve(false);
     var cmds = commandesDu(j);
     if (!cmds.length) { if (!silencieux) retourGh("Aucune commande ce jour-là : rien à sauvegarder.", "erreur"); return Promise.resolve(false); }
-    var h = empreinte(JSON.stringify(cmds)), b = bilanDe(cmds);
-    var texte = JSON.stringify({ application: "ATELIER-COMMANDES", type: "soiree", version: 3, jour: j, enregistreLe: new Date().toISOString(), source: "application",
-      confidentiel: cmds.some(function (c) { return c.tel; }), commandes: cmds, bilan: b }, null, 1);
+    var fini = soireeTerminee(j), h = empreinteSoiree(j), b = bilanDe(cmds), cl = suiviLire(j).cloture || null;
+    var texte = JSON.stringify({ application: "ATELIER-COMMANDES", type: "soiree", version: 4, jour: j,
+      etat: fini ? "terminee" : "en_cours", clotureLe: cl ? new Date(cl).toISOString() : null, enregistreLe: new Date().toISOString(), source: "application",
+      confidentiel: cmds.some(function (c) { return c.tel; }), commandes: cmds, bilan: b, montants: montantsSoiree(cmds), objectif: objectifSoiree(j) }, null, 1);
     var avant = suiviGh(j) || {}; ghEnCours[j] = true;
     ecrireSuiviGh(j, { t: avant.t || 0, sha: avant.sha || null, commit: avant.commit || null, h: avant.h || null, attente: true }); sauver(); majEtatGh();
     var gh = donneesClient(), chemin = cheminSoiree(j);
@@ -2266,7 +2385,7 @@
     var shaConnu = avant.sha ? Promise.resolve(avant.sha) : gh.lire(chemin).then(function (r) { return r.sha; });
     return shaConnu.then(function (sha) { return essai(sha, false); }).then(function (r) {
       if (!r.verifie) throw { code: "autre", message: "GitHub n’a pas confirmé l’enregistrement." };
-      ecrireSuiviGh(j, { t: Date.now(), sha: r.sha, commit: r.commit, h: h, attente: false });
+      ecrireSuiviGh(j, { t: Date.now(), sha: r.sha, commit: r.commit, h: h, attente: false, v: 4, fini: fini });
       delete ghEnCours[j]; sauver(); majEtatGh(); rendreBilan();
       if (!silencieux) { retourGh("Sauvegardé sur GitHub et vérifié à " + heureDe(Date.now()) + ".", "ok"); vibrer(30); }
       return true;
@@ -2276,11 +2395,33 @@
       return false;
     });
   }
+  /* V6.14 (demande de l'équipe : « chaque envoi doit être bien enregistré et jamais perdu ») : la soirée part aussi TOUTE SEULE sur
+     GitHub, 2 min après la dernière modification et dès que l'application passe en arrière-plan (WhatsApp ouvert, écran éteint) :
+     le bouton « La vente est finie » n'est plus indispensable. Même écriture vérifiée (empreinte) ; échec → « en attente », nouvel essai. */
+  var minuterieAutoGh = null;
+  function autoGhProgrammer(delai) {
+    if (typeof ghEnCours === "undefined" || !ghEnCours) return;   // appel pendant le chargement, avant ce module
+    clearTimeout(minuterieAutoGh); minuterieAutoGh = setTimeout(autoGh, delai == null ? 120000 : delai);
+  }
+  function autoGh() {
+    if (!donneesBranchees()) return;
+    var s = soireeCourante(), jours = {}, reste = false;
+    [s, etat.jourVu, isoPlus(s, -1)].forEach(function (j) { jours[j] = 1; });
+    Object.keys(jours).forEach(function (j) {
+      if (!commandesDu(j).length || etatGhJour(j) === "ok") return;
+      reste = true; if (!ghEnCours[j]) sauverSoireeGitHub(j, true);
+    });
+    if (reste) autoGhProgrammer(120000);   // tant qu'un jour n'est pas sur GitHub, on réessaie
+  }
+  document.addEventListener("visibilitychange", function () { if (document.hidden) autoGhProgrammer(0); });
+  window.addEventListener("online", function () { autoGhProgrammer(2000); });
   function retourGh(message, type) { retourEn("retourGh", message, type); }
   function etatGhJour(j) {   // "ok" | "modifie" | "attente" | "aucun"
     var g = suiviGh(j); if (!g) return "aucun";
     if (g.attente) return "attente";
-    return g.h === empreinte(JSON.stringify(commandesDu(j))) ? "ok" : "modifie";
+    if (g.h === empreinteSoiree(j)) return "ok";
+    if (!g.v && g.h === empreinte(JSON.stringify(commandesDu(j))) && j < isoPlus(soireeCourante(), -1)) return "ok";   // ancienne sauvegarde (version 3) d'un jour passé, inchangé
+    return "modifie";
   }
   function majEtatGh() {
     var j = etat.jourVu, g = suiviGh(j), e = etatGhJour(j), z = $("etatGh");
@@ -2291,7 +2432,7 @@
     if (!depotDonnees.cle) { z.textContent = "Sauvegarde GitHub non branchée (Outils)."; z.className = "etat-gh"; return; }
     if (e === "ok") {
       z.className = "etat-gh ok";
-      z.append("Sur GitHub depuis " + heureDe(g.t) + " (" + frDate(ymd(new Date(g.t))) + ")");
+      z.append("Sur GitHub depuis " + heureDe(g.t) + " (" + frDate(ymd(new Date(g.t))) + ")" + (g.fini ? " · soirée terminée" : g.v ? " · en cours (sauvegarde automatique)" : ""));
       if (g.commit) z.append(" · ", el("a", { href: "https://github.com/" + DONNEES_PROPRIETAIRE + "/" + DONNEES_DEPOT + "/commit/" + g.commit, target: "_blank", rel: "noopener", text: "version " + g.commit.slice(0, 7) }));
     }
     else if (e === "modifie") { z.className = "etat-gh attention"; z.textContent = "Modifié depuis la sauvegarde de " + heureDe(g.t) + " : appuie à nouveau."; }
@@ -2302,7 +2443,32 @@
     if (!donneesBranchees()) return;
     Object.keys(etat.sauvegarde.jours || {}).forEach(function (j) { var g = suiviGh(j); if (g && g.attente && !ghEnCours[j]) sauverSoireeGitHub(j, true); });
   }
-  $("btnFinSoiree").addEventListener("click", function () { sauverSoireeGitHub(etat.jourVu, false); });
+  $("btnFinSoiree").addEventListener("click", function () {   // V6.14 : « La vente est finie » clôt la soirée (etat « terminee » dans le fichier)
+    var j = etat.jourVu, s = suiviLire(j);
+    if (!s.cloture && j === soireeCourante()) { s.cloture = Date.now(); suiviEcrire(j, s); sauver(); }
+    sauverSoireeGitHub(j, false);
+  });
+  /* V6.14 : fichier de soirée complet (version 4), pour qu'un agent puisse faire un bilan de n'importe quelle période :
+     etat « en_cours » (sauvegardes automatiques pendant la vente) ou « terminee » (« La vente est finie », ou soirée passée : à partir de 4 h) ;
+     montants au franc près (packs, livraisons offertes ou payées, payé, à encaisser) ; objectif du soir et réponse de la cuisine. */
+  function soireeTerminee(j) { return j < soireeCourante() || !!suiviLire(j).cloture; }
+  function empreinteSoiree(j) { return empreinte(JSON.stringify(commandesDu(j)) + (soireeTerminee(j) ? "|terminee" : "|en_cours") + "|" + JSON.stringify(objectifSoiree(j))); }   // la réponse de la cuisine arrivée après la sauvegarde la refait
+  function montantsSoiree(cmds) {
+    var m = { packs: 0, livraisons: 0, livraisonsOffertes: 0, total: 0, paye: 0, aEncaisser: 0, nonLivreNonPaye: 0 };
+    cmds.forEach(function (c) {
+      var x = montantCommande(c, cmds);
+      m.packs += x.base; m.livraisons += x.livraison; m.total += x.total;
+      if (x.offerte) m.livraisonsOffertes++;
+      if (c.paye) m.paye += x.total; else if (c.livre) m.aEncaisser += x.total; else m.nonLivreNonPaye += x.total;
+    });
+    return m;
+  }
+  function objectifSoiree(j) {
+    if (typeof obj === "undefined" || !obj || !obj.cycle || j < obj.cycle.debut || j > obj.cycle.fin) return null;
+    var r = calculObj(obj.cycle, soireeCourante()), x = r.jours.find(function (d) { return d.j === j; }), c = objCui.coches[j];
+    return { objectifDuSoir: r.objSoir, ventesRetenues: ventesSoir(j), montantReelSaisi: obj.reels[j] != null, soirDeVente: !!(x && x.vente),
+      atteint: !!(x && x.vente && x.ventes >= r.objSoir), reponseCuisine: c ? (c.atteint ? "atteint" : "pas_encore") : null };
+  }
   function retourDonnees(message, type) { retourEn("retourDonnees", message, type); }
   function majInfoDonnees() { $("infoDonnees").textContent = depotDonnees.cle ? "Branchée : dépôt privé « " + DONNEES_DEPOT + " »." : "Non branchée."; }
   $("btnCleDonnees").addEventListener("click", function () {
@@ -2632,8 +2798,8 @@
     return "intent://" + url.replace(/^https?:\/\//, "") + "#Intent;scheme=https;package=com.whatsapp.w4b;S.browser_fallback_url=" + encodeURIComponent(url) + ";end";
   }
   function ouvrirLien(url) { if (/^intent:/.test(url)) location.href = url; else window.open(url, "_blank", "noopener"); }
-  function noterEnvoi(cle, cible) { var d = envoisDuJour(); (d[cle] = d[cle] || {})[cible] = Date.now(); envoisSale = true; sauverEnvois(); programmerEnvoisGh(); }
-  function annulerEnvoi(cle, cible) { var d = envoisDuJour(); if (d[cle]) delete d[cle][cible]; envoisSale = true; sauverEnvois(); programmerEnvoisGh(); }
+  function noterEnvoi(cle, cible) { var d = envoisDuJour(); (d[cle] = d[cle] || {})[cible] = Date.now(); envoisSale = true; marquerEnvoisAttente(); sauverEnvois(); programmerEnvoisGh(); }
+  function annulerEnvoi(cle, cible) { var d = envoisDuJour(); if (d[cle]) delete d[cle][cible]; envoisSale = true; marquerEnvoisAttente(); sauverEnvois(); programmerEnvoisGh(); }
   function envoyerA(c) {
     var m = variante(sel.base, "contacts"); if (!m) return;
     ouvrirLien(lienWhatsApp(c.tel, m.texte));
@@ -2956,13 +3122,15 @@
       carnet.chargeLe = carnet.ok = Date.now(); carnet.erreur = null; sauverCarnet(); standardiserCarnet(); rendreEnvois();
     }).catch(function (e) { carnet.erreur = { message: ((e && e.message) || "erreur") + " (copie du téléphone utilisée)" }; rendreEnvois(); });
   }
-  var shaEnvois = {}, envoisSale = false;
+  var CLE_ENVOIS_ATTENTE = "atelier_envois_attente_v1";   // V6.14 : jour dont l'historique n'est pas encore confirmé par GitHub
+  var shaEnvois = {}, envoisSale = !!lire(CLE_ENVOIS_ATTENTE);
   function programmerEnvoisGh() { clearTimeout(minuterieEnvois); minuterieEnvois = setTimeout(function () { envoyerEnvoisGh(false); }, 3000); }
   function envoyerEnvoisGh(garder) {
     if (!donneesBranchees() || !envoisSale) return Promise.resolve();
     envoisSale = false;
-    var j = soireeCourante(), chemin = "envois/" + j.slice(0, 4) + "/" + j + ".json", gh = donneesClient();
-    var d = envoisDuJour(), compte = 0; Object.keys(d).forEach(function (k) { compte += Object.keys(d[k]).length; });
+    var attente = lire(CLE_ENVOIS_ATTENTE) || "", j = /^\d{4}-\d{2}-\d{2}$/.test(attente) && envois.jours[attente] ? attente : soireeCourante();
+    var chemin = "envois/" + j.slice(0, 4) + "/" + j + ".json", gh = donneesClient();
+    var d = envois.jours[j] || {}, compte = 0; Object.keys(d).forEach(function (k) { compte += Object.keys(d[k]).length; });
     var texte = JSON.stringify({ application: "ATELIER-ENVOIS", version: 1, jour: j, majLe: new Date().toISOString(), envois: d }, null, 1);
     var essai = function (sha, deuxieme) {
       return gh.ecrire(chemin, texte, sha, "Envois du " + j + " : " + compte, garder).catch(function (e) {
@@ -2971,7 +3139,16 @@
       });
     };
     var shaConnu = shaEnvois[j] !== undefined ? Promise.resolve(shaEnvois[j]) : gh.lire(chemin).then(function (r) { return r.sha; });
-    return shaConnu.then(function (sha) { return essai(sha, false); }).then(function (r) { if (!r.verifie) throw {}; shaEnvois[j] = r.sha; }).catch(function () { shaEnvois[j] = undefined; envoisSale = true; });
+    return shaConnu.then(function (sha) { return essai(sha, false); }).then(function (r) {
+      if (!r.verifie) throw {};
+      shaEnvois[j] = r.sha;
+      if (lire(CLE_ENVOIS_ATTENTE) === j) ecrire(CLE_ENVOIS_ATTENTE, "");
+      if (j !== soireeCourante() && envois.jours[soireeCourante()]) { envoisSale = true; marquerEnvoisAttente(); programmerEnvoisGh(); }   // l'ancien jour est passé : au tour d'aujourd'hui
+    }).catch(function () { shaEnvois[j] = undefined; envoisSale = true; ecrire(CLE_ENVOIS_ATTENTE, j); clearTimeout(minuterieEnvois); minuterieEnvois = setTimeout(function () { envoyerEnvoisGh(false); }, 30000); });
+  }
+  function marquerEnvoisAttente() {   // garde le jour à envoyer ; un jour plus ancien encore en attente passe d'abord
+    var a = lire(CLE_ENVOIS_ATTENTE) || "";
+    if (!a || a > soireeCourante() || !envois.jours[a]) ecrire(CLE_ENVOIS_ATTENTE, soireeCourante());
   }
   function envoisDemarrer() {
     $("cleDonnees").value = depotDonnees.cle; majInfoDonnees(); majEtatGh();
@@ -3021,6 +3198,450 @@
   $("voileCal").addEventListener("click", function (e) { if (e.target === $("voileCal")) fermerCalendrier(); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("voileCal").hidden) fermerCalendrier(); });
 
+
+  /* ---------- Onglet Objectifs (V6.14, D-100) ----------
+     Un cycle d'objectifs financiers : épargne de départ, épargne visée, cagnotte congés, cagnotte internet, charges (stock par soir de vente,
+     dépenses de vie par jour), soirs de vente. Les montants sont saisis UNE FOIS dans cet onglet : jamais écrits dans ce fichier (public).
+     Ventes de chaque soir = « Ventes estimées » du Bilan (bilanDe → caEstime), corrigeables par « Montant réel » : rien n'est saisi deux fois.
+     Copies : téléphone (atelier_objectifs_v1) + dépôt privé atelier-donnees (objectifs.json, comme messages-perso.json).
+     Écran cuisine : résumé SANS ventes ni charges (pourcentages, cagnottes congés et internet, soirs atteints) dans objectifs/suivi.json
+     du dépôt atelier-cuisine ; la cuisine coche l'objectif du soir dans objectifs/coches.json (lu ici, point doré sur le soir).
+     Verrou : jusqu'à la date de fin incluse, aucun objectif ni aucune charge ne baisse ; début, fin et épargne de départ sont fixes.
+     Après la fin : tout se modifie ; « Nouveaux objectifs » range le cycle terminé dans l'historique. */
+  var CLE_OBJ = "atelier_objectifs_v1", CHEMIN_OBJ = "objectifs.json";
+  var obj = { cycle: null, reels: {}, constat: null, historique: [], sha: null, sale: false, rev: 0, ok: 0, erreur: null };
+  try {
+    var ob = JSON.parse(lire(CLE_OBJ) || "{}");
+    if (ob && typeof ob === "object") { obj = Object.assign(obj, ob, { erreur: null }); obj.reels = obj.reels || {}; obj.historique = Array.isArray(obj.historique) ? obj.historique : []; }
+  } catch (e) {}
+  var objCui = { coches: {}, etag: null, envoye: "", sha: undefined, enCours: false, minuterie: null, lecture: false };
+  var objSel = { jour: null, semaine: null };
+  var JOURS_LETTRES = ["D", "L", "M", "M", "J", "V", "S"], ORDRE_SEMAINE = [1, 2, 3, 4, 5, 6, 0];
+  function sauverObj() { ecrire(CLE_OBJ, JSON.stringify({ cycle: obj.cycle, reels: obj.reels, constat: obj.constat, historique: obj.historique, sha: obj.sha, sale: obj.sale, rev: obj.rev, ok: obj.ok })); }
+  function isoPlus(iso, n) { var d = dateDe(iso); d.setDate(d.getDate() + n); return ymd(d); }
+  function joursDe(a, b) { var r = [], d = a; while (d <= b && r.length < 400) { r.push(d); d = isoPlus(d, 1); } return r; }
+  function verrouObj(cy) { return !!cy && soireeCourante() <= cy.fin; }
+  function ventesSoir(j) {   // « Montant réel » s'il a été saisi, sinon les ventes estimées du Bilan
+    if (obj.reels[j] != null) return obj.reels[j];
+    var c = etat.jours[j] ? etat.jours[j].commandes : [];
+    return c.length ? bilanDe(c).caEstime : 0;
+  }
+  function arrondi50(n) { return Math.ceil(n / 50) * 50; }
+  function besoinObj(cy) { return Math.max(0, cy.cibles.epargne - cy.epargneDepart) + cy.cibles.conges + cy.cibles.internet; }
+  function calculObj(cy, auj) {
+    var jours = joursDe(cy.debut, cy.fin);
+    var vend = function (j) { return cy.joursVente.indexOf(dateDe(j).getDay()) >= 0; };
+    var charge = function (j) { return cy.charges.vie + (vend(j) ? cy.charges.stock : 0); };
+    var besoin = besoinObj(cy), nbVente = jours.filter(vend).length;
+    var totalCharges = jours.reduce(function (a, j) { return a + charge(j); }, 0);
+    var objSoir = nbVente ? arrondi50((besoin + totalCharges) / nbVente) : 0;   // ventes à faire chaque soir de vente, fixé par les objectifs
+    var c = obj.constat && obj.constat.date >= cy.debut && obj.constat.date <= cy.fin && obj.constat.date <= auj ? obj.constat : null;
+    var finFermee = c && c.date >= auj ? c.date : isoPlus(auj, -1);   // soirs terminés (le comptage d'aujourd'hui clôt la soirée)
+    var acquis = c ? c.montant - cy.epargneDepart : 0, plan = 0, planFin = 0, ventesPassees = 0, soirsPasses = 0;
+    var serie = [], liste = [];
+    jours.forEach(function (j, i) {
+      var v = ventesSoir(j), ferme = j <= finFermee;
+      planFin += (vend(j) ? objSoir : 0) - charge(j);
+      if (ferme) {
+        if (!c || j > c.date) acquis += v - charge(j);
+        plan = planFin;
+        if (vend(j)) { ventesPassees += v; soirsPasses++; }
+        serie.push({ i: i, acquis: acquis });
+      }
+      var statut = !vend(j) ? "repos" : ferme ? (v >= objSoir ? "atteint" : "manque") : j === auj ? (v >= objSoir ? "atteint" : "encours") : "avenir";
+      liste.push({ j: j, i: i, vente: vend(j), ventes: v, statut: statut, plan: planFin });
+    });
+    var restants = jours.filter(function (j) { return j > finFermee; });
+    var soirsRestants = restants.filter(vend).length, chargesRestantes = restants.reduce(function (a, j) { return a + charge(j); }, 0);
+    var ceSoirVend = restants[0] === auj && vend(auj), ventesAuj = restants.indexOf(auj) >= 0 ? ventesSoir(auj) : 0;
+    var manque = besoin - acquis + chargesRestantes;
+    var ceSoir = soirsRestants ? Math.max(0, arrondi50(manque / soirsRestants)) : 0;   // pour finir pile à l'objectif, à partir de ce soir
+    var moyenne = soirsPasses ? Math.round(ventesPassees / soirsPasses) : null, projection = null, dateAtteinte = null;
+    if (moyenne != null) {
+      projection = acquis;
+      if (acquis >= besoin) dateAtteinte = finFermee;
+      restants.forEach(function (j) { projection += (vend(j) ? moyenne : 0) - charge(j); if (dateAtteinte == null && projection >= besoin) dateAtteinte = j; });
+    }
+    var frac = besoin ? Math.max(0, Math.min(1, acquis / besoin)) : 1, besoinEp = Math.max(0, cy.cibles.epargne - cy.epargneDepart);
+    var pots = {
+      epargne: acquis >= 0 ? cy.epargneDepart + Math.round(besoinEp * frac) : cy.epargneDepart + acquis,
+      conges: Math.round(cy.cibles.conges * frac), internet: Math.round(cy.cibles.internet * frac)
+    };
+    return { jours: liste, serie: serie, besoin: besoin, objSoir: objSoir, acquis: acquis, plan: plan, ecart: acquis - plan, finFermee: finFermee,
+      soirsRestants: soirsRestants, chargesRestantes: chargesRestantes, ceSoir: ceSoir, ceSoirVend: ceSoirVend, ventesAuj: ventesAuj, moyenne: moyenne, projection: projection, dateAtteinte: dateAtteinte,
+      pourcent: Math.round(frac * 100), pots: pots, termine: auj > cy.fin, avant: auj < cy.debut, constat: c, nbVente: nbVente };
+  }
+  /* Citation du jour (citations.js, une seule liste pour l'application, la cuisine et la fiche) ; « r » : soirs difficiles */
+  function citationDuJour(j, rattrapage) {
+    var l = window.CITATIONS || []; if (!l.length) return null;
+    if (rattrapage) { var r = l.filter(function (c) { return c.r; }); if (r.length) l = r; }
+    var base = obj.cycle ? obj.cycle.debut : "2026-01-01", i = Math.round((dateDe(j) - dateDe(base)) / 86400000);
+    return l[((i % l.length) + l.length) % l.length];
+  }
+  function blocCitation(c) { return c ? el("figure", { class: "citation" }, el("q", { text: c.t }), el("cite", { text: c.a })) : null; }
+  function majRappelObj(r) {   // bandeau de l'onglet Saisir : l'objectif reste sous les yeux pendant la vente
+    var b = $("rappelObj"); if (!b) return;
+    if (!r || r.termine || r.avant) { b.hidden = true; return; }
+    b.hidden = false; b.replaceChildren();
+    if (r.ceSoirVend) {
+      var reste = Math.max(0, r.ceSoir - r.ventesAuj);
+      b.append(el("span", {}, "🎯 Ce soir ", el("b", { text: fcfa(r.ceSoir) }), reste ? " · reste " + fcfa(reste) : " · atteint ✓"), el("span", { text: r.pourcent + " %" }));
+    } else b.append(el("span", {}, "🎯 Prochain soir ", el("b", { text: fcfa(r.ceSoir) })), el("span", { text: r.pourcent + " %" }));
+  }
+  $("rappelObj").addEventListener("click", function () { choisirVue("objectifs"); });
+  function enPacks(f) {   // « soit environ 3 MÉGA ou 5 MAXI »
+    if (f <= 0) return "";
+    return "soit environ " + Math.ceil(f / PRIX.mega) + " MÉGA ou " + Math.ceil(f / PRIX.maxi) + " MAXI";
+  }
+  function barreObj(frac) { var b = el("div", { class: "obj-barre" }), i = el("i"); i.style.width = Math.max(0, Math.min(100, frac * 100)).toFixed(1) + "%"; b.append(i); return b; }
+  function potObj(nom, actuel, cible, depart) {
+    var frac = cible - (depart || 0) > 0 ? (actuel - (depart || 0)) / (cible - (depart || 0)) : 1;
+    return el("div", { class: "obj-pot" }, el("div", { class: "l" }, el("b", { text: nom }), el("span", { text: fcfa(actuel) + " / " + fcfa(cible) })), barreObj(frac));
+  }
+  function grapheObj(cy, r) {   // prévu (pointillé doré) / réel (trait plein) / à ce rythme (pointillé fin) ; ligne de l'objectif
+    var n = r.jours.length, W = 320, H = 150, g = 26, d = 8;
+    var proj = []; if (r.moyenne != null) { var p = r.acquis; r.jours.forEach(function (x) { if (x.j > r.finFermee) { p += (x.vente ? r.moyenne : 0) - (cy.charges.vie + (x.vente ? cy.charges.stock : 0)); proj.push({ i: x.i, v: p }); } }); }
+    var vals = [0, r.besoin].concat(r.jours.map(function (x) { return x.plan; }), r.serie.map(function (s) { return s.acquis; }), proj.map(function (s) { return s.v; }));
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals) || 1;
+    var X = function (i) { return g + (n > 1 ? i / (n - 1) : 0) * (W - g - d); }, Y = function (v) { return d + (1 - (v - min) / (max - min || 1)) * (H - 2 * d - 12); };
+    var ligne = function (pts) { return pts.map(function (q, k) { return (k ? "L" : "M") + X(q[0]).toFixed(1) + " " + Y(q[1]).toFixed(1); }).join(" "); };
+    var NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "Trajectoire : " + fcfa(Math.max(0, r.acquis)) + " mis de côté sur " + fcfa(r.besoin));
+    var ajout = function (tag, a) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); svg.append(e); return e; };
+    ajout("line", { x1: g, x2: W - d, y1: Y(r.besoin), y2: Y(r.besoin), class: "g-cible" });
+    ajout("text", { x: g, y: Y(r.besoin) - 4, class: "g-txt" }).textContent = "Objectif " + fcfa(r.besoin);
+    if (min < 0) ajout("line", { x1: g, x2: W - d, y1: Y(0), y2: Y(0), class: "g-zero" });
+    ajout("path", { d: ligne([[0, 0]].concat(r.jours.map(function (x) { return [x.i, x.plan]; }))), class: "g-prevu" });
+    if (proj.length && r.serie.length) ajout("path", { d: ligne([[r.serie[r.serie.length - 1].i, r.acquis]].concat(proj.map(function (q) { return [q.i, q.v]; }))), class: "g-rythme" });
+    if (r.serie.length) ajout("path", { d: ligne([[0, 0]].concat(r.serie.map(function (s) { return [s.i, s.acquis]; }))), class: "g-reel" });
+    ajout("text", { x: g, y: H - 2, class: "g-txt" }).textContent = frDate(cy.debut).slice(0, 5);
+    ajout("text", { x: W - d, y: H - 2, class: "g-txt", "text-anchor": "end" }).textContent = frDate(cy.fin).slice(0, 5);
+    var leg = el("div", { class: "g-legende" }, el("span", { class: "l-prevu", text: "Prévu" }), el("span", { class: "l-reel", text: "Réel" }));
+    if (proj.length) leg.append(el("span", { class: "l-rythme", text: "À ce rythme" }));
+    return el("div", { class: "obj-graphe" }, svg, leg);
+  }
+  function rendreObjectifs() {
+    var z = $("zoneObj"); if (!z) return;
+    var cy = obj.cycle, auj = soireeCourante();
+    z.replaceChildren();
+    $("titreFormObj").textContent = !cy ? "Fixer mes objectifs" : verrouObj(cy) ? "Modifier les objectifs" : "Nouveaux objectifs";
+    $("constatObj").hidden = !cy;
+    remplirFormObj();
+    if (!cy) {
+      majRappelObj(null);
+      z.append(el("div", { class: "vide" }, el("b", { text: "Aucun objectif pour l’instant" }),
+        "Ouvre « Fixer mes objectifs » plus bas : épargne de départ, objectifs, charges. Le reste se calcule avec les ventes du Bilan."));
+      majEtatObj(); return;
+    }
+    var r = calculObj(cy, auj);
+    majRappelObj(r);
+    var difficile = r.ceSoirVend && r.ventesAuj === 0 && r.serie.length && r.ecart < 0;
+    if (!r.termine) z.append(blocCitation(citationDuJour(auj, difficile)));
+    // 1. Ce soir
+    var soir = el("div", { class: "obj-soir" });
+    if (r.termine) {
+      soir.append(el("span", { class: "lib", text: "Cycle terminé le " + frDate(cy.fin) }),
+        el("div", { class: "chiffre", text: r.acquis >= r.besoin ? "Objectifs atteints" : r.pourcent + " % atteint" }),
+        el("small", {}, el("b", { text: fcfa(Math.max(0, r.acquis)) }), " mis de côté sur " + fcfa(r.besoin) + ". Fixe de nouveaux objectifs plus bas."));
+    } else if (r.avant) {
+      soir.append(el("span", { class: "lib", text: "Départ " + nomJour(cy.debut) }),
+        el("div", { class: "chiffre", text: fcfa(r.objSoir) }), el("small", { text: "à vendre chaque soir de vente pour atteindre les objectifs le " + frDate(cy.fin) + "." }));
+    } else if (!r.ceSoirVend) {
+      soir.append(el("span", { class: "lib", text: r.finFermee >= auj ? "Soirée comptée" : "Pas de vente prévue ce soir" }),
+        el("div", { class: "chiffre", text: fcfa(r.ceSoir) }), el("small", { text: "à vendre le prochain soir de vente pour rester sur la cible." }));
+    } else {
+      var reste = Math.max(0, r.ceSoir - r.ventesAuj);
+      soir.append(el("span", { class: "lib", text: "Ce soir, pour tenir la cible" }), el("div", { class: "chiffre", text: fcfa(r.ceSoir) }));
+      if (reste) soir.append(el("small", {}, "Déjà vendu ", el("b", { text: fcfa(r.ventesAuj) }), " · reste ", el("b", { text: fcfa(reste) }), " (" + enPacks(reste) + ")."));
+      else soir.append(el("small", {}, el("b", { text: "Objectif du soir atteint ✓" }), " " + fcfa(r.ventesAuj) + " vendus."));
+      if (r.ceSoir !== r.objSoir) soir.append(el("small", { text: "Objectif de base : " + fcfa(r.objSoir) + " par soir de vente." }));
+      if (!r.ventesAuj && r.soirsRestants > 1) {   // tenté de ne pas vendre ce soir ? ce que ça coûte aux soirs suivants (le stock n'est pas acheté, la vie continue)
+        var sans = arrondi50((r.besoin - r.acquis + r.chargesRestantes - cy.charges.stock) / (r.soirsRestants - 1));
+        soir.append(el("small", { class: "sauter" }, "Sauter ce soir : ", el("b", { text: "+" + fcfa(Math.max(0, sans - r.ceSoir)) }), " à vendre chacun des " + plur(r.soirsRestants - 1, "soir restant", "soirs restants") + " (" + fcfa(sans) + " par soir)."));
+      }
+    }
+    var jb = r.finFermee >= auj || r.ceSoirVend ? auj : r.finFermee, cc = objCui.coches[jb];
+    var bloc = el("div", { class: "obj-cuisine" });
+    if (objCui.bilanEnvoye && objCui.bilanEnvoye.jour === jb) bloc.append(el("span", { text: "Bilan du " + frDate(jb).slice(0, 5) + " envoyé à la cuisine à " + heureDe(objCui.bilanEnvoye.t) + "." }));
+    if (cc) bloc.append(el("b", { text: "Cuisine : " + (cc.atteint ? "« Objectif atteint » 🎉" : "« Pas encore, on rattrape »") }));
+    var bb = el("button", { type: "button", class: "sec fort", id: "btnObjBilanCuisine", text: "Envoyer le bilan à la cuisine" });
+    bloc.append(bb, el("div", { class: "retour", id: "retourObjBilan", role: "status" }));
+    if (!r.avant && !r.termine) z.append(soir, bloc); else z.append(soir);
+    // 2. Avance ou retard
+    if (!r.avant && r.serie.length) {
+      var soirs = r.objSoir ? Math.abs(r.ecart) / r.objSoir : 0, s = soirs >= 0.95 ? " (≈ " + plur(Math.round(soirs), "soir", "soirs") + ")" : "";
+      z.append(el("div", { class: "obj-ecart " + (r.ecart >= 0 ? "avance" : "retard"),
+        text: (r.ecart >= 0 ? "En avance de " : "En retard de ") + fcfa(Math.abs(Math.round(r.ecart / 50) * 50)) + s }));
+    }
+    // 3. Avancement global et cagnottes
+    z.append(el("div", { class: "obj-global" },
+      el("div", { class: "l" }, el("b", { text: "Vers les objectifs : " + r.pourcent + " %" }), el("span", { text: r.termine ? "terminé" : plur(r.soirsRestants, "soir de vente restant", "soirs de vente restants") })),
+      barreObj(r.pourcent / 100),
+      el("p", { class: "aide", text: fcfa(Math.max(0, r.acquis)) + " mis de côté sur " + fcfa(r.besoin) + (r.constat ? " (épargne comptée le " + frDate(r.constat.date) + ")" : "") + "." })));
+    z.append(potObj("Épargne", r.pots.epargne, cy.cibles.epargne, cy.epargneDepart), potObj("Congés", r.pots.conges, cy.cibles.conges), potObj("Internet", r.pots.internet, cy.cibles.internet));
+    // 4. Trajectoire
+    z.append(el("h3", { class: "st", text: "Trajectoire" }), grapheObj(cy, r));
+    if (r.moyenne != null && !r.termine) {
+      z.append(el("p", { class: "aide obj-rythme" }, "À ce rythme (", el("b", { text: fcfa(r.moyenne) }), " par soir en moyenne) : ",
+        r.dateAtteinte ? el("b", { text: "objectifs atteints " + (r.dateAtteinte <= auj ? "dès maintenant" : "le " + nomJour(r.dateAtteinte)) })
+                       : el("b", { text: "il manquerait " + fcfa(Math.round((r.besoin - r.projection) / 50) * 50) + " le " + frDate(cy.fin) }), "."));
+    }
+    // 5. Soirs (cases du calendrier) : touche un soir pour corriger ses ventes
+    z.append(el("h3", { class: "st", text: "Soirs" }));
+    var grille = el("div", { class: "obj-jours", id: "grilleObj" });
+    ORDRE_SEMAINE.forEach(function (w) { grille.append(el("span", { class: "tete", text: JOURS_LETTRES[w] })); });
+    var decal = (dateDe(cy.debut).getDay() + 6) % 7; for (var k = 0; k < decal; k++) grille.append(el("span"));
+    r.jours.forEach(function (x) {
+      var d = dateDe(x.j), coche = objCui.coches[x.j];
+      var b = el("button", { type: "button", "data-objjour": x.j, class: x.statut + (x.j === auj ? " auj" : "") + (objSel.jour === x.j ? " choisi" : ""),
+        "aria-label": nomJour(x.j) + " : " + ({ repos: "pas de vente", atteint: "objectif atteint", manque: "objectif manqué", encours: "en cours", avenir: "à venir" })[x.statut] });
+      b.append(el("span", { text: String(d.getDate()) }), el("i", { text: x.statut === "atteint" ? "✓" : x.statut === "manque" ? "✗" : x.statut === "encours" ? "…" : "" }));
+      if (coche) b.append(el("em", { class: coche.atteint ? "c-oui" : "c-non", title: "Coché en cuisine" }));
+      grille.append(b);
+    });
+    z.append(grille, el("p", { class: "aide", text: "✓ objectif du soir atteint (" + fcfa(r.objSoir) + ") · ✗ pas atteint · point doré : coché en cuisine. Touche un soir pour corriger ses ventes." }));
+    if (objSel.jour && r.jours.some(function (x) { return x.j === objSel.jour; })) z.append(detailJourObj(objSel.jour));
+    if (obj.historique.length) {
+      z.append(el("h3", { class: "st", text: "Cycles précédents" }));
+      obj.historique.slice().reverse().forEach(function (h) {
+        z.append(el("p", { class: "aide", text: frDate(h.cycle.debut) + " → " + frDate(h.cycle.fin) + " : " + fcfa(Math.max(0, h.acquis)) + " mis de côté sur " + fcfa(h.besoin) + " (" + Math.round(h.besoin ? Math.max(0, h.acquis) / h.besoin * 100 : 100) + " %)." }));
+      });
+    }
+    majEtatObj();
+  }
+  function detailJourObj(j) {
+    var c = etat.jours[j] ? etat.jours[j].commandes : [], estime = c.length ? bilanDe(c).caEstime : 0, reel = obj.reels[j];
+    var bloc = el("div", { class: "obj-detail" },
+      el("b", { text: nomJour(j).replace(/^./, function (x) { return x.toUpperCase(); }) }),
+      el("p", { class: "aide", text: "Ventes estimées du Bilan : " + fcfa(estime) + (reel != null ? " · montant réel retenu : " + fcfa(reel) : "") + "." }),
+      el("label", { for: "objReel", class: "etiquette", text: "Montant réel encaissé ce soir-là" }));
+    var inp = el("input", { type: "text", id: "objReel", inputmode: "numeric", autocomplete: "off", placeholder: String(estime) });
+    if (reel != null) inp.value = String(reel);
+    bloc.append(inp, el("small", { class: "err-champ", id: "err-objReel" }),
+      el("div", { class: "rang" }, el("button", { type: "button", class: "principal", id: "btnReelObj", text: "Enregistrer" }),
+        el("button", { type: "button", class: "sec", id: "btnReelBilan", text: "Garder le Bilan" }), el("button", { type: "button", class: "sec", id: "btnReelFermer", text: "Fermer" })));
+    return bloc;
+  }
+  function montantSaisi(v) { var s = String(v == null ? "" : v).replace(/[\s.  ]/g, "").replace(/F(CFA)?$/i, ""); return /^\d{1,9}$/.test(s) ? parseInt(s, 10) : NaN; }
+  function modifierObj() { obj.sale = true; obj.rev = (obj.rev || 0) + 1; sauverObj(); rendreObjectifs(); programmerObjGh(); objProgrammer(); }
+  $("zoneObj").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-objjour]");
+    if (b) { objSel.jour = objSel.jour === b.dataset.objjour ? null : b.dataset.objjour; rendreObjectifs(); if (objSel.jour && $("objReel")) $("objReel").focus(); return; }
+    if (e.target.closest("#btnObjBilanCuisine")) { envoyerBilanCuisine(etat.jourVu, "retourObjBilan"); return; }
+    if (e.target.closest("#btnReelFermer")) { objSel.jour = null; rendreObjectifs(); return; }
+    if (e.target.closest("#btnReelBilan")) { delete obj.reels[objSel.jour]; objSel.jour = null; modifierObj(); toast("Ventes du Bilan reprises pour ce soir.", null, true); return; }
+    if (e.target.closest("#btnReelObj")) {
+      var v = montantSaisi($("objReel").value);
+      if (isNaN(v)) { $("err-objReel").textContent = "Montant en francs, chiffres seulement (exemple : 14500)."; $("objReel").setAttribute("aria-invalid", "true"); return; }
+      obj.reels[objSel.jour] = v; var j = objSel.jour; objSel.jour = null; modifierObj(); toast("Ventes du " + frDate(j) + " : " + fcfa(v) + ".", null, true);
+    }
+  });
+  /* Formulaire des objectifs (verrou jusqu'à la fin du cycle) */
+  var CHAMPS_OBJ = [["objDepart", "epargneDepart"], ["objEpargne", "epargne", "cibles"], ["objConges", "conges", "cibles"], ["objInternet", "internet", "cibles"], ["objStock", "stock", "charges"], ["objVie", "vie", "charges"]];
+  function valeurCycle(cy, ch) { return ch[2] ? cy[ch[2]][ch[1]] : cy[ch[1]]; }
+  function remplirFormObj() {
+    if ($("formObj").open && objSel.semaine) return;   // formulaire en cours de saisie : on ne l'écrase pas
+    var cy = obj.cycle, nouveau = cy && !verrouObj(cy), verrou = verrouObj(cy);
+    $("objDebut").value = cy ? (nouveau ? isoPlus(cy.fin, 1) : cy.debut) : soireeCourante();
+    $("objFin").value = cy && !nouveau ? cy.fin : "";
+    CHAMPS_OBJ.forEach(function (ch) { $(ch[0]).value = cy ? String(ch[1] === "epargneDepart" && nouveau ? cy.cibles.epargne : valeurCycle(cy, ch)) : ""; });
+    ["objDebut", "objFin", "objDepart"].forEach(function (id) { $(id).readOnly = verrou; });
+    objSel.semaine = cy ? cy.joursVente.slice() : [0, 1, 2, 3, 4, 5, 6];
+    majSemaineObj();
+    $("verrouObj").hidden = !verrou;
+    if (verrou) $("verrouObj").textContent = "🔒 Jusqu’au " + frDate(cy.fin) + " : chaque objectif reste ou augmente, jamais moins. Début, fin et épargne de départ sont fixes.";
+    $("btnEnregObj").textContent = !cy ? "Lancer le suivi" : verrou ? "Enregistrer (augmenter)" : "Lancer les nouveaux objectifs";
+    document.querySelectorAll("#formObj .err-champ").forEach(function (e) { e.textContent = ""; });
+  }
+  function majSemaineObj() {
+    var z = $("semaineObj"); z.replaceChildren();
+    ORDRE_SEMAINE.forEach(function (w) { z.append(el("button", { type: "button", "data-jsem": String(w), "aria-pressed": String(objSel.semaine.indexOf(w) >= 0), "aria-label": JOURS_FR[w], text: JOURS_LETTRES[w] })); });
+  }
+  $("semaineObj").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-jsem]"); if (!b) return;
+    var w = Number(b.dataset.jsem), i = objSel.semaine.indexOf(w);
+    if (i >= 0) objSel.semaine.splice(i, 1); else objSel.semaine.push(w);
+    majSemaineObj();
+  });
+  function validerObj(n, a) {   // n : nouveau cycle ; a : cycle en vigueur (ou null) -> { id du champ : message }
+    var e = {}, date = /^\d{4}-\d{2}-\d{2}$/;
+    if (!date.test(n.debut)) e.objDebut = "Date de début manquante.";
+    if (!date.test(n.fin)) e.objFin = "Date de fin manquante.";
+    else if (date.test(n.debut) && n.fin < n.debut) e.objFin = "La fin doit être après le début.";
+    else if (date.test(n.debut) && joursDe(n.debut, n.fin).length >= 400) e.objFin = "Un an au plus.";
+    CHAMPS_OBJ.forEach(function (ch) { if (isNaN(valeurCycle(n, ch))) e[ch[0]] = "Montant en francs, chiffres seulement."; });
+    if (!e.objEpargne && !e.objDepart && n.cibles.epargne < n.epargneDepart) e.objEpargne = "Au moins l’épargne de départ (" + fcfa(n.epargneDepart) + ").";
+    if (!n.joursVente.length) e.semaineObj = "Choisis au moins un soir de vente.";
+    if (a && verrouObj(a)) {
+      var jusque = "Verrouillé jusqu’au " + frDate(a.fin) + ".";
+      if (n.debut !== a.debut) e.objDebut = jusque;
+      if (n.fin !== a.fin) e.objFin = jusque;
+      if (n.epargneDepart !== a.epargneDepart) e.objDepart = jusque;
+      CHAMPS_OBJ.slice(1).forEach(function (ch) {
+        if (!e[ch[0]] && valeurCycle(n, ch) < valeurCycle(a, ch)) e[ch[0]] = "Jusqu’au " + frDate(a.fin) + " : " + fcfa(valeurCycle(a, ch)) + " au moins (on garde ou on augmente).";
+      });
+    }
+    return e;
+  }
+  $("btnEnregObj").addEventListener("click", function () {
+    var a = obj.cycle;
+    var n = { debut: $("objDebut").value, fin: $("objFin").value, epargneDepart: montantSaisi($("objDepart").value),
+      cibles: { epargne: montantSaisi($("objEpargne").value), conges: montantSaisi($("objConges").value), internet: montantSaisi($("objInternet").value) },
+      charges: { stock: montantSaisi($("objStock").value), vie: montantSaisi($("objVie").value) },
+      joursVente: objSel.semaine.slice().sort(), creeLe: a && verrouObj(a) ? a.creeLe : new Date().toISOString() };
+    var err = validerObj(n, a);
+    document.querySelectorAll("#formObj .err-champ").forEach(function (x) { x.textContent = err[x.id.slice(4)] || ""; });
+    document.querySelectorAll("#formObj input").forEach(function (x) { if (err[x.id]) x.setAttribute("aria-invalid", "true"); else x.removeAttribute("aria-invalid"); });
+    if (Object.keys(err).length) { var p = document.querySelector("#formObj .err-champ:not(:empty)"); if (p) p.scrollIntoView({ block: "center" }); return; }
+    if (a && !verrouObj(a)) {   // cycle terminé : rangé dans l'historique
+      var r = calculObj(a, soireeCourante());
+      obj.historique.push({ cycle: a, acquis: r.acquis, besoin: r.besoin, rangeLe: new Date().toISOString() });
+      obj.constat = null;
+    }
+    var premier = !a;
+    obj.cycle = n; objSel.semaine = null; $("formObj").open = false;
+    modifierObj();
+    toast(premier ? "Objectifs enregistrés : le suivi commence." : "Objectifs enregistrés.", null, true);
+    window.scrollTo({ top: 0 });
+  });
+  $("formObj").addEventListener("toggle", function () { if (!$("formObj").open) { objSel.semaine = null; remplirFormObj(); } });
+  /* Épargne comptée pour de vrai : remplace le calcul jusqu'à ce soir */
+  $("btnConstatObj").addEventListener("click", function () {
+    var v = montantSaisi($("objConstat").value);
+    if (isNaN(v)) { $("err-objConstat").textContent = "Montant en francs, chiffres seulement."; $("objConstat").setAttribute("aria-invalid", "true"); return; }
+    $("err-objConstat").textContent = ""; $("objConstat").removeAttribute("aria-invalid");
+    obj.constat = { date: soireeCourante(), montant: v, t: Date.now() }; $("objConstat").value = ""; $("constatObj").open = false;
+    modifierObj(); toast("Épargne comptée : " + fcfa(v) + " ce soir.", null, true);
+  });
+  $("btnConstatEffacer").addEventListener("click", function () { obj.constat = null; $("constatObj").open = false; modifierObj(); toast("Comptage effacé : retour au calcul.", null, true); });
+  function majEtatObj() {
+    var t = [];
+    if (obj.constat && obj.cycle) t.push("Épargne comptée : " + fcfa(obj.constat.montant) + " le " + frDate(obj.constat.date) + ".");
+    $("infoConstat").textContent = t.length ? t[0] : "Aucun comptage : l’épargne est calculée avec les ventes et les charges.";
+    var e = [];
+    e.push(!depotDonnees.cle ? "Copie GitHub : sauvegarde non branchée (Outils)." : obj.erreur ? "Copie GitHub : " + obj.erreur.message : obj.sale ? "Copie GitHub : envoi en attente." : obj.ok ? "Copie GitHub à jour." : "");
+    if (obj.cycle) e.push(!cuisineBranchee() ? "Cuisine : non branchée." : objCui.erreur ? "Cuisine : " + objCui.erreur : objCui.envoye ? "Cuisine : à jour." : "Cuisine : envoi…");
+    $("etatObj").textContent = e.filter(Boolean).join(" · ");
+  }
+  /* Copie dans le dépôt privé atelier-donnees (objectifs.json) */
+  var minuterieObj = null;
+  function programmerObjGh() { clearTimeout(minuterieObj); minuterieObj = setTimeout(function () { envoyerObjGh(false); }, 1500); }
+  function envoyerObjGh(garder) {
+    if (!donneesBranchees() || !obj.sale) return Promise.resolve();
+    var rev = obj.rev || 0, gh = donneesClient();
+    var texte = JSON.stringify({ application: "ATELIER-OBJECTIFS", version: 1, confidentiel: true, majLe: new Date().toISOString(), cycle: obj.cycle, reels: obj.reels, constat: obj.constat, historique: obj.historique }, null, 1);
+    var essai = function (sha, deuxieme) {
+      return gh.ecrire(CHEMIN_OBJ, texte, sha, "Objectifs : mise à jour", garder).catch(function (e) {
+        if (e && e.code === "conflit" && !deuxieme) return gh.lire(CHEMIN_OBJ).then(function (r) { return essai(r.sha, true); });
+        throw e;
+      });
+    };
+    var shaConnu = obj.sha ? Promise.resolve(obj.sha) : gh.lire(CHEMIN_OBJ).then(function (r) { return r.sha; });
+    return shaConnu.then(function (sha) { return essai(sha, false); }).then(function (r) {
+      if (!r.verifie) throw { message: "GitHub n’a pas confirmé l’enregistrement." };
+      obj.sha = r.sha; obj.ok = Date.now(); obj.erreur = null;
+      if ((obj.rev || 0) === rev) obj.sale = false; else programmerObjGh();
+      sauverObj(); majEtatObj();
+    }).catch(function (e) { obj.erreur = { message: ((e && e.message) || "erreur") + " (nouvel essai automatique)" }; majEtatObj(); setTimeout(function () { envoyerObjGh(false); }, 30000); });
+  }
+  function chargerObjGitHub() {
+    if (!donneesBranchees()) return;
+    if (obj.sale) { envoyerObjGh(false); return; }   // modification du téléphone pas encore envoyée : elle passe d'abord
+    donneesClient().lire(CHEMIN_OBJ).then(function (r) {
+      if (r.statut === 200) {
+        var o = JSON.parse(r.texte);
+        obj.cycle = o.cycle || null; obj.reels = o.reels || {}; obj.constat = o.constat || null; obj.historique = Array.isArray(o.historique) ? o.historique : []; obj.sha = r.sha;
+      }
+      obj.ok = Date.now(); obj.erreur = null; sauverObj(); if (document.body.dataset.vue === "objectifs") rendreObjectifs(); objProgrammer();
+    }).catch(function (e) { obj.erreur = { message: ((e && e.message) || "erreur") + " (copie du téléphone utilisée)" }; majEtatObj(); });
+  }
+  /* Écran cuisine : résumé sans ventes ni charges (objectifs/suivi.json) ; coches de la cuisine (objectifs/coches.json) */
+  function resumeObjCuisine() {
+    var cy = obj.cycle; if (!cy) return null;
+    var auj = soireeCourante(), r = calculObj(cy, auj), jours = {};
+    r.jours.forEach(function (x) { if (x.statut === "atteint") jours[x.j] = true; else if (x.statut === "manque") jours[x.j] = false; });
+    return { application: "ATELIER-OBJECTIFS", version: 1, debut: cy.debut, fin: cy.fin, joursVente: cy.joursVente, pourcent: r.pourcent,
+      conges: { actuel: Math.round(r.pots.conges / 100) * 100, cible: cy.cibles.conges }, internet: { actuel: Math.round(r.pots.internet / 100) * 100, cible: cy.cibles.internet },
+      epargne: { pourcent: cy.cibles.epargne > cy.epargneDepart ? Math.max(0, Math.min(100, Math.round((r.pots.epargne - cy.epargneDepart) / (cy.cibles.epargne - cy.epargneDepart) * 100))) : 100 },
+      jours: jours, soirsRestants: r.soirsRestants };
+  }
+  function objProgrammer() {
+    if (typeof objCui === "undefined" || !objCui) return;   // appel pendant le chargement, avant ce module
+    clearTimeout(objCui.minuterie); objCui.minuterie = setTimeout(envoyerObjCuisine, 2500);
+  }
+  function envoyerObjCuisine() {
+    var res = resumeObjCuisine();
+    if (!res || !cuisineBranchee()) { majEtatObj(); return Promise.resolve(); }
+    var empreinteRes = JSON.stringify(res);
+    if (empreinteRes === objCui.envoye) return Promise.resolve();
+    if (objCui.enCours) { objProgrammer(); return Promise.resolve(); }
+    objCui.enCours = true;
+    var gh = cuisineClient(), chemin = "objectifs/suivi.json", texte = JSON.stringify(Object.assign({ envoyeLe: new Date().toISOString() }, res), null, 1);
+    var shaConnu = objCui.sha === undefined ? gh.lire(chemin).then(function (r) { return r.sha; }) : Promise.resolve(objCui.sha);
+    return shaConnu.then(function (sha) { return gh.ecrire(chemin, texte, sha, "Objectifs : " + res.pourcent + " %"); }).then(function (r) {
+      if (!r.verifie) throw { message: "GitHub n’a pas confirmé l’enregistrement." };
+      objCui.sha = r.sha; objCui.envoye = empreinteRes; objCui.erreur = null;
+    }).catch(function (e) {
+      objCui.erreur = ((e && e.message) || "erreur") + " (nouvel essai)";
+      if (e && e.code === "conflit") objCui.sha = undefined;
+      setTimeout(objProgrammer, e && e.code === "limite" ? 120000 : 15000);
+    }).then(function () { objCui.enCours = false; majEtatObj(); });
+  }
+  function lireCochesCuisine() {
+    if (!cuisineBranchee() || !obj.cycle || objCui.lecture || document.hidden) return Promise.resolve();
+    objCui.lecture = true;
+    return cuisineClient().lire("objectifs/coches.json", objCui.etag).finally(function () { objCui.lecture = false; }).then(function (r) {
+      if (r.statut === 304) return;
+      objCui.etag = r.etag || null; var c = {};
+      if (r.statut === 200) { try { c = JSON.parse(r.texte).coches || {}; } catch (e) { c = {}; } }
+      objCui.coches = c; autoGhProgrammer(5000);
+      var at = objCui.attente;   // réponse de la cuisine au bilan envoyé
+      if (at && JSON.stringify(c[at.jour] || null) !== at.avant && c[at.jour]) {
+        toast("Cuisine : " + (c[at.jour].atteint ? "« Objectif atteint » 🎉" : "« Pas encore, on rattrape »") + " (" + frDate(at.jour).slice(0, 5) + ").", null, true); vibrer([40, 60, 40]);
+        objCui.attente = null;
+      }
+      if (document.body.dataset.vue === "objectifs") rendreObjectifs();
+    }).catch(function () {});
+  }
+  function objDemarrer() {
+    chargerObjGitHub(); objProgrammer();
+    setInterval(function () { if (document.body.dataset.vue === "objectifs") lireCochesCuisine(); }, 30000);
+    setInterval(function () { if (obj.cycle) objProgrammer(); }, 10 * 60000);   // le jour change à 4 h : le résumé de la cuisine suit
+    window.addEventListener("online", function () { if (obj.sale) envoyerObjGh(false); objProgrammer(); });
+  }
+  /* Bilan du soir envoyé à la cuisine (objectifs/bilan.json) : remplace la copie sur WhatsApp. La cuisine le lit proprement et répond
+     « Objectif atteint » / « Pas encore » (objectifs/coches.json) ; la réponse revient ici (petite fenêtre + point doré sur le soir). */
+  function bilanPourCuisine(j) {
+    var cmds = etat.jours[j] ? etat.jours[j].commandes : [], b = bilanDe(cmds);
+    var r = obj.cycle ? calculObj(obj.cycle, soireeCourante()) : null, x = r ? r.jours.find(function (d) { return d.j === j; }) : null;
+    return { application: "ATELIER-BILAN", version: 1, jour: j, envoyeLe: new Date().toISOString(),
+      commandes: b.commandes, livrees: b.livrees, crepes: b.crepes, nature: b.nature, nutella: b.nutella, packs: b.packs, unites: b.unites,
+      centre: b.centre, sud: b.sud, ventes: ventesSoir(j), premiere: b.premiere, derniere: b.derniere, delaiMoyen: b.delaiMoyen,
+      objectif: x && x.vente ? { atteint: x.ventes >= r.objSoir, pourcent: r.pourcent } : null };
+  }
+  function envoyerBilanCuisine(j, idRetour) {
+    if (!cuisineBranchee()) { retourEn(idRetour, "Branche d’abord l’écran cuisine (Outils, « Écran cuisine »).", "erreur"); return Promise.resolve(false); }
+    if (!commandesDu(j).length) { retourEn(idRetour, "Aucune commande ce jour-là : rien à envoyer.", "erreur"); return Promise.resolve(false); }
+    var gh = cuisineClient(), chemin = "objectifs/bilan.json", texte = JSON.stringify(bilanPourCuisine(j), null, 1);
+    retourEn(idRetour, "Envoi du bilan à la cuisine…", "");
+    var essai = function (deuxieme) {
+      return gh.lire(chemin).then(function (r) { return gh.ecrire(chemin, texte, r.sha, "Bilan du " + j + " envoyé à la cuisine", true); }).catch(function (e) {
+        if (e && e.code === "conflit" && !deuxieme) return essai(true);
+        throw e;
+      });
+    };
+    return essai(false).then(function (r) {
+      if (!r.verifie) throw { message: "GitHub n’a pas confirmé l’enregistrement." };
+      objCui.bilanEnvoye = { jour: j, t: Date.now() }; objCui.attente = { jour: j, jusque: Date.now() + 45 * 60000, avant: JSON.stringify(objCui.coches[j] || null) };
+      retourEn(idRetour, "Bilan envoyé à la cuisine. Sa réponse s’affichera ici.", "ok"); vibrer(30);
+      objProgrammer(); if (document.body.dataset.vue === "objectifs") rendreObjectifs();
+      return true;
+    }).catch(function (e) { retourEn(idRetour, "Bilan pas envoyé : " + ((e && e.message) || "erreur") + " Réessaie.", "erreur"); return false; });
+  }
+  setInterval(function () { if (objCui.attente && Date.now() < objCui.attente.jusque) lireCochesCuisine(); }, 15000);   // réponse de la cuisine attendue
+  $("btnBilanCuisine").addEventListener("click", function () { envoyerBilanCuisine(etat.jourVu, "retourBilan"); });
+
   /* ---------- « En savoir plus » : une fenêtre au lieu des encadrés d'explication (V6.2) ---------- */
   var infoRetour = null;
   function ouvrirInfo(cle, bouton) {
@@ -3052,9 +3673,9 @@
   $("avecNumeros").checked = !!ui.avecNumeros;
   construireSite(); construirePacks();
   restaurerBrouillon();
-  document.body.dataset.vue = ["saisir", "liste", "bilan", "wave", "envois", "messages"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
+  document.body.dataset.vue = ["saisir", "liste", "bilan", "wave", "envois", "messages", "objectifs"].indexOf(ui.vue) >= 0 ? ui.vue : "saisir";
   document.querySelectorAll(".navbas button").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.vue === document.body.dataset.vue)); });
-  sauver(); rendre(); majAppli(); cuisineDemarrer(); rendreWave(); envoisDemarrer();
+  sauver(); rendre(); majAppli(); cuisineDemarrer(); rendreWave(); envoisDemarrer(); objDemarrer();
   avertissements.forEach(function (m) { toast(m); });
   secoursIdb();
 })();
