@@ -2291,8 +2291,9 @@
   var PACKS_WAVE = ["mini", "maxi", "mega"], ARTICLES_WAVE = ["mini", "maxi", "mega", "nature", "nutella"];
   /* V6.16 (D-104) : « Autre quantité » sans limite : packs ET crêpes à l'unité, livraison « selon la règle » / « offerte » / « à payer × N »,
      montant en plus (libre) ; les 1 % de Wave sont toujours ajoutés tout seuls (arrondi au franc supérieur). */
-  /* V6.18 (D-106) : montant seul possible (sans pack ni crêpe) ; livraison NON comptée par défaut (souvent laissée au client). */
-  var waveSite = ui.waveSite === "S" ? "S" : "C", waveAutre = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0, livraison: "offerte", livraisons: 1, plus: 0 };
+  /* V6.18 (D-106) : montant seul possible (sans pack ni crêpe). V6.18.1 (D-107) : livraison SELON LA RÈGLE par défaut, comme avant
+     (le lien envoyé au client comprend la livraison) ; ce sont le Bilan et la répartition qui ne comptent pas les livraisons. */
+  var waveSite = ui.waveSite === "S" ? "S" : "C", waveAutre = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0, livraison: "regle", livraisons: 1, plus: 0 };
   function montantWave(q, site, opt) {
     opt = opt || {};
     var articles = 0; ARTICLES_WAVE.forEach(function (p) { articles += (q[p] || 0) * PRIX[p]; });
@@ -2359,13 +2360,13 @@
     $("nbLivWave").hidden = waveAutre.livraison !== "payante";
     var regle = LIVRAISON[waveSite];
     $("aideLivWave").textContent = waveAutre.livraison === "regle" ? (n ? (m.offerteRegle ? "Règle " + SITES[waveSite].nom + " : livraison offerte (pack qui l’offre)." : "Règle " + SITES[waveSite].nom + " : livraison " + fcfa(regle.frais) + ".") : regle.texte)
-      : waveAutre.livraison === "offerte" ? "Livraison non comptée (choix par défaut)." : fcfa(regle.frais) + " par livraison (" + SITES[waveSite].nom + ").";
+      : waveAutre.livraison === "offerte" ? "Livraison offerte, quelle que soit la commande." : fcfa(regle.frais) + " par livraison (" + SITES[waveSite].nom + ").";
     var d = $("detailAutreWave"); d.replaceChildren();
     if (!n && !m.plus) return;
     var ligne = function (a, v, fort) { d.append(el("div", { class: "dw-l" + (fort ? " fort" : "") }, el("span", { text: a }), el("b", { text: v }))); };
     if (n) ligne(libelleWave(waveAutre), fcfa(m.articles));
     if (m.plus) ligne(n ? "Montant en plus" : "Montant", fcfa(m.plus));
-    ligne(waveAutre.livraison === "payante" && waveAutre.livraisons > 1 ? "Livraison × " + waveAutre.livraisons : "Livraison", m.livraison ? fcfa(m.livraison) : waveAutre.livraison === "offerte" ? "non comptée" : "offerte");
+    ligne(waveAutre.livraison === "payante" && waveAutre.livraisons > 1 ? "Livraison × " + waveAutre.livraisons : "Livraison", m.livraison ? fcfa(m.livraison) : "offerte");
     ligne("Frais Wave (1 %, ajoutés tout seuls)", fcfa(m.frais));
     ligne("Le client paie", fcfa(m.wave), true);
   }
@@ -2404,8 +2405,8 @@
         el("div", { class: "pas-ctrl" }, moins, champ, plus)));
     });
     var seg = el("div", { class: "segmente trois", id: "livWave", role: "group", "aria-label": "Livraison" },
-      el("button", { type: "button", "data-liv": "offerte", "aria-pressed": "true", text: "Sans livraison" }),
-      el("button", { type: "button", "data-liv": "regle", "aria-pressed": "false", text: "Selon la règle" }),
+      el("button", { type: "button", "data-liv": "regle", "aria-pressed": "true", text: "Selon la règle" }),
+      el("button", { type: "button", "data-liv": "offerte", "aria-pressed": "false", text: "Offerte" }),
       el("button", { type: "button", "data-liv": "payante", "aria-pressed": "false", text: "À payer" }));
     var nbMoins = el("button", { type: "button", "aria-label": "Une livraison de moins", text: "−" }), nbPlus = el("button", { type: "button", "aria-label": "Une livraison de plus", text: "+" });
     var nbChamp = el("input", { type: "text", id: "qw_livraisons", class: "pas-val", inputmode: "numeric", autocomplete: "off", "aria-label": "Nombre de livraisons", value: "1" });
