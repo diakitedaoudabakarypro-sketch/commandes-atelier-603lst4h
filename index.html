@@ -1515,6 +1515,7 @@
       var trouves = contactsDeChambre(site, res, chambre);
       if (trouves.length) { tel = trouves[0].tel; auto = " · numéro du carnet : " + libContact(trouves[0]) + (trouves.length > 1 ? " (" + trouves.length + " contacts dans cette chambre)" : ""); }
     }
+    try {
     if (edition) {
       var id = edition;
       muter("Commande modifiée : " + SITES[site].nom + " · " + res + " · ch. " + chambre + auto, function () {
@@ -1525,7 +1526,8 @@
       var nouvelle = { id: "c" + maintenant.toString(36) + Math.random().toString(36).slice(2, 6), site: site, res: res, chambre: chambre, q: q, tel: tel, paye: paye, tp: paye ? maintenant : null, t: maintenant, maj: maintenant, livre: false, tl: null };
       muter("Ajouté : " + SITES[site].nom + " · " + res + " · ch. " + chambre + " — " + libelle(q) + auto, function () { etat.commandes.push(nouvelle); });
     }
-    viderSaisie(); majForm(); vibrer(25);
+    } finally { viderSaisie(); majForm(); }   // V6.18 : packs à zéro, chambre et numéro vides, « Non payé », même si un affichage échoue
+    vibrer(25);
     noterChangement();
     if (window.matchMedia("(pointer:fine)").matches) $("chambre").focus();   // ordinateur : on enchaîne au clavier
     else $("chambre").scrollIntoView({ block: "center" });                   // téléphone : pas de clavier imposé
@@ -2289,13 +2291,14 @@
   var PACKS_WAVE = ["mini", "maxi", "mega"], ARTICLES_WAVE = ["mini", "maxi", "mega", "nature", "nutella"];
   /* V6.16 (D-104) : « Autre quantité » sans limite : packs ET crêpes à l'unité, livraison « selon la règle » / « offerte » / « à payer × N »,
      montant en plus (libre) ; les 1 % de Wave sont toujours ajoutés tout seuls (arrondi au franc supérieur). */
-  var waveSite = ui.waveSite === "S" ? "S" : "C", waveAutre = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0, livraison: "regle", livraisons: 1, plus: 0 };
+  /* V6.18 (D-106) : montant seul possible (sans pack ni crêpe) ; livraison NON comptée par défaut (souvent laissée au client). */
+  var waveSite = ui.waveSite === "S" ? "S" : "C", waveAutre = { mini: 0, maxi: 0, mega: 0, nature: 0, nutella: 0, livraison: "offerte", livraisons: 1, plus: 0 };
   function montantWave(q, site, opt) {
     opt = opt || {};
     var articles = 0; ARTICLES_WAVE.forEach(function (p) { articles += (q[p] || 0) * PRIX[p]; });
     var plus = Math.max(0, opt.plus || 0), base = articles + plus;
     var regle = LIVRAISON[site], offerte = regle.offerteAvec.some(function (p) { return (q[p] || 0) > 0; }), mode = opt.livraison || "regle";
-    var livraison = !articles ? 0 : mode === "offerte" ? 0 : mode === "payante" ? regle.frais * Math.max(1, opt.livraisons || 1) : (offerte ? 0 : regle.frais);
+    var livraison = mode === "offerte" ? 0 : mode === "payante" ? regle.frais * Math.max(1, opt.livraisons || 1) : !articles ? 0 : (offerte ? 0 : regle.frais);
     var total = base + livraison, wave = Math.ceil(total * (100 + WAVE_FRAIS_POUR_CENT) / 100);
     return { articles: articles, plus: plus, base: base, livraison: livraison, offerteRegle: offerte, total: total, frais: wave - total, wave: wave };
   }
@@ -2325,7 +2328,7 @@
     return b;
   }
   function copierWave(q, bouton, opt) {
-    var m = montantWave(q, waveSite, opt), lib = libelleWave(q) + " · " + SITES[waveSite].nom + " · " + fcfa(m.wave);
+    var m = montantWave(q, waveSite, opt), lib = (libelleWave(q) || "Montant") + " · " + SITES[waveSite].nom + " · " + fcfa(m.wave);
     copier(texteWave(m.wave)).then(function (ok) {
       document.querySelectorAll(".wave-btn.copie").forEach(function (x) { x.classList.remove("copie"); var s = x.querySelector(".w-mt small"); if (s) s.textContent = "Copier"; });
       if (ok) {
@@ -2349,20 +2352,20 @@
   }
   function majAutreWave() {   // V6.16 : détail au franc près, 1 % Wave compris
     var n = nbArticlesWave(waveAutre), b = $("btnAutreWave"), m = montantWave(waveAutre, waveSite, waveAutre);
-    b.disabled = !n;
-    b.textContent = n ? "Copier : " + libelleWave(waveAutre) + " · " + fcfa(m.wave) : "Choisis les packs ou les crêpes";
+    b.disabled = !n && !m.plus;
+    b.textContent = n ? "Copier : " + libelleWave(waveAutre) + " · " + fcfa(m.wave) : m.plus ? "Copier : montant seul · " + fcfa(m.wave) : "Choisis les packs ou tape un montant";
     ARTICLES_WAVE.forEach(function (p) { var i = $("qw_" + p); if (i && document.activeElement !== i) i.value = String(waveAutre[p]); });
     document.querySelectorAll("#livWave button").forEach(function (x) { x.setAttribute("aria-pressed", String(x.dataset.liv === waveAutre.livraison)); });
     $("nbLivWave").hidden = waveAutre.livraison !== "payante";
     var regle = LIVRAISON[waveSite];
     $("aideLivWave").textContent = waveAutre.livraison === "regle" ? (n ? (m.offerteRegle ? "Règle " + SITES[waveSite].nom + " : livraison offerte (pack qui l’offre)." : "Règle " + SITES[waveSite].nom + " : livraison " + fcfa(regle.frais) + ".") : regle.texte)
-      : waveAutre.livraison === "offerte" ? "Livraison offerte, quelle que soit la commande." : fcfa(regle.frais) + " par livraison (" + SITES[waveSite].nom + ").";
+      : waveAutre.livraison === "offerte" ? "Livraison non comptée (choix par défaut)." : fcfa(regle.frais) + " par livraison (" + SITES[waveSite].nom + ").";
     var d = $("detailAutreWave"); d.replaceChildren();
-    if (!n) return;
+    if (!n && !m.plus) return;
     var ligne = function (a, v, fort) { d.append(el("div", { class: "dw-l" + (fort ? " fort" : "") }, el("span", { text: a }), el("b", { text: v }))); };
-    ligne(libelleWave(waveAutre), fcfa(m.articles));
-    if (m.plus) ligne("Montant en plus", fcfa(m.plus));
-    ligne(waveAutre.livraison === "payante" && waveAutre.livraisons > 1 ? "Livraison × " + waveAutre.livraisons : "Livraison", m.livraison ? fcfa(m.livraison) : "offerte");
+    if (n) ligne(libelleWave(waveAutre), fcfa(m.articles));
+    if (m.plus) ligne(n ? "Montant en plus" : "Montant", fcfa(m.plus));
+    ligne(waveAutre.livraison === "payante" && waveAutre.livraisons > 1 ? "Livraison × " + waveAutre.livraisons : "Livraison", m.livraison ? fcfa(m.livraison) : waveAutre.livraison === "offerte" ? "non comptée" : "offerte");
     ligne("Frais Wave (1 %, ajoutés tout seuls)", fcfa(m.frais));
     ligne("Le client paie", fcfa(m.wave), true);
   }
@@ -2401,8 +2404,8 @@
         el("div", { class: "pas-ctrl" }, moins, champ, plus)));
     });
     var seg = el("div", { class: "segmente trois", id: "livWave", role: "group", "aria-label": "Livraison" },
-      el("button", { type: "button", "data-liv": "regle", "aria-pressed": "true", text: "Selon la règle" }),
-      el("button", { type: "button", "data-liv": "offerte", "aria-pressed": "false", text: "Offerte" }),
+      el("button", { type: "button", "data-liv": "offerte", "aria-pressed": "true", text: "Sans livraison" }),
+      el("button", { type: "button", "data-liv": "regle", "aria-pressed": "false", text: "Selon la règle" }),
       el("button", { type: "button", "data-liv": "payante", "aria-pressed": "false", text: "À payer" }));
     var nbMoins = el("button", { type: "button", "aria-label": "Une livraison de moins", text: "−" }), nbPlus = el("button", { type: "button", "aria-label": "Une livraison de plus", text: "+" });
     var nbChamp = el("input", { type: "text", id: "qw_livraisons", class: "pas-val", inputmode: "numeric", autocomplete: "off", "aria-label": "Nombre de livraisons", value: "1" });
@@ -2415,10 +2418,10 @@
     zone.append(el("span", { class: "etiquette", text: "Livraison" }), seg, el("p", { class: "aide", id: "aideLivWave" }),
       el("div", { class: "pas", id: "nbLivWave", hidden: "" }, el("div", { class: "pas-nom" }, el("b", { text: "Nombre de livraisons" }), el("span", { text: "une par chambre" })),
         el("div", { class: "pas-ctrl" }, nbMoins, nbChamp, nbPlus)),
-      el("label", { class: "etiquette", for: "qw_plus", text: "Montant en plus (F, facultatif)" }), plusChamp,
+      el("label", { class: "etiquette", for: "qw_plus", text: "Montant (F) : seul, ou en plus des packs" }), plusChamp,
       el("div", { class: "detail-wave", id: "detailAutreWave", "aria-live": "polite" }));
     seg.addEventListener("click", function (e) { var b = e.target.closest("button[data-liv]"); if (!b) return; waveAutre.livraison = b.dataset.liv; majAutreWave(); });
-    $("btnAutreWave").addEventListener("click", function () { if (nbArticlesWave(waveAutre)) copierWave(waveAutre, null, waveAutre); });
+    $("btnAutreWave").addEventListener("click", function () { if (nbArticlesWave(waveAutre) || waveAutre.plus > 0) copierWave(waveAutre, null, waveAutre); });
     $("siteWave").addEventListener("click", function (e) {
       var b = e.target.closest("button[data-wsite]"); if (!b) return;
       waveSite = b.dataset.wsite; ui.waveSite = waveSite; sauverUi(); $("retourWave").textContent = ""; rendreWave();
@@ -2579,7 +2582,7 @@
   }
   function objectifSoiree(j) {
     if (typeof obj === "undefined" || !obj || !obj.cycle || j < obj.cycle.debut || j > obj.cycle.fin) return null;
-    var r = calculObj(obj.cycle, soireeCourante()), x = r.jours.find(function (d) { return d.j === j; }), c = objCui.coches[j];
+    try { var r = calculObj(obj.cycle, soireeCourante()), x = r.jours.find(function (d) { return d.j === j; }), c = objCui.coches[j]; } catch (e) { return null; }   // V6.18 : jamais bloquant
     return { objectifDuSoir: r.objSoir, ventesRetenues: ventesSoir(j), montantReelSaisi: obj.reels[j] != null, soirDeVente: !!(x && x.vente),
       atteint: !!(x && x.vente && x.ventes >= r.objSoir), reponseCuisine: c ? (c.atteint ? "atteint" : "pas_encore") : null,
       enveloppes: x && x.rep ? { paquets: x.rep.paquets, paquetsCorriges: x.rep.corrige, fournisseur: x.rep.fournisseur, conges: x.rep.conges, internet: x.rep.internet, perso: x.rep.perso, coffre: x.rep.coffre,
@@ -3327,7 +3330,7 @@
      (prix du paquet et parts congés / internet / coffre : jamais moins ; ventes par paquet et part perso : jamais plus) ; début, fin et épargne de départ sont fixes.
      Après la fin : tout se modifie ; « Nouveaux objectifs » range le cycle terminé dans l'historique. */
   var CLE_OBJ = "atelier_objectifs_v1", CHEMIN_OBJ = "objectifs.json";
-  var obj = { cycle: null, reels: {}, paquets: {}, constat: null, historique: [], sha: null, sale: false, rev: 0, ok: 0, erreur: null };
+  var obj = { cycle: null, reels: {}, paquets: {}, constat: null, depart: null, historique: [], sha: null, sale: false, rev: 0, ok: 0, erreur: null };
   try {
     var ob = JSON.parse(lire(CLE_OBJ) || "{}");
     if (ob && typeof ob === "object") { obj = Object.assign(obj, ob, { erreur: null }); obj.reels = obj.reels || {}; obj.paquets = obj.paquets || {}; obj.historique = Array.isArray(obj.historique) ? obj.historique : []; }
@@ -3335,7 +3338,7 @@
   var objCui = { coches: {}, etag: null, envoye: "", sha: undefined, enCours: false, minuterie: null, lecture: false };
   var objSel = { jour: null, semaine: null };
   var JOURS_LETTRES = ["D", "L", "M", "M", "J", "V", "S"], ORDRE_SEMAINE = [1, 2, 3, 4, 5, 6, 0];
-  function sauverObj() { ecrire(CLE_OBJ, JSON.stringify({ cycle: obj.cycle, reels: obj.reels, paquets: obj.paquets, constat: obj.constat, historique: obj.historique, sha: obj.sha, sale: obj.sale, rev: obj.rev, ok: obj.ok })); }
+  function sauverObj() { ecrire(CLE_OBJ, JSON.stringify({ cycle: obj.cycle, reels: obj.reels, paquets: obj.paquets, constat: obj.constat, depart: obj.depart, historique: obj.historique, sha: obj.sha, sale: obj.sale, rev: obj.rev, ok: obj.ok })); }
   function isoPlus(iso, n) { var d = dateDe(iso); d.setDate(d.getDate() + n); return ymd(d); }
   function joursDe(a, b) { var r = [], d = a; while (d <= b && r.length < 400) { r.push(d); d = isoPlus(d, 1); } return r; }
   function verrouObj(cy) { return !!cy && soireeCourante() <= cy.fin; }
@@ -3378,9 +3381,11 @@
     for (var v = Math.max(50, Math.ceil((min || 0) / 50) * 50); v <= 3000000; v += 50) if (epargneType(cy, v) >= parSoir) return v;
     return 3000000;
   }
+  function departOk(cy) { var d = obj.depart; return d && d.conges != null && d.date >= cy.debut && d.date <= cy.fin ? d : null; }   // V6.18 : soirs passés réglés
+  function avantDepart(cy, j) { var d = departOk(cy); return !!d && j <= d.date; }
   function constatOk(cy, auj) { var c = obj.constat; return c && c.conges != null && c.date >= cy.debut && c.date <= cy.fin && c.date <= auj ? c : null; }
   function repartitionCycle(cy, jusque) {   // soir par soir, du début du cycle à « jusque » inclus -> { jour: détail }
-    var rp = cy.repartition, out = {}, reste = 0, dette = 0, c = constatOk(cy, jusque);
+    var rp = cy.repartition, out = {}, reste = 0, dette = 0, c = constatOk(cy, jusque), dep = departOk(cy);
     var cum = { conges: 0, internet: 0, perso: 0, coffre: 0, fournisseur: 0 };
     joursDe(cy.debut, jusque < cy.fin ? jusque : cy.fin).forEach(function (j) {
       var v = ventesSoir(j), dispo = reste;
@@ -3389,6 +3394,7 @@
       var du = dette + n * rp.paquet, f = Math.min(v, du); dette = du - f;
       var p = plafonner(partager(v - f, rp.parts), cum, cy);
       cum.fournisseur += f; ENVELOPPES.forEach(function (k) { cum[k] += p[k]; });
+      if (dep && dep.date === j) { cum.conges = dep.conges; cum.internet = dep.internet; cum.coffre = dep.coffre - cy.epargneDepart; dette = 0; reste = 0; }   // point de départ : fournisseur déjà pris
       if (c && c.date === j) { cum.conges = c.conges; cum.internet = c.internet; cum.coffre = c.coffre - cy.epargneDepart; }
       out[j] = { ventes: v, paquetsAuto: auto, paquets: n, corrige: manuel != null, resteVeille: dispo, fournisseur: f, conges: p.conges, internet: p.internet, perso: p.perso, coffre: p.coffre,
         aCompleter: dette, reste: reste, cumul: { conges: cum.conges, internet: cum.internet, coffre: cum.coffre, perso: cum.perso, fournisseur: cum.fournisseur } };
@@ -3466,7 +3472,7 @@
   }
   function repDuJour(j) {   // détail d'un soir du cycle en cours (null hors cycle ou sans répartition)
     var cy = obj.cycle, auj = soireeCourante();
-    if (!cy || !repOk(cy) || j < cy.debut || j > cy.fin || j > auj) return null;
+    if (!cy || !repOk(cy) || j < cy.debut || j > cy.fin || j > auj || avantDepart(cy, j)) return null;
     return repartitionCycle(cy, j)[j] || null;
   }
   document.addEventListener("click", function (e) {   // paquets ouverts corrigés (Objectifs et Bilan)
@@ -3494,10 +3500,6 @@
     } else b.append(el("span", {}, "🎯 Prochain soir ", el("b", { text: fcfa(r.ceSoir) })), el("span", { text: r.pourcent + " %" }));
   }
   $("rappelObj").addEventListener("click", function () { choisirVue("objectifs"); });
-  function enPacks(f) {   // « soit environ 3 MÉGA ou 5 MAXI »
-    if (f <= 0) return "";
-    return "soit environ " + Math.ceil(f / PRIX.mega) + " MÉGA ou " + Math.ceil(f / PRIX.maxi) + " MAXI";
-  }
   function barreObj(frac) { var b = el("div", { class: "obj-barre" }), i = el("i"); i.style.width = Math.max(0, Math.min(100, frac * 100)).toFixed(1) + "%"; b.append(i); return b; }
   function potObj(nom, actuel, cible, depart) {
     var frac = cible - (depart || 0) > 0 ? (actuel - (depart || 0)) / (cible - (depart || 0)) : 1;
@@ -3563,7 +3565,7 @@
     } else {
       var reste = Math.max(0, r.ceSoir - r.ventesAuj);
       soir.append(el("span", { class: "lib", text: "Ce soir, pour tenir la cible" }), el("div", { class: "chiffre", text: fcfa(r.ceSoir) }));
-      if (reste) soir.append(el("small", {}, "Déjà vendu ", el("b", { text: fcfa(r.ventesAuj) }), " · reste ", el("b", { text: fcfa(reste) }), " (" + enPacks(reste) + ")."));
+      if (reste) soir.append(el("small", {}, "Déjà vendu ", el("b", { text: fcfa(r.ventesAuj) }), " · reste ", el("b", { text: fcfa(reste) }), "."));   // V6.18 : montants exacts seulement (plus de « soit environ … »)
       else soir.append(el("small", {}, el("b", { text: "Objectif du soir atteint ✓" }), " " + fcfa(r.ventesAuj) + " vendus."));
       if (r.ceSoir !== r.objSoir) soir.append(el("small", { text: "Objectif de base : " + fcfa(r.objSoir) + " par soir de vente." }));
       if (!r.ventesAuj && r.soirsRestants > 1) {   // tenté de ne pas vendre ce soir ? ce que ça coûte aux soirs suivants
@@ -3580,7 +3582,7 @@
     bloc.append(bb, el("div", { class: "retour", id: "retourObjBilan", role: "status" }));
     if (!r.avant && !r.termine) z.append(soir, bloc); else z.append(soir);
     // 1 bis. Ce soir, mets : les cinq enveloppes (ce soir s'il a des ventes, sinon le dernier soir vendu)
-    var jr = null; Object.keys(r.rep).sort().forEach(function (j) { if (r.rep[j].ventes > 0 || r.rep[j].corrige) jr = j; });
+    var jr = null; Object.keys(r.rep).sort().forEach(function (j) { if (!avantDepart(cy, j) && (r.rep[j].ventes > 0 || r.rep[j].corrige)) jr = j; });
     if (jr && (jr === auj || !r.rep[auj] || !r.rep[auj].ventes)) z.append(carteRep(jr, r.rep[jr], auj));
     // 2. Avance ou retard
     if (!r.avant && r.serie.length) {
@@ -3636,6 +3638,7 @@
       el("div", { class: "rang" }, el("button", { type: "button", class: "principal", id: "btnReelObj", text: "Enregistrer" }),
         el("button", { type: "button", class: "sec", id: "btnReelBilan", text: "Garder le Bilan" }), el("button", { type: "button", class: "sec", id: "btnReelFermer", text: "Fermer" })));
     var x = repDuJour(j); if (x) bloc.append(carteRep(j, x, soireeCourante()));
+    else if (obj.cycle && avantDepart(obj.cycle, j)) bloc.append(el("p", { class: "aide", text: "Soir réglé : compté dans le point de départ du " + frDate(obj.depart.date) + " (fournisseur déjà pris)." }));
     return bloc;
   }
   function montantSaisi(v) { var s = String(v == null ? "" : v).replace(/[\s.  ]/g, "").replace(/F(CFA)?$/i, ""); return /^\d{1,9}$/.test(s) ? parseInt(s, 10) : NaN; }
@@ -3712,7 +3715,7 @@
       cibles: { epargne: montantSaisi($("objEpargne").value), conges: montantSaisi($("objConges").value), internet: montantSaisi($("objInternet").value) },
       repartition: { paquet: montantSaisi($("objPaquet").value), capacite: montantSaisi($("objCapacite").value),
         parts: { conges: montantSaisi($("objPartConges").value), internet: montantSaisi($("objPartInternet").value), perso: montantSaisi($("objPartPerso").value), coffre: montantSaisi($("objPartCoffre").value) } },
-      objSoirMin: montantSaisi($("objSoirMin").value || "0"),
+      objSoirMin: montantSaisi($("objSoirMin").value || "0"), charges: a && a.charges ? a.charges : undefined,   // ancien champ gardé pour les téléphones encore en V6.16
       joursVente: objSel.semaine.slice().sort(), creeLe: a && verrouObj(a) ? a.creeLe : new Date().toISOString() };
     var err = validerObj(n, a);
     document.querySelectorAll("#formObj .err-champ").forEach(function (x) { x.textContent = err[x.id.slice(4)] || ""; });
@@ -3721,7 +3724,7 @@
     if (a && !verrouObj(a)) {   // cycle terminé : rangé dans l'historique
       var r = calculObj(a, soireeCourante());
       obj.historique.push({ cycle: a, acquis: r.acquis, besoin: r.besoin, rangeLe: new Date().toISOString() });
-      obj.constat = null; obj.paquets = {};
+      obj.constat = null; obj.paquets = {}; obj.depart = null;
     }
     var premier = !a;
     obj.cycle = n; objSel.semaine = null; $("formObj").open = false;
@@ -3758,7 +3761,9 @@
   function majEtatObj() {
     var t = [];
     if (obj.constat && obj.constat.conges != null && obj.cycle) t.push("Comptage du " + frDate(obj.constat.date) + " : congés " + fcfa(obj.constat.conges) + " · internet " + fcfa(obj.constat.internet) + " · coffre " + fcfa(obj.constat.coffre) + ".");
-    $("infoConstat").textContent = t.length ? t[0] : "Aucun comptage : les enveloppes se calculent avec les ventes, soir après soir.";
+    var dp = obj.cycle ? departOk(obj.cycle) : null;
+    if (dp) t.push("Point de départ au " + frDate(dp.date) + " (soirs passés réglés, fournisseur déjà pris) : congés " + fcfa(dp.conges) + " · internet " + fcfa(dp.internet) + " · coffre " + fcfa(dp.coffre) + ".");
+    $("infoConstat").textContent = t.length ? t.join(" ") : "Aucun comptage : les enveloppes se calculent avec les ventes, soir après soir.";
     var e = [];
     e.push(!depotDonnees.cle ? "Copie GitHub : sauvegarde non branchée (Outils)." : obj.erreur ? "Copie GitHub : " + obj.erreur.message : obj.sale ? "Copie GitHub : envoi en attente." : obj.ok ? "Copie GitHub à jour." : "");
     if (obj.cycle) e.push(!cuisineBranchee() ? "Cuisine : non branchée." : objCui.erreur ? "Cuisine : " + objCui.erreur : objCui.envoye ? "Cuisine : à jour." : "Cuisine : envoi…");
@@ -3770,7 +3775,7 @@
   function envoyerObjGh(garder) {
     if (!donneesBranchees() || !obj.sale) return Promise.resolve();
     var rev = obj.rev || 0, gh = donneesClient();
-    var texte = JSON.stringify({ application: "ATELIER-OBJECTIFS", version: 1, confidentiel: true, majLe: new Date().toISOString(), cycle: obj.cycle, reels: obj.reels, paquets: obj.paquets, constat: obj.constat, historique: obj.historique }, null, 1);
+    var texte = JSON.stringify({ application: "ATELIER-OBJECTIFS", version: 1, confidentiel: true, majLe: new Date().toISOString(), cycle: obj.cycle, reels: obj.reels, paquets: obj.paquets, constat: obj.constat, depart: obj.depart, historique: obj.historique }, null, 1);
     var essai = function (sha, deuxieme) {
       return gh.ecrire(CHEMIN_OBJ, texte, sha, "Objectifs : mise à jour", garder).catch(function (e) {
         if (e && e.code === "conflit" && !deuxieme) return gh.lire(CHEMIN_OBJ).then(function (r) { return essai(r.sha, true); });
@@ -3786,13 +3791,20 @@
     }).catch(function (e) { obj.erreur = { message: ((e && e.message) || "erreur") + " (nouvel essai automatique)" }; majEtatObj(); setTimeout(function () { envoyerObjGh(false); }, 30000); });
   }
   function chargerObjGitHub() {
-    if (!donneesBranchees()) return;
-    if (obj.sale) { envoyerObjGh(false); return; }   // modification du téléphone pas encore envoyée : elle passe d'abord
-    donneesClient().lire(CHEMIN_OBJ).then(function (r) {
+    if (!donneesBranchees()) return Promise.resolve();
+    return donneesClient().lire(CHEMIN_OBJ).then(function (r) {
       if (r.statut === 200) {
         var o = JSON.parse(r.texte);
-        obj.cycle = o.cycle || null; obj.reels = o.reels || {}; obj.paquets = o.paquets || {}; obj.constat = o.constat || null; obj.historique = Array.isArray(o.historique) ? o.historique : []; obj.sha = r.sha;
-      }
+        if (obj.sale) {   // modification du téléphone pas encore envoyée : elle passe, SANS perdre ce que GitHub a en plus (V6.18)
+          var meme = obj.cycle && o.cycle && o.cycle.debut === obj.cycle.debut;
+          if (meme && !repOk(obj.cycle) && repOk(o.cycle)) obj.cycle.repartition = o.cycle.repartition;
+          if (meme && !obj.depart && o.depart) obj.depart = o.depart;
+          if (meme) { obj.paquets = Object.assign({}, o.paquets || {}, obj.paquets); obj.reels = Object.assign({}, o.reels || {}, obj.reels); }
+          obj.sha = r.sha; obj.erreur = null; sauverObj(); envoyerObjGh(false);
+          if (document.body.dataset.vue === "objectifs") rendreObjectifs(); objProgrammer(); return;
+        }
+        obj.cycle = o.cycle || null; obj.reels = o.reels || {}; obj.paquets = o.paquets || {}; obj.constat = o.constat || null; obj.depart = o.depart || null; obj.historique = Array.isArray(o.historique) ? o.historique : []; obj.sha = r.sha;
+      } else if (obj.sale) { envoyerObjGh(false); return; }
       obj.ok = Date.now(); obj.erreur = null; sauverObj(); if (document.body.dataset.vue === "objectifs") rendreObjectifs(); objProgrammer();
     }).catch(function (e) { obj.erreur = { message: ((e && e.message) || "erreur") + " (copie du téléphone utilisée)" }; majEtatObj(); });
   }
@@ -3849,6 +3861,7 @@
     setInterval(function () { if (document.body.dataset.vue === "objectifs") lireCochesCuisine(); }, 30000);
     setInterval(function () { if (obj.cycle) objProgrammer(); }, 10 * 60000);   // le jour change à 4 h : le résumé de la cuisine suit
     window.addEventListener("online", function () { if (obj.sale) envoyerObjGh(false); objProgrammer(); });
+    document.addEventListener("visibilitychange", function () { if (!document.hidden && obj.cycle && !repOk(obj.cycle)) chargerObjGitHub(); });   // répartition manquante : relue au retour
   }
   /* Bilan du soir envoyé à la cuisine (objectifs/bilan.json) : remplace la copie sur WhatsApp. La cuisine le lit proprement et répond
      « Objectif atteint » / « Pas encore » (objectifs/coches.json) ; la réponse revient ici (petite fenêtre + point doré sur le soir). */
